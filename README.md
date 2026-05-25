@@ -19,3 +19,4 @@ A cat care assistant app that helps you keep your feline friends happy and healt
 ## Contributing
 
 Pull requests are welcome. Please open an issue first to discuss any major changes.
+At least from us three.
