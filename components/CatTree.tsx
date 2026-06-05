@@ -14,79 +14,90 @@ const PERCHES = [
 
 export default function CatTree() {
   const [hovered, setHovered] = useState<string | null>(null)
-  const active = PERCHES.find(p => p.href === hovered)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0 8px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px 16px' }}>
 
-      {/* Logo */}
-      <img src="/images/logo-vertical.png" alt="Catssistant" style={{ height: 110, width: 'auto', marginBottom: 8 }} />
-      <p style={{ fontSize: 12, color: '#C4956A', margin: '0 0 14px', letterSpacing: '.04em' }}>
-        Your cat care headquarters
-      </p>
-
-      {/* Tree + hover zones */}
-      <div style={{ position: 'relative', width: '100%', maxWidth: 480 }}>
-        <img
-          src="/images/cat-tree.png"
-          alt="Cat tree navigation"
-          style={{ width: '100%', display: 'block', userSelect: 'none' }}
-          draggable={false}
-        />
-
-        {PERCHES.map(({ href, label, emoji, top, left, width, height }) => (
-          // Wrapper div handles mouse — more reliable than putting events on Link
-          <div
-            key={href}
-            onMouseEnter={() => setHovered(href)}
-            onMouseLeave={() => setHovered(null)}
-            style={{
-              position:     'absolute',
-              top:          `${top}%`,
-              left:         `${left}%`,
-              width:        `${width}%`,
-              height:       `${height}%`,
-              borderRadius: 10,
-              cursor:       'pointer',
-              // Visible warm glow when hovered — no text, no buttons on the cats
-              background:   hovered === href ? 'rgba(255, 210, 80, 0.30)' : 'transparent',
-              outline:      hovered === href ? '2px solid rgba(196, 144, 40, 0.70)' : 'none',
-              transition:   'background 0.15s ease, outline 0.15s ease',
-            }}
-          >
-            {/* Link fills the whole zone so clicking navigates */}
-            <Link
-              href={href}
-              aria-label={`${emoji} ${label}`}
-              style={{ display: 'block', width: '100%', height: '100%' }}
-            />
-          </div>
-        ))}
+      {/* Logo — white card so it looks clean on pink background */}
+      <div style={{
+        background: '#fff', borderRadius: 20, padding: '16px 24px 12px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        marginBottom: 20, textAlign: 'center',
+      }}>
+        <img src="/images/logo-vertical.png" alt="Catssistant" style={{ height: 110, width: 'auto' }} />
+        <p style={{ fontSize: 12, color: '#C4956A', margin: '4px 0 0', letterSpacing: '.04em' }}>
+          Your cat care headquarters
+        </p>
       </div>
 
-      {/* Section label — fades in BELOW the image, never over the cats */}
+      {/* Cat tree image — white card border so pink → white transitions smoothly */}
       <div style={{
-        height: 42, marginTop: 10,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        opacity:    active ? 1 : 0,
-        transition: 'opacity 0.15s ease',
-        pointerEvents: 'none',
+        background: '#fff', borderRadius: 24, padding: 14,
+        boxShadow: '0 6px 28px rgba(0,0,0,0.10)',
+        width: '100%', maxWidth: 500,
       }}>
-        <div style={{
-          background:   '#8B5E3C',
-          color:        '#fff',
-          padding:      '8px 22px',
-          borderRadius: 999,
-          fontSize:     15,
-          fontWeight:   700,
-          boxShadow:    '0 3px 10px rgba(0,0,0,0.25)',
-          letterSpacing: '.02em',
-          whiteSpace:   'nowrap',
-        }}>
-          {active?.emoji}&nbsp;&nbsp;{active?.label}
+        <div style={{ position: 'relative' }}>
+          <img
+            src="/images/cat-tree.png"
+            alt="Cat tree navigation"
+            style={{ width: '100%', display: 'block', borderRadius: 12, userSelect: 'none' }}
+            draggable={false}
+          />
+
+          {/* Transparent hover zones with always-visible labels */}
+          {PERCHES.map(({ href, label, emoji, top, left, width, height }) => {
+            const isHovered = hovered === href
+            return (
+              <div
+                key={href}
+                onMouseEnter={() => setHovered(href)}
+                onMouseLeave={() => setHovered(null)}
+                style={{
+                  position:     'absolute',
+                  top:          `${top}%`,
+                  left:         `${left}%`,
+                  width:        `${width}%`,
+                  height:       `${height}%`,
+                  borderRadius: 10,
+                  cursor:       'pointer',
+                  background:   isHovered ? 'rgba(255, 210, 80, 0.28)' : 'transparent',
+                  outline:      isHovered ? '2px solid rgba(196, 144, 40, 0.65)' : 'none',
+                  transition:   'background 0.15s ease, outline 0.15s ease',
+                  // Keep label visible without covering cats
+                  display:      'flex',
+                  alignItems:   'flex-end',
+                  justifyContent: 'center',
+                  paddingBottom: 3,
+                }}
+              >
+                <Link
+                  href={href}
+                  style={{ position: 'absolute', inset: 0, zIndex: 1 }}
+                  aria-label={`${emoji} ${label}`}
+                />
+                {/* Always-visible label at the bottom of each perch zone */}
+                <span style={{
+                  position:     'relative',
+                  zIndex:       2,
+                  pointerEvents: 'none',
+                  background:   isHovered ? '#8B5E3C' : 'rgba(90, 50, 20, 0.72)',
+                  color:        '#fff',
+                  fontSize:     11,
+                  fontWeight:   700,
+                  padding:      '3px 9px',
+                  borderRadius: 999,
+                  letterSpacing: '.03em',
+                  whiteSpace:   'nowrap',
+                  boxShadow:    '0 1px 4px rgba(0,0,0,0.25)',
+                  transition:   'background 0.15s ease',
+                }}>
+                  {emoji} {label}
+                </span>
+              </div>
+            )
+          })}
         </div>
       </div>
-
     </div>
   )
 }

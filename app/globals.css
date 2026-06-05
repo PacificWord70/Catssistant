@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  background-color: #FFE4F0;
+}
+
 @keyframes catWalk {
   from {
     transform: translateX(-160px);
