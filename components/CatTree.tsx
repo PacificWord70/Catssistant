@@ -1,91 +1,113 @@
-'use client'
-
 import Link from 'next/link'
-import { Cat } from '@/types/cat'
-import { catHumanAge } from '@/lib/utils'
 
-// ─── Layout constants ────────────────────────────────────────────────────────
-const TRUNK_PCT  = 42   // trunk center as % of container width
-const CARD_W_PCT = 22   // each perch card as % of container width
-const TRUNK_PX   = 12   // trunk visual width in px (half = 6px offset on each side)
+// ─── Nav items — one perch per app section ────────────────────────────────────
+const NAV_ITEMS = [
+  {
+    href:    '/cats',
+    label:   'My Cats',
+    emoji:   '🐱',
+    desc:    'Profiles & care records',
+    type:    'shelf'   as const,
+    side:    'left'    as const,
+    leftPct: 4,
+    topPx:   115,
+    branchYPx: 172,
+  },
+  {
+    href:    '/feeding',
+    label:   'Feeding',
+    emoji:   '🍽️',
+    desc:    'Meals & schedules',
+    type:    'hammock' as const,
+    side:    'right'   as const,
+    leftPct: 55,
+    topPx:   270,
+    branchYPx: 336,
+  },
+  {
+    href:    '/health',
+    label:   'Health',
+    emoji:   '🏥',
+    desc:    'Vets, vaccines & weight',
+    type:    'cubie'   as const,
+    side:    'left'    as const,
+    leftPct: 9,
+    topPx:   432,
+    branchYPx: 492,
+  },
+  {
+    href:    '/litter',
+    label:   'Litter',
+    emoji:   '🪣',
+    desc:    'Cleaning reminders',
+    type:    'shelf'   as const,
+    side:    'right'   as const,
+    leftPct: 62,
+    topPx:   578,
+    branchYPx: 636,
+  },
+  {
+    href:    '/meds',
+    label:   'Meds',
+    emoji:   '💊',
+    desc:    'Medicine schedule',
+    type:    'hammock' as const,
+    side:    'left'    as const,
+    leftPct: 1,
+    topPx:   725,
+    branchYPx: 791,
+  },
+  {
+    href:    '/tips',
+    label:   'Tips',
+    emoji:   '💡',
+    desc:    'Cat care advice',
+    type:    'cubie'   as const,
+    side:    'right'   as const,
+    leftPct: 57,
+    topPx:   862,
+    branchYPx: 922,
+  },
+]
 
-// Six pre-defined slots. Deliberately uneven — some left perches hug the edge,
-// others sit more center-left; same on the right.
-const SLOTS = [
-  { type: 'shelf',   side: 'left',  leftPct: 4,  topPx: 28,  branchYPx: 88  },
-  { type: 'hammock', side: 'right', leftPct: 55, topPx: 190, branchYPx: 256 },
-  { type: 'cubie',   side: 'left',  leftPct: 9,  topPx: 360, branchYPx: 420 },
-  { type: 'shelf',   side: 'right', leftPct: 62, topPx: 510, branchYPx: 568 },
-  { type: 'hammock', side: 'left',  leftPct: 1,  topPx: 665, branchYPx: 731 },
-  { type: 'cubie',   side: 'right', leftPct: 57, topPx: 808, branchYPx: 868 },
-] as const
+const TRUNK_PCT  = 42   // trunk center, % of container
+const CARD_W_PCT = 22   // perch card width, % of container
+const TRUNK_PX   = 12   // trunk visual width in px
+const TREE_H     = 1050 // total tree height in px
 
-type PerchType = typeof SLOTS[number]['type']
+// ─── Perch card variants ──────────────────────────────────────────────────────
 
-const PASS_HEIGHT = 970    // px between passes (for 7+ cats)
-const BASE_HEIGHT = 970    // minimum container height
-
-// ─── Shared cat card innards ──────────────────────────────────────────────────
-function CatPortrait({ cat }: { cat: Cat }) {
-  return (
-    <div className="w-14 h-14 rounded-full bg-brand-tan/20 flex items-center justify-center overflow-hidden mx-auto mb-2 shadow-sm">
-      {cat.photoUrl
-        ? <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
-        : <span className="text-2xl select-none">🐱</span>}
-    </div>
-  )
-}
-
-function CatLabel({ cat }: { cat: Cat }) {
-  return (
-    <>
-      <p className="font-semibold text-sm text-brand-charcoal leading-tight truncate">{cat.name}</p>
-      {cat.breed.length > 0 && (
-        <p className="text-xs text-brand-tan mt-0.5 truncate">
-          {cat.breed[0]}{cat.breed.length > 1 ? ' +' : ''}
-        </p>
-      )}
-      {cat.birthday && (
-        <p className="text-xs text-gray-400 mt-0.5">~{catHumanAge(cat.birthday)} human yrs</p>
-      )}
-    </>
-  )
-}
-
-// ─── Perch types ─────────────────────────────────────────────────────────────
-
-function ShelfPerch({ cat }: { cat: Cat }) {
+function ShelfCard({ emoji, label, desc }: { emoji: string; label: string; desc: string }) {
   return (
     <div className="w-full">
-      <Link href={`/cats/${cat.id}`} className="block">
-        <div className="bg-white rounded-xl px-4 py-3 shadow-sm border border-brand-tan/20 text-center
-                        hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-          <CatPortrait cat={cat} />
-          <CatLabel cat={cat} />
-        </div>
-      </Link>
+      <div className="bg-white rounded-xl px-4 py-4 shadow-sm border border-brand-tan/20 text-center
+                      hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+        <div className="text-4xl mb-2 select-none">{emoji}</div>
+        <p className="font-semibold text-brand-charcoal leading-tight">{label}</p>
+        <p className="text-xs text-gray-400 mt-1">{desc}</p>
+      </div>
       {/* Shelf plank */}
       <div className="h-3 bg-brand-brown rounded-full shadow-md mx-1 mt-0.5" />
     </div>
   )
 }
 
-function CubiePerch({ cat }: { cat: Cat }) {
+function CubieCard({ emoji, label, desc }: { emoji: string; label: string; desc: string }) {
   return (
-    <Link href={`/cats/${cat.id}`} className="block w-full">
-      <div className="relative bg-brand-cream border-[3px] border-brand-brown rounded-2xl px-4 pb-3 pt-4 shadow
-                      text-center hover:bg-white hover:shadow-md transition-all duration-200">
-        {/* Entry hole knob on top */}
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-brand-brown
-                        border-2 border-brand-cream shadow" />
-        <CatPortrait cat={cat} />
-        <CatLabel cat={cat} />
-      </div>
-    </Link>
+    <div className="relative bg-brand-cream border-[3px] border-brand-brown rounded-2xl
+                    px-4 pb-4 pt-5 shadow text-center
+                    hover:bg-white hover:shadow-md transition-all duration-200 cursor-pointer w-full">
+      {/* Entry hole knob */}
+      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2
+                      w-7 h-7 rounded-full bg-brand-brown border-2 border-brand-cream shadow" />
+      <div className="text-4xl mb-2 select-none">{emoji}</div>
+      <p className="font-semibold text-brand-charcoal leading-tight">{label}</p>
+      <p className="text-xs text-gray-400 mt-1">{desc}</p>
+    </div>
   )
 }
 
-function HammockPerch({ cat }: { cat: Cat }) {
+function HammockCard({ emoji, label, desc }: { emoji: string; label: string; desc: string }) {
   return (
     <div className="w-full">
       {/* Hanging ropes */}
@@ -94,78 +116,43 @@ function HammockPerch({ cat }: { cat: Cat }) {
         <div className="w-px h-5 bg-brand-brown" />
       </div>
       {/* Hammock bed */}
-      <Link href={`/cats/${cat.id}`} className="block">
-        <div className="bg-brand-tan/25 border-2 border-brand-tan rounded-b-[2.5rem] px-4 py-4
-                        text-center shadow-inner hover:bg-brand-tan/40 transition-colors duration-200">
-          <CatPortrait cat={cat} />
-          <CatLabel cat={cat} />
-        </div>
-      </Link>
+      <div className="bg-brand-tan/25 border-2 border-brand-tan rounded-b-[2.5rem] px-4 py-4
+                      text-center shadow-inner
+                      hover:bg-brand-tan/45 transition-colors duration-200 cursor-pointer">
+        <div className="text-4xl mb-2 select-none">{emoji}</div>
+        <p className="font-semibold text-brand-charcoal leading-tight">{label}</p>
+        <p className="text-xs text-gray-400 mt-1">{desc}</p>
+      </div>
     </div>
   )
 }
 
-function AddCatPerch() {
+// ─── Main tree (server component — pure nav, no data needed) ──────────────────
+export default function CatTree() {
   return (
-    <div className="w-full">
-      <Link href="/cats/new" className="block">
-        <div className="bg-white border-2 border-dashed border-brand-tan rounded-xl px-4 py-4
-                        text-center hover:border-brand-orange hover:bg-brand-orange/5 transition-colors duration-200">
-          <div className="w-14 h-14 rounded-full bg-brand-orange/10 flex items-center justify-center mx-auto mb-2">
-            <span className="text-2xl select-none">➕</span>
-          </div>
-          <p className="text-sm font-medium text-brand-tan group-hover:text-brand-orange">Add a cat</p>
-        </div>
-      </Link>
-      {/* Dashed shelf */}
-      <div className="h-3 bg-brand-tan/40 rounded-full mx-1 mt-0.5" />
-    </div>
-  )
-}
+    <div className="relative w-full select-none" style={{ height: `${TREE_H}px` }}>
 
-// ─── Main tree ────────────────────────────────────────────────────────────────
+      {/* App title, centred above trunk */}
+      <div className="absolute top-6 w-full text-center z-10 pointer-events-none">
+        <h1 className="font-display text-4xl text-brand-brown drop-shadow-sm">
+          🐱 Catssistant
+        </h1>
+        <p className="text-sm text-brand-tan mt-1">Your cat care headquarters</p>
+      </div>
 
-interface Props {
-  cats: Cat[]
-}
-
-export default function CatTree({ cats }: Props) {
-  const totalItems  = cats.length + 1 // last slot = Add Cat
-  const passes      = Math.ceil(totalItems / SLOTS.length)
-  const containerH  = Math.max(BASE_HEIGHT, passes * PASS_HEIGHT)
-
-  // Build items list: every cat + the Add Cat button
-  const items = ([...cats, null] as (Cat | null)[]).map((cat, i) => {
-    const slotIdx = i % SLOTS.length
-    const pass    = Math.floor(i / SLOTS.length)
-    const slot    = SLOTS[slotIdx]
-    return {
-      key:       cat ? cat.id : 'add-cat',
-      cat,
-      type:      slot.type as PerchType,
-      side:      slot.side as 'left' | 'right',
-      leftPct:   slot.leftPct,
-      topPx:     slot.topPx  + pass * PASS_HEIGHT,
-      branchYPx: slot.branchYPx + pass * PASS_HEIGHT,
-    }
-  })
-
-  return (
-    <div className="relative w-full select-none" style={{ height: `${containerH}px` }}>
-
-      {/* ── Trunk ── */}
+      {/* Trunk */}
       <div
         className="absolute bg-brand-brown rounded-full"
         style={{
           left:      `${TRUNK_PCT}%`,
           top:       0,
-          height:    `${containerH - 18}px`,
+          height:    `${TREE_H - 18}px`,
           width:     `${TRUNK_PX}px`,
           transform: 'translateX(-50%)',
         }}
       />
 
-      {/* ── Base platform ── */}
+      {/* Base platform */}
       <div
         className="absolute bottom-0 bg-brand-brown rounded-xl shadow"
         style={{
@@ -175,19 +162,18 @@ export default function CatTree({ cats }: Props) {
         }}
       />
 
-      {/* ── Perches ── */}
-      {items.map(({ key, cat, type, side, leftPct, topPx, branchYPx }) => {
+      {/* Perches */}
+      {NAV_ITEMS.map(({ href, label, emoji, desc, type, side, leftPct, topPx, branchYPx }) => {
+        const isLeft      = side === 'left'
         const cardRightPct = leftPct + CARD_W_PCT
-        const isLeft       = side === 'left'
 
-        // Branch spans from card edge to trunk (minus half trunk width = 6px)
-        const branchLeft  = isLeft ? `${cardRightPct}%`     : `${TRUNK_PCT}%`
+        const branchLeft  = isLeft ? `${cardRightPct}%` : `${TRUNK_PCT}%`
         const branchWidth = isLeft
           ? `calc(${TRUNK_PCT - cardRightPct}% - 6px)`
           : `calc(${leftPct - TRUNK_PCT}% - 6px)`
 
         return (
-          <div key={key}>
+          <div key={href}>
             {/* Horizontal branch */}
             <div
               className="absolute bg-brand-brown rounded-full"
@@ -200,20 +186,20 @@ export default function CatTree({ cats }: Props) {
               }}
             />
 
-            {/* Perch card */}
-            <div
-              className="absolute"
+            {/* Perch card — wrapped in Link */}
+            <Link
+              href={href}
+              className="absolute block"
               style={{
                 left:  `${leftPct}%`,
                 top:   `${topPx}px`,
                 width: `${CARD_W_PCT}%`,
               }}
             >
-              {!cat                ? <AddCatPerch /> :
-               type === 'shelf'   ? <ShelfPerch   cat={cat} /> :
-               type === 'cubie'   ? <CubiePerch   cat={cat} /> :
-                                    <HammockPerch  cat={cat} />}
-            </div>
+              {type === 'shelf'   && <ShelfCard   emoji={emoji} label={label} desc={desc} />}
+              {type === 'cubie'   && <CubieCard   emoji={emoji} label={label} desc={desc} />}
+              {type === 'hammock' && <HammockCard emoji={emoji} label={label} desc={desc} />}
+            </Link>
           </div>
         )
       })}
