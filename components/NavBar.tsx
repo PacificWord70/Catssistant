@@ -14,12 +14,7 @@ export default function NavBar() {
     <nav className="bg-brand-orange text-white shadow-md">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="hover:opacity-90 transition-opacity">
-          <CatssistantLogo
-            size={52}
-            horizontal
-            catColor="#FFFFFF"
-            textColor="#FFFFFF"
-          />
+          <CatssistantLogo horizontal height={38} />
         </Link>
         <div className="flex gap-3">
           <Link href="/" className="px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">

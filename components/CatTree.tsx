@@ -135,14 +135,8 @@ export default function CatTree() {
 
       {/* ── Logo & tagline ── */}
       <div className="absolute top-6 w-full flex flex-col items-center z-10 pointer-events-none">
-        <CatssistantLogo size={90} showText={false} />
-        <span
-          className="font-display text-brand-brown mt-1"
-          style={{ fontSize: '2rem' }}
-        >
-          Catssistant
-        </span>
-        <p className="text-sm text-brand-tan mt-0.5">Your cat care headquarters</p>
+        <CatssistantLogo horizontal={false} height={160} />
+        <p className="text-sm text-brand-tan mt-2">Your cat care headquarters</p>
       </div>
 
       {/* ── Trunk — gray rounded pole matching the Figma cat tree ── */}
