@@ -1,177 +1,95 @@
 import Link from 'next/link'
-import CatssistantLogo from '@/components/CatssistantLogo'
 
-// ─── Navigation items — matches the MVP flow diagram ─────────────────────────
+// ─── Nav items — matches the MVP flow diagram ─────────────────────────────────
 const NAV_ITEMS = [
-  {
-    href:    '/cats',
-    label:   'My Cats',
-    emoji:   '🐱',
-    desc:    'Profiles, owner & sitter view',
-    type:    'shelf'   as const,
-    side:    'left'    as const,
-    leftPct: 4,
-    topPx:   130,
-    branchYPx: 188,
-  },
-  {
-    href:    '/schedule',
-    label:   'Schedule',
-    emoji:   '📅',
-    desc:    'Calendar, health & care log',
-    type:    'hammock' as const,
-    side:    'right'   as const,
-    leftPct: 55,
-    topPx:   285,
-    branchYPx: 351,
-  },
-  {
-    href:    '/shopping',
-    label:   'Shopping',
-    emoji:   '🛍️',
-    desc:    'Food, toys & recommendations',
-    type:    'cubie'   as const,
-    side:    'left'    as const,
-    leftPct: 9,
-    topPx:   450,
-    branchYPx: 510,
-  },
-  {
-    href:    '/breeds',
-    label:   'Breeds',
-    emoji:   '📚',
-    desc:    'Breed catalog & search',
-    type:    'shelf'   as const,
-    side:    'right'   as const,
-    leftPct: 60,
-    topPx:   598,
-    branchYPx: 656,
-  },
-  {
-    href:    '/resources',
-    label:   'Resources',
-    emoji:   '🔗',
-    desc:    'Vets, boarding & external links',
-    type:    'hammock' as const,
-    side:    'left'    as const,
-    leftPct: 2,
-    topPx:   745,
-    branchYPx: 811,
-  },
-  {
-    href:    '/about',
-    label:   'About',
-    emoji:   '💬',
-    desc:    'Suggestions & feedback',
-    type:    'cubie'   as const,
-    side:    'right'   as const,
-    leftPct: 57,
-    topPx:   878,
-    branchYPx: 938,
-  },
-]
+  { href: '/cats',      label: 'My Cats',   emoji: '🐱', desc: 'Profiles, owner & sitter view',   type: 'shelf',   side: 'left',  leftPct: 4,  topPx: 170, branchYPx: 228 },
+  { href: '/schedule',  label: 'Schedule',  emoji: '📅', desc: 'Calendar, health & care log',      type: 'hammock', side: 'right', leftPct: 55, topPx: 320, branchYPx: 388 },
+  { href: '/shopping',  label: 'Shopping',  emoji: '🛍️', desc: 'Food, toys & recommendations',    type: 'cubie',   side: 'left',  leftPct: 9,  topPx: 490, branchYPx: 550 },
+  { href: '/breeds',    label: 'Breeds',    emoji: '📚', desc: 'Breed catalog & search',           type: 'shelf',   side: 'right', leftPct: 60, topPx: 638, branchYPx: 696 },
+  { href: '/resources', label: 'Resources', emoji: '🔗', desc: 'Vets, boarding & external links',  type: 'hammock', side: 'left',  leftPct: 2,  topPx: 785, branchYPx: 853 },
+  { href: '/about',     label: 'About',     emoji: '💬', desc: 'Suggestions & feedback',           type: 'cubie',   side: 'right', leftPct: 57, topPx: 918, branchYPx: 978 },
+] as const
 
-// Layout constants
-const TRUNK_PCT  = 42   // trunk center as % of container width
-const CARD_W_PCT = 22   // perch card width as % of container
-const TRUNK_PX   = 14   // trunk visual width in px
-const TREE_H     = 1070 // total tree height in px
+const TRUNK_PCT  = 42   // trunk centre, % of container width
+const CARD_W_PCT = 22   // perch card width, % of container
+const TREE_H     = 1110 // total container height in px
 
-// ─── Perch card variants — styled like an actual cat tree ─────────────────────
+// ─── Perch card styles ────────────────────────────────────────────────────────
 
 function ShelfCard({ emoji, label, desc }: { emoji: string; label: string; desc: string }) {
   return (
-    <div className="w-full group">
-      <div className="bg-white rounded-xl px-4 py-4 shadow-sm border border-stone-200 text-center
-                      group-hover:shadow-md group-hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
-        <div className="text-4xl mb-2 select-none">{emoji}</div>
-        <p className="font-semibold text-brand-charcoal leading-tight">{label}</p>
-        <p className="text-xs text-gray-400 mt-1 leading-snug">{desc}</p>
+    <div className="w-full">
+      <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,.12)', border: '1px solid #e5d5c4', textAlign: 'center' }}>
+        <div style={{ fontSize: '2rem', marginBottom: '6px' }}>{emoji}</div>
+        <p style={{ fontWeight: 600, color: '#1F1F1F', margin: 0, lineHeight: 1.3 }}>{label}</p>
+        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0', lineHeight: 1.4 }}>{desc}</p>
       </div>
-      {/* Shelf plank — matches the gray cat tree in the Figma */}
-      <div className="h-3 rounded-full shadow-md mx-1 mt-0.5 bg-stone-400" />
+      {/* Shelf plank */}
+      <div style={{ height: '10px', background: '#8B5E3C', borderRadius: '999px', margin: '2px 4px 0', boxShadow: '0 2px 4px rgba(0,0,0,.2)' }} />
     </div>
   )
 }
 
 function CubieCard({ emoji, label, desc }: { emoji: string; label: string; desc: string }) {
   return (
-    <div className="relative bg-stone-100 border-[3px] border-stone-400 rounded-2xl
-                    px-4 pb-4 pt-5 shadow text-center w-full
-                    hover:bg-white hover:shadow-md transition-all duration-200 cursor-pointer group">
-      {/* Circular entry hole — as shown in the Figma mockup */}
-      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2
-                      w-7 h-7 rounded-full bg-stone-400 border-2 border-stone-100 shadow" />
-      <div className="text-4xl mb-2 select-none">{emoji}</div>
-      <p className="font-semibold text-brand-charcoal leading-tight">{label}</p>
-      <p className="text-xs text-gray-400 mt-1 leading-snug">{desc}</p>
+    <div style={{ position: 'relative', background: '#FAFAF5', border: '3px solid #8B5E3C', borderRadius: '16px', padding: '16px 16px 14px', textAlign: 'center', boxShadow: '0 2px 6px rgba(0,0,0,.1)' }}>
+      {/* Entry hole */}
+      <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', width: '28px', height: '28px', borderRadius: '50%', background: '#8B5E3C', border: '3px solid #FAFAF5', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
+      <div style={{ marginTop: '6px' }}>
+        <div style={{ fontSize: '2rem', marginBottom: '6px' }}>{emoji}</div>
+        <p style={{ fontWeight: 600, color: '#1F1F1F', margin: 0, lineHeight: 1.3 }}>{label}</p>
+        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0', lineHeight: 1.4 }}>{desc}</p>
+      </div>
     </div>
   )
 }
 
 function HammockCard({ emoji, label, desc }: { emoji: string; label: string; desc: string }) {
   return (
-    <div className="w-full group">
-      {/* Hanging ropes from the platform above */}
-      <div className="flex justify-between px-7">
-        <div className="w-0.5 h-5 bg-stone-400" />
-        <div className="w-0.5 h-5 bg-stone-400" />
+    <div className="w-full">
+      {/* Hanging ropes */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 28px' }}>
+        <div style={{ width: '2px', height: '20px', background: '#8B5E3C' }} />
+        <div style={{ width: '2px', height: '20px', background: '#8B5E3C' }} />
       </div>
-      <div className="bg-brand-tan/20 border-2 border-brand-tan/40 rounded-b-[2.5rem]
-                      px-4 py-4 text-center shadow-inner
-                      group-hover:bg-brand-tan/35 transition-colors duration-200 cursor-pointer">
-        <div className="text-4xl mb-2 select-none">{emoji}</div>
-        <p className="font-semibold text-brand-charcoal leading-tight">{label}</p>
-        <p className="text-xs text-gray-400 mt-1 leading-snug">{desc}</p>
+      {/* Hammock bed */}
+      <div style={{ background: 'rgba(196,149,106,0.2)', border: '2px solid rgba(196,149,106,0.5)', borderRadius: '0 0 60px 60px', padding: '14px 16px 18px', textAlign: 'center' }}>
+        <div style={{ fontSize: '2rem', marginBottom: '6px' }}>{emoji}</div>
+        <p style={{ fontWeight: 600, color: '#1F1F1F', margin: 0, lineHeight: 1.3 }}>{label}</p>
+        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0', lineHeight: 1.4 }}>{desc}</p>
       </div>
     </div>
   )
 }
 
-// ─── Main tree (pure server component — no data needed) ───────────────────────
+// ─── Main tree ────────────────────────────────────────────────────────────────
 export default function CatTree() {
   return (
-    <div className="relative w-full select-none" style={{ height: `${TREE_H}px` }}>
+    <div style={{ position: 'relative', width: '100%', height: `${TREE_H}px`, background: '#FAFAF5', overflow: 'hidden' }}>
 
-      {/* ── Logo & tagline ── */}
-      <div className="absolute top-6 w-full flex flex-col items-center z-10 pointer-events-none">
-        <CatssistantLogo horizontal={false} height={160} />
-        <p className="text-sm text-brand-tan mt-2">Your cat care headquarters</p>
+      {/* ── Logo ── */}
+      <div style={{ position: 'absolute', top: '20px', left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10, pointerEvents: 'none' }}>
+        <img src="/images/logo-vertical.png" alt="Catssistant" style={{ height: '140px', width: 'auto' }} />
+        <p style={{ fontSize: '13px', color: '#C4956A', marginTop: '4px' }}>Your cat care headquarters</p>
       </div>
 
-      {/* ── Trunk — gray rounded pole matching the Figma cat tree ── */}
-      <div
-        className="absolute bg-stone-400 rounded-full"
-        style={{
-          left:      `${TRUNK_PCT}%`,
-          top:       0,
-          height:    `${TREE_H - 20}px`,
-          width:     `${TRUNK_PX}px`,
-          transform: 'translateX(-50%)',
-        }}
-      />
+      {/* ── Trunk ── */}
+      <div style={{
+        position: 'absolute',
+        left: `${TRUNK_PCT}%`,
+        top: 0,
+        height: `${TREE_H - 16}px`,
+        width: '14px',
+        background: '#8B5E3C',
+        borderRadius: '999px',
+        transform: 'translateX(-50%)',
+      }} />
 
-      {/* ── Top cap platform ── */}
-      <div
-        className="absolute bg-stone-400 rounded-full"
-        style={{
-          left:   `calc(${TRUNK_PCT}% - 10%)`,
-          top:    0,
-          width:  '20%',
-          height: '14px',
-        }}
-      />
+      {/* ── Top cap ── */}
+      <div style={{ position: 'absolute', left: `calc(${TRUNK_PCT}% - 10%)`, top: 0, width: '20%', height: '14px', background: '#8B5E3C', borderRadius: '999px' }} />
 
-      {/* ── Base platform ── */}
-      <div
-        className="absolute bg-stone-400 rounded-full shadow"
-        style={{
-          left:   `calc(${TRUNK_PCT}% - 12%)`,
-          bottom: 0,
-          width:  '24%',
-          height: '14px',
-        }}
-      />
+      {/* ── Base ── */}
+      <div style={{ position: 'absolute', left: `calc(${TRUNK_PCT}% - 12%)`, bottom: 0, width: '24%', height: '14px', background: '#8B5E3C', borderRadius: '999px' }} />
 
       {/* ── Perches ── */}
       {NAV_ITEMS.map(({ href, label, emoji, desc, type, side, leftPct, topPx, branchYPx }) => {
@@ -185,26 +103,28 @@ export default function CatTree() {
 
         return (
           <div key={href}>
-            {/* Horizontal branch — gray to match the cat tree poles */}
-            <div
-              className="absolute bg-stone-400 rounded-full"
-              style={{
-                left:      branchLeft,
-                top:       `${branchYPx}px`,
-                width:     branchWidth,
-                height:    '12px',
-                transform: 'translateY(-50%)',
-              }}
-            />
+            {/* Branch */}
+            <div style={{
+              position: 'absolute',
+              left: branchLeft,
+              top: `${branchYPx}px`,
+              width: branchWidth,
+              height: '12px',
+              background: '#8B5E3C',
+              borderRadius: '999px',
+              transform: 'translateY(-50%)',
+            }} />
 
-            {/* Perch card */}
+            {/* Perch */}
             <Link
               href={href}
-              className="absolute block"
               style={{
+                position: 'absolute',
                 left:  `${leftPct}%`,
                 top:   `${topPx}px`,
                 width: `${CARD_W_PCT}%`,
+                display: 'block',
+                textDecoration: 'none',
               }}
             >
               {type === 'shelf'   && <ShelfCard   emoji={emoji} label={label} desc={desc} />}
