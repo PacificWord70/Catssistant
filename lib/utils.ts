@@ -21,6 +21,19 @@ export function catHumanAge(birthday: string): string {
   return Math.round(humanYears).toString()
 }
 
+export function catAgeShort(birthday: string): string {
+  const birth = new Date(birthday)
+  const now = new Date()
+  const totalMonths =
+    (now.getFullYear() - birth.getFullYear()) * 12 +
+    (now.getMonth() - birth.getMonth())
+
+  if (totalMonths < 1) return '< 1 mo'
+  if (totalMonths < 12) return `${totalMonths} mo`
+  const years = Math.floor(totalMonths / 12)
+  return `${years} yr${years !== 1 ? 's' : ''}`
+}
+
 export function catAgeLabel(birthday: string): string {
   const birth = new Date(birthday)
   const now = new Date()

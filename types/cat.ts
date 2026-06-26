@@ -12,8 +12,11 @@ export interface Cat {
   photoUrl?: string
   weight?: number
   weightUnit: 'lbs' | 'kg'
+  color?: string
   chipId?: string
-  homeLocation?: string
+  locationCountry?: string
+  locationRegion?: string
+  locationCity?: string
   vet?: Vet
   personality?: string
   notes?: string
