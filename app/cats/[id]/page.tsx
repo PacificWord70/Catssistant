@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { getCatById } from '@/lib/storage'
 import { Cat } from '@/types/cat'
 import { catAgeLabel, catHumanAge } from '@/lib/utils'
+import BreedTag from '@/components/BreedTag'
 
 const FEATURE_TABS = ['Feeding', 'Health', 'Litter', 'Meds', 'Notes']
 
@@ -16,10 +17,7 @@ export default function CatProfilePage() {
 
   useEffect(() => {
     const found = getCatById(id)
-    if (!found) {
-      router.replace('/')
-      return
-    }
+    if (!found) { router.replace('/'); return }
     setCat(found)
   }, [id, router])
 
@@ -27,107 +25,117 @@ export default function CatProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Link href="/" className="text-brand-slate text-sm hover:underline mb-6 inline-block">
-        ← My Cats
-      </Link>
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
 
-      {/* Hero card */}
-      <div className="bg-white rounded-3xl shadow-sm border border-brand-tan/30 overflow-hidden mb-6">
-        <div className="h-56 bg-brand-tan/20 flex items-center justify-center overflow-hidden">
+        {/* Photo hero */}
+        <div className="h-64 bg-brand-tan/20 flex items-center justify-center overflow-hidden relative">
           {cat.photoUrl ? (
             <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-9xl select-none">🐱</span>
+            <span className="text-[7rem] select-none">🐱</span>
           )}
+          <Link
+            href="/cats"
+            className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm text-brand-brown text-sm font-medium px-3 py-1.5 rounded-full hover:bg-white transition-colors shadow-sm"
+          >
+            ← My Cats
+          </Link>
         </div>
-        <div className="p-6">
-          <h1 className="font-display text-3xl text-brand-brown">{cat.name}</h1>
-          {cat.breed.length > 0 && (
-            <p className="text-brand-tan font-medium mt-1">{cat.breed.join(' · ')}</p>
-          )}
-          {cat.birthday && (
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <span className="text-gray-500">{catAgeLabel(cat.birthday)}</span>
-              <span className="text-brand-brown font-medium">
-                ~{catHumanAge(cat.birthday)} in human years
-              </span>
+
+        <div className="p-7">
+
+          {/* Name + breed + age */}
+          <div className="mb-6">
+            <h1 className="font-display text-4xl text-brand-brown leading-tight">{cat.name}</h1>
+            {cat.breed.length > 0 && (
+              <p className="text-brand-tan font-medium mt-1 flex flex-wrap items-center gap-x-1">
+                {cat.breed.map((b, i) => (
+                  <span key={b} className="flex items-center gap-x-1">
+                    {i > 0 && <span>·</span>}
+                    <BreedTag name={b} variant="inline" />
+                  </span>
+                ))}
+              </p>
+            )}
+            {cat.birthday && (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm">
+                <span className="text-brand-brown font-medium">{catAgeLabel(cat.birthday)}</span>
+                <span className="text-gray-400">~{catHumanAge(cat.birthday)} in cat years</span>
+              </div>
+            )}
+          </div>
+
+          {/* Quick stats */}
+          {(cat.weight || cat.chipId || cat.locationCity || cat.locationCountry) && (
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {cat.weight && (
+                <StatCard label="Weight" value={`${cat.weight} ${cat.weightUnit}`} />
+              )}
+              {cat.chipId && (
+                <StatCard label="Microchip ID" value={cat.chipId} mono />
+              )}
+              {(cat.locationCity || cat.locationRegion || cat.locationCountry) && (
+                <StatCard label="Home" value={[cat.locationCity, cat.locationRegion, cat.locationCountry].filter(Boolean).join(', ')} />
+              )}
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Stats grid */}
-      {(cat.weight || cat.chipId || cat.homeLocation) && (
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          {cat.weight && (
-            <StatCard label="Weight" value={`${cat.weight} ${cat.weightUnit}`} />
-          )}
-          {cat.chipId && (
-            <StatCard label="Microchip ID" value={cat.chipId} mono />
-          )}
-          {cat.homeLocation && (
-            <StatCard label="Home" value={cat.homeLocation} />
-          )}
-        </div>
-      )}
-
-      {/* Vet info */}
-      {cat.vet && (cat.vet.name || cat.vet.phone || cat.vet.address) && (
-        <div className="bg-white rounded-2xl border border-brand-tan/30 p-5 mb-6">
-          <h2 className="font-semibold text-brand-brown mb-3">Vet</h2>
-          {cat.vet.name && <p className="text-sm font-medium">{cat.vet.name}</p>}
-          {cat.vet.phone && (
-            <a href={`tel:${cat.vet.phone}`} className="text-sm text-brand-slate hover:underline block mt-0.5">
-              {cat.vet.phone}
-            </a>
-          )}
-          {cat.vet.address && <p className="text-sm text-gray-400 mt-0.5">{cat.vet.address}</p>}
-        </div>
-      )}
-
-      {/* Personality / notes */}
-      {(cat.personality || cat.notes) && (
-        <div className="bg-white rounded-2xl border border-brand-tan/30 p-5 mb-6 space-y-4">
-          {cat.personality && (
-            <div>
-              <h2 className="font-semibold text-brand-brown mb-1">Personality</h2>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">{cat.personality}</p>
+          {/* Vet */}
+          {cat.vet && (cat.vet.name || cat.vet.phone || cat.vet.address) && (
+            <div className="bg-brand-tan/10 rounded-2xl p-5 mb-6">
+              <h2 className="text-xs font-semibold text-brand-brown uppercase tracking-wide mb-3">Vet</h2>
+              {cat.vet.name && <p className="font-medium text-brand-charcoal">{cat.vet.name}</p>}
+              {cat.vet.phone && (
+                <a href={`tel:${cat.vet.phone}`} className="text-sm text-brand-slate hover:underline block mt-0.5">
+                  {cat.vet.phone}
+                </a>
+              )}
+              {cat.vet.address && <p className="text-sm text-gray-400 mt-0.5">{cat.vet.address}</p>}
             </div>
           )}
-          {cat.notes && (
-            <div>
-              <h2 className="font-semibold text-brand-brown mb-1">Notes</h2>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">{cat.notes}</p>
+
+          {/* Personality / notes */}
+          {(cat.personality || cat.notes) && (
+            <div className="space-y-3 mb-6">
+              {cat.personality && (
+                <div className="bg-brand-tan/10 rounded-2xl p-5">
+                  <h2 className="text-xs font-semibold text-brand-brown uppercase tracking-wide mb-2">Personality</h2>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{cat.personality}</p>
+                </div>
+              )}
+              {cat.notes && (
+                <div className="bg-brand-tan/10 rounded-2xl p-5">
+                  <h2 className="text-xs font-semibold text-brand-brown uppercase tracking-wide mb-2">Notes</h2>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{cat.notes}</p>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Feature tabs — placeholders */}
-      <div className="bg-white rounded-2xl border border-brand-tan/30 overflow-hidden">
-        <div className="flex border-b border-brand-tan/20 overflow-x-auto">
-          {FEATURE_TABS.map(tab => (
-            <button
-              key={tab}
-              className="flex-1 min-w-[4rem] py-3 text-xs sm:text-sm font-medium text-gray-300 cursor-default"
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-        <div className="p-8 text-center text-gray-400 text-sm">
-          More features coming soon!
-        </div>
-      </div>
+          {/* Feature tabs — placeholders */}
+          <div className="border border-brand-tan/30 rounded-2xl overflow-hidden mb-6">
+            <div className="flex border-b border-brand-tan/20 overflow-x-auto bg-brand-tan/5">
+              {FEATURE_TABS.map(tab => (
+                <button
+                  key={tab}
+                  className="flex-1 min-w-[4rem] py-3 text-xs sm:text-sm font-medium text-gray-300 cursor-default"
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            <div className="p-8 text-center text-gray-400 text-sm">
+              More features coming soon 🐾
+            </div>
+          </div>
 
-      {/* Edit link */}
-      <div className="mt-6 text-center">
-        <Link
-          href={`/cats/${cat.id}/edit`}
-          className="text-sm text-brand-slate hover:underline"
-        >
-          Edit {cat.name}&apos;s profile
-        </Link>
+          <div className="text-center">
+            <Link href={`/cats/${cat.id}/edit`} className="text-sm text-brand-slate hover:underline">
+              Edit {cat.name}&apos;s profile
+            </Link>
+          </div>
+
+        </div>
       </div>
     </div>
   )
@@ -135,11 +143,9 @@ export default function CatProfilePage() {
 
 function StatCard({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="bg-white rounded-2xl border border-brand-tan/30 p-4">
+    <div className="bg-brand-tan/10 rounded-2xl p-4">
       <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
-      <p className={`font-medium text-brand-charcoal ${mono ? 'font-mono text-sm break-all' : ''}`}>
-        {value}
-      </p>
+      <p className={`font-medium text-brand-charcoal ${mono ? 'font-mono text-sm break-all' : ''}`}>{value}</p>
     </div>
   )
 }
