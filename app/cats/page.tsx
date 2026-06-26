@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { getCats } from '@/lib/storage'
 import { Cat } from '@/types/cat'
 import CatCard from '@/components/CatCard'
-import EmptyState from '@/components/EmptyState'
 
 export default function CatsPage() {
   const [cats, setCats] = useState<Cat[]>([])
@@ -25,16 +24,13 @@ export default function CatsPage() {
 
   if (!loaded) return null
 
-  if (cats.length === 0) return <EmptyState />
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-3xl shadow-sm p-7 min-h-[calc(100vh-8rem)]">
+      <div className="flex items-center justify-between mb-7">
         <h1 className="font-display text-3xl text-brand-brown">My Cats</h1>
         <Link
           href="/cats/new"
-          className="px-4 py-2 bg-brand-slate text-white rounded-lg text-sm font-medium
-                     hover:bg-brand-slate/90 transition-colors"
+          className="px-4 py-2 bg-brand-orange text-white rounded-xl text-sm font-semibold hover:bg-brand-orange/90 transition-colors shadow-sm"
         >
           + Add Cat
         </Link>
