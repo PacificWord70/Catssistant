@@ -4,42 +4,44 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 const PERCHES = [
-  { href: '/cats',      label: 'My Cats',   emoji: '🐱', top:  5,  left:  8, width: 83 },
+  { href: '/cats',      label: 'My Cats',   emoji: '🐱', top:  0,  left:  8, width: 83 },
   { href: '/schedule',  label: 'Schedule',  emoji: '📅', top: 25,  left: 57, width: 36 },
-  { href: '/shopping',  label: 'Shopping',  emoji: '🛍️', top: 32,  left:  5, width: 36 },
-  { href: '/breeds',    label: 'Breeds',    emoji: '📚', top: 55,  left: 13, width: 73 },
-  { href: '/resources', label: 'Resources', emoji: '🔗', top: 61,  left:  5, width: 33 },
-  { href: '/about',     label: 'About',     emoji: '💬', top: 92,  left: 16, width: 67 },
+  { href: '/shopping',  label: 'Shopping',  emoji: '🛍️', top: 17,  left:  5, width: 36 },
+  { href: '/resources', label: 'Resources', emoji: '🔗', top: 63,  left:  5, width: 33 },
+  { href: '/breeds',    label: 'Breeds',    emoji: '📚', top: 71,  left: 43, width: 73 },
+  { href: '/about',     label: 'About',     emoji: '💬', top: 90,  left: 24, width: 67 },
 ]
 
 export default function CatTree() {
   const [hovered, setHovered] = useState<string | null>(null)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px 16px', marginTop: 40 }}>
 
       {/* Single card containing logo + cat tree */}
       <div style={{
         background: '#fff',
         borderRadius: 24,
-        padding: 20,
+        padding: '28px 20px 20px',
         boxShadow: '0 4px 24px rgba(0,0,0,0.09)',
         width: '100%',
-        maxWidth: 500,
+        maxWidth: 650,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 16,
+        gap: 40,
       }}>
 
         <img
           src="/images/logo-vertical.png"
           alt="Catssistant"
           draggable={false}
-          style={{ height: 110, width: 'auto', userSelect: 'none' }}
+          style={{ width: '34%', height: 'auto', userSelect: 'none' }}
         />
 
-        <div style={{ position: 'relative', width: '100%' }}>
+        <hr style={{ width: '100%', border: 'none', borderTop: '2px solid #F0D9C8', margin: 0 }} />
+
+        <div style={{ position: 'relative', width: '100%', paddingTop: 16 }}>
           <img
             src="/images/cat-tree.png"
             alt="Cat tree navigation"
@@ -64,9 +66,9 @@ export default function CatTree() {
                     display:       'inline-block',
                     background:    isHovered ? '#8B5E3C' : 'rgba(90, 50, 20, 0.72)',
                     color:         '#fff',
-                    fontSize:      11,
+                    fontSize:      13,
                     fontWeight:    700,
-                    padding:       '3px 9px',
+                    padding:       '5px 12px',
                     borderRadius:  999,
                     letterSpacing: '.03em',
                     whiteSpace:    'nowrap',
