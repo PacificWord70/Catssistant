@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Cat } from '@/types/cat'
 import { saveCat } from '@/lib/storage'
 import { BREEDS } from '@/lib/breeds'
+import { COAT_LENGTHS, ENERGY_LEVELS, PREY_DRIVES, HUNTING_LOCATIONS, KNOWN_ILLNESSES, YES_NO_UNKNOWN } from '@/lib/catAttributes'
 import BreedTag from '@/components/BreedTag'
 
 // ─── Country data ─────────────────────────────────────────────────────────────
@@ -83,7 +84,7 @@ function padChipId(value: string): string {
   return clean ? clean.padStart(15, '0') : ''
 }
 
-const COMMON_BREEDS = [...BREEDS.map(b => b.name), 'Dog']
+const COMMON_BREEDS = [...BREEDS.map(b => b.name), 'Dog', 'Unknown']
 const BREED_MAP = new Map(BREEDS.map(b => [b.name, b]))
 
 function newCat(): Cat {
@@ -98,15 +99,16 @@ function newCat(): Cat {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-interface Props { existing?: Cat }
+interface Props { existing?: Cat; prospective?: boolean }
 
-export default function CatForm({ existing }: Props) {
+export default function CatForm({ existing, prospective }: Props) {
   const router = useRouter()
   const [cat, setCat] = useState<Cat>(existing ?? newCat())
   const [breedInput, setBreedInput] = useState('')
   const [breedOpen, setBreedOpen] = useState(false)
   const [breedTooltip, setBreedTooltip] = useState<{ name: string; top: number; left: number } | null>(null)
   const breedBoxRef = useRef<HTMLDivElement>(null)
+  const [illnessInput, setIllnessInput] = useState('')
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -181,6 +183,31 @@ export default function CatForm({ existing }: Props) {
 
   function removeBreed(breed: string) {
     updateField('breed', cat.breed.filter(b => b !== breed))
+  }
+
+  function toggleIllness(illness: string) {
+    const current = cat.knownIllnesses ?? []
+    const next = current.includes(illness) ? current.filter(i => i !== illness) : [...current, illness]
+    updateField('knownIllnesses', next.length ? next : undefined)
+  }
+
+  function addCustomIllness() {
+    const trimmed = illnessInput.trim()
+    if (!trimmed || (cat.knownIllnesses ?? []).includes(trimmed)) return
+    updateField('knownIllnesses', [...(cat.knownIllnesses ?? []), trimmed])
+    setIllnessInput('')
+  }
+
+  function togglePreyDrive(drive: (typeof PREY_DRIVES)[number]) {
+    const current = cat.huntingPreyDrive ?? []
+    const next = current.includes(drive) ? current.filter(d => d !== drive) : [...current, drive]
+    updateField('huntingPreyDrive', next.length ? next : undefined)
+  }
+
+  function toggleHuntingLocation(location: (typeof HUNTING_LOCATIONS)[number]) {
+    const current = cat.huntingLocation ?? []
+    const next = current.includes(location) ? current.filter(l => l !== location) : [...current, location]
+    updateField('huntingLocation', next.length ? next : undefined)
   }
 
   function handlePhotoChange(e: ChangeEvent<HTMLInputElement>) {
@@ -344,6 +371,19 @@ export default function CatForm({ existing }: Props) {
         </select>
       </div>
 
+      {/* Coat length */}
+      <div>
+        <label className="block text-sm font-medium text-brand-charcoal mb-1">Coat length</label>
+        <select
+          value={cat.coatLength ?? ''}
+          onChange={e => updateField('coatLength', (e.target.value || undefined) as Cat['coatLength'])}
+          className={inputClass}
+        >
+          <option value="">Select coat length…</option>
+          {COAT_LENGTHS.map(c => <option key={c}>{c}</option>)}
+        </select>
+      </div>
+
       {/* Birthday */}
       <div>
         <label className="block text-sm font-medium text-brand-charcoal mb-1">Birthday</label>
@@ -368,23 +408,133 @@ export default function CatForm({ existing }: Props) {
         </div>
       </div>
 
-      {/* Microchip */}
+      {/* Energy level */}
       <div>
-        <label className="block text-sm font-medium text-brand-charcoal mb-1">Microchip ID</label>
-        <div className="relative">
-          <input
-            type="text" inputMode="numeric" maxLength={15}
-            value={cat.chipId ?? ''}
-            onChange={e => updateField('chipId', e.target.value.replace(/\D/g, '').slice(0, 15) || undefined)}
-            onBlur={e => { const p = padChipId(e.target.value); updateField('chipId', p || undefined) }}
-            placeholder="15-digit chip number"
-            className={`${inputClass} font-mono pr-12`}
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-300 pointer-events-none font-mono">
-            {(cat.chipId ?? '').length}/15
-          </span>
+        <label className="block text-sm font-medium text-brand-charcoal mb-1">Energy level</label>
+        <select
+          value={cat.energyLevel ?? ''}
+          onChange={e => updateField('energyLevel', (e.target.value || undefined) as Cat['energyLevel'])}
+          className={inputClass}
+        >
+          <option value="">Select energy level…</option>
+          {ENERGY_LEVELS.map(l => <option key={l}>{l}</option>)}
+        </select>
+      </div>
+
+      {/* Hunting */}
+      <div>
+        <label className="block text-sm font-medium text-brand-charcoal mb-2">Hunting</label>
+        <div className="space-y-2">
+          <div>
+            <p className="text-xs text-gray-400 mb-1">Prey drive — what do they go after?</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 bg-brand-tan/10 rounded-xl p-4">
+              {PREY_DRIVES.map(drive => (
+                <label key={drive} className="flex items-center gap-2 text-sm text-brand-charcoal">
+                  <input
+                    type="checkbox"
+                    checked={(cat.huntingPreyDrive ?? []).includes(drive)}
+                    onChange={() => togglePreyDrive(drive)}
+                    className="rounded border-brand-tan/50 text-brand-orange focus:ring-brand-orange/40"
+                  />
+                  {drive}
+                </label>
+              ))}
+              <label className="flex items-center gap-2 text-sm text-brand-charcoal ml-auto">
+                Likes electronic toys?
+                <select
+                  value={cat.likesElectronicToys ?? ''}
+                  onChange={e => updateField('likesElectronicToys', (e.target.value || undefined) as Cat['likesElectronicToys'])}
+                  className="px-2 py-1 rounded-lg border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white text-sm"
+                >
+                  <option value="">Select…</option>
+                  {YES_NO_UNKNOWN.map(v => <option key={v}>{v}</option>)}
+                </select>
+              </label>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-1">Where do they hunt?</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 bg-brand-tan/10 rounded-xl p-4">
+              {HUNTING_LOCATIONS.map(location => (
+                <label key={location} className="flex items-center gap-2 text-sm text-brand-charcoal">
+                  <input
+                    type="checkbox"
+                    checked={(cat.huntingLocation ?? []).includes(location)}
+                    onChange={() => toggleHuntingLocation(location)}
+                    className="rounded border-brand-tan/50 text-brand-orange focus:ring-brand-orange/40"
+                  />
+                  {location}
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Known illnesses */}
+      <div>
+        <label className="block text-sm font-medium text-brand-charcoal mb-2">Known illnesses</label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-brand-tan/10 rounded-xl p-4">
+          {KNOWN_ILLNESSES.map(illness => (
+            <label key={illness} className="flex items-center gap-2 text-sm text-brand-charcoal">
+              <input
+                type="checkbox"
+                checked={(cat.knownIllnesses ?? []).includes(illness)}
+                onChange={() => toggleIllness(illness)}
+                className="rounded border-brand-tan/50 text-brand-orange focus:ring-brand-orange/40"
+              />
+              {illness}
+            </label>
+          ))}
+        </div>
+        <div className="flex gap-2 mt-2">
+          <input
+            type="text"
+            value={illnessInput}
+            onChange={e => setIllnessInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomIllness() } }}
+            placeholder="Other illness…"
+            className={inputClass}
+          />
+          <button type="button" onClick={addCustomIllness} className="px-4 py-2.5 bg-brand-tan text-white rounded-xl text-sm font-medium hover:bg-brand-brown transition-colors">
+            Add
+          </button>
+        </div>
+        {(() => {
+          const custom = (cat.knownIllnesses ?? []).filter(i => !KNOWN_ILLNESSES.includes(i))
+          if (!custom.length) return null
+          return (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {custom.map(i => (
+                <span key={i} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-tan/20 text-brand-charcoal text-sm">
+                  {i}
+                  <button type="button" onClick={() => toggleIllness(i)} className="text-brand-slate hover:text-brand-brown">×</button>
+                </span>
+              ))}
+            </div>
+          )
+        })()}
+      </div>
+
+      {/* Microchip */}
+      {!prospective && (
+        <div>
+          <label className="block text-sm font-medium text-brand-charcoal mb-1">Microchip ID</label>
+          <div className="relative">
+            <input
+              type="text" inputMode="numeric" maxLength={15}
+              value={cat.chipId ?? ''}
+              onChange={e => updateField('chipId', e.target.value.replace(/\D/g, '').slice(0, 15) || undefined)}
+              onBlur={e => { const p = padChipId(e.target.value); updateField('chipId', p || undefined) }}
+              placeholder="15-digit chip number"
+              className={`${inputClass} font-mono pr-12`}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-300 pointer-events-none font-mono">
+              {(cat.chipId ?? '').length}/15
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Home location */}
       <div>

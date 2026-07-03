@@ -1,11 +1,124 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { getCats, getScheduleEvents, saveScheduleEvent, deleteScheduleEvent } from '@/lib/storage'
+import { Cat } from '@/types/cat'
+import { ScheduleEvent } from '@/types/scheduleEvent'
+import { buildMonthGrid, formatDateLabel, formatTimesLabel, toDateKey, CATEGORY_EMOJI } from '@/lib/scheduleUtils'
+import ScheduleCalendar from '@/components/ScheduleCalendar'
+import ScheduleEventForm from '@/components/ScheduleEventForm'
+
 export default function SchedulePage() {
+  const router = useRouter()
+  const [cats, setCats] = useState<Cat[]>([])
+  const [events, setEvents] = useState<ScheduleEvent[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date()
+    return new Date(d.getFullYear(), d.getMonth(), 1)
+  })
+  const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()))
+  const [editingEvent, setEditingEvent] = useState<ScheduleEvent | 'new' | null>(null)
+
+  useEffect(() => {
+    const storedCats = getCats()
+    if (storedCats.length === 0) {
+      router.replace('/onboarding')
+      return
+    }
+    setCats(storedCats)
+    setEvents(getScheduleEvents())
+    setLoaded(true)
+  }, [router])
+
+  if (!loaded) return null
+
+  function handleSave(event: ScheduleEvent) {
+    saveScheduleEvent(event)
+    setEvents(getScheduleEvents())
+    setEditingEvent(null)
+  }
+
+  function handleDelete(id: string) {
+    deleteScheduleEvent(id)
+    setEvents(getScheduleEvents())
+    setEditingEvent(null)
+  }
+
+  function shiftMonth(offset: number) {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + offset, 1))
+  }
+
+  function goToday() {
+    const today = new Date()
+    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1))
+    setSelectedDate(toDateKey(today))
+  }
+
+  const cells = buildMonthGrid(currentMonth, events)
+  const selectedCell = cells.find(c => c.dateKey === selectedDate)
+  const selectedItems = selectedCell?.items ?? []
+  const catNames = (ids: string[]) => ids.map(id => cats.find(c => c.id === id)?.name ?? 'Unknown cat').join(', ')
+
   return (
-    <div className="text-center py-24">
-      <div className="text-7xl mb-6 select-none">📅</div>
-      <h1 className="font-display text-3xl text-brand-brown mb-2">Schedule</h1>
-      <p className="text-gray-400 max-w-sm mx-auto">
-        Calendar, health event log, feeding schedule, vet appointments — coming soon!
-      </p>
+    <div className="bg-white rounded-3xl shadow-sm p-7 min-h-[calc(100vh-8rem)]">
+      <div className="flex items-center justify-between mb-7">
+        <h1 className="font-display text-3xl text-brand-brown">Schedule</h1>
+        <button
+          onClick={() => setEditingEvent('new')}
+          className="px-4 py-2 bg-brand-orange text-white rounded-xl text-sm font-semibold hover:bg-brand-orange/90 transition-colors shadow-sm"
+        >
+          + Add Event
+        </button>
+      </div>
+
+      <ScheduleCalendar
+        month={currentMonth}
+        cells={cells}
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        onPrevMonth={() => shiftMonth(-1)}
+        onNextMonth={() => shiftMonth(1)}
+        onToday={goToday}
+      />
+
+      <div className="mt-6 pt-6 border-t border-brand-tan/30">
+        <h3 className="text-sm font-semibold text-brand-slate mb-2">{formatDateLabel(selectedDate)}</h3>
+        {selectedItems.length === 0 ? (
+          <p className="text-gray-400 text-sm py-4">Nothing scheduled this day.</p>
+        ) : (
+          <div className="space-y-2">
+            {selectedItems.map(({ event }, i) => (
+              <button
+                key={`${event.id}-${i}`}
+                onClick={() => setEditingEvent(event)}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-brand-tan/10 rounded-xl hover:bg-brand-tan/20 transition-colors text-left"
+              >
+                <span className="text-xl select-none">{CATEGORY_EMOJI[event.category]}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-brand-charcoal truncate">{event.title}</p>
+                  <p className="text-xs text-gray-400">{catNames(event.catIds)}</p>
+                </div>
+                {(event.times.length > 0 || event.durationMinutes) && (
+                  <span className="text-xs text-gray-400 flex-shrink-0">{formatTimesLabel(event.times, event.durationMinutes)}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {editingEvent && (
+        <ScheduleEventForm
+          cats={cats}
+          existing={editingEvent === 'new' ? undefined : editingEvent}
+          defaultDate={selectedDate}
+          onSave={handleSave}
+          onCancel={() => setEditingEvent(null)}
+          onDelete={editingEvent !== 'new' ? () => handleDelete(editingEvent.id) : undefined}
+        />
+      )}
     </div>
   )
 }

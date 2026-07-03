@@ -3,6 +3,7 @@ node_modules/
 .next/
 .env*.local
 npm-debug.log*
+*.tsbuildinfo
 
 # Xcode
 #

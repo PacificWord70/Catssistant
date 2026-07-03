@@ -7,6 +7,7 @@ import CatssistantLogo from '@/components/CatssistantLogo'
 
 const MORE_LINKS = [
   { href: '/breeds',    label: 'Breeds' },
+  { href: '/guides',    label: 'Guides' },
   { href: '/resources', label: 'Resources' },
   { href: '/about',     label: 'About' },
 ]

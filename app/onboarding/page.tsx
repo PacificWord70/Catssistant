@@ -29,7 +29,7 @@ export default function OnboardingPage() {
           I have a cat! 🐾
         </Link>
         <Link
-          href="/cats/new"
+          href="/onboarding/getting-a-cat"
           className="flex-1 px-8 py-5 bg-white text-brand-brown border-2 border-brand-tan rounded-2xl font-semibold text-lg hover:bg-brand-tan/10 transition-colors shadow-sm"
         >
           I&apos;m getting a cat 🔍
