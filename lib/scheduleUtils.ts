@@ -3,6 +3,7 @@ import { ScheduleEvent, ScheduleCategory } from '@/types/scheduleEvent'
 export interface AgendaItem {
   event: ScheduleEvent
   date: string // YYYY-MM-DD
+  adjustedFromDay?: number // set when a monthly occurrence fell back to the last day of a shorter month
 }
 
 export const CATEGORY_EMOJI: Record<ScheduleCategory, string> = {
@@ -63,6 +64,19 @@ export function buildMonthGrid(monthStart: Date, events: ScheduleEvent[]): DayCe
   return cells
 }
 
+function ordinal(n: number): string {
+  if (n % 10 === 1 && n % 100 !== 11) return `${n}st`
+  if (n % 10 === 2 && n % 100 !== 12) return `${n}nd`
+  if (n % 10 === 3 && n % 100 !== 13) return `${n}rd`
+  return `${n}th`
+}
+
+export function adjustedDateNote(item: AgendaItem): string | null {
+  if (!item.adjustedFromDay) return null
+  const actualDay = Number(item.date.slice(-2))
+  return `Normally the ${ordinal(item.adjustedFromDay)} — this month has no ${ordinal(item.adjustedFromDay)}, so it's on the ${ordinal(actualDay)} instead`
+}
+
 export function expandEvents(events: ScheduleEvent[], rangeStart: Date, rangeEnd: Date): AgendaItem[] {
   const startKey = toDateKey(rangeStart)
   const endKey = toDateKey(rangeEnd)
@@ -76,14 +90,37 @@ export function expandEvents(events: ScheduleEvent[], rangeStart: Date, rangeEnd
       continue
     }
 
-    const cursor = parseDateKey(event.date)
+    const anchor = parseDateKey(event.date)
     const recurEndKey = event.recurrenceEndDate && event.recurrenceEndDate < endKey ? event.recurrenceEndDate : endKey
+
+    if (event.recurrence === 'monthly') {
+      // Recompute each occurrence from the original day-of-month rather than drifting the
+      // cursor forward — a short month (e.g. Feb has no 31st) falls back to that month's
+      // last day instead of silently overflowing into the following month.
+      const originalDay = anchor.getDate()
+      for (let n = 0; ; n++) {
+        const targetIndex = anchor.getMonth() + n
+        const targetYear = anchor.getFullYear() + Math.floor(targetIndex / 12)
+        const targetMonth = ((targetIndex % 12) + 12) % 12
+        let occurrence = new Date(targetYear, targetMonth, originalDay)
+        let adjusted = false
+        if (occurrence.getMonth() !== targetMonth) {
+          occurrence = new Date(targetYear, targetMonth + 1, 0) // last day of the target month
+          adjusted = true
+        }
+        const key = toDateKey(occurrence)
+        if (key > recurEndKey) break
+        if (key >= startKey) items.push({ event, date: key, adjustedFromDay: adjusted ? originalDay : undefined })
+      }
+      continue
+    }
+
+    const cursor = new Date(anchor)
     while (toDateKey(cursor) <= recurEndKey) {
       const key = toDateKey(cursor)
       if (key >= startKey) items.push({ event, date: key })
       if (event.recurrence === 'daily') cursor.setDate(cursor.getDate() + 1)
-      else if (event.recurrence === 'weekly') cursor.setDate(cursor.getDate() + 7)
-      else cursor.setMonth(cursor.getMonth() + 1) // monthly — JS Date rolls over short months, close enough for reminders
+      else cursor.setDate(cursor.getDate() + 7) // weekly
     }
   }
 
