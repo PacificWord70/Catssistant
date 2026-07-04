@@ -1,0 +1,239 @@
+# Codebase Structure
+
+**Analysis Date:** 2026-07-04
+
+## Directory Layout
+
+```
+Catssistant/
+├── app/                           # Next.js App Router pages
+│   ├── layout.tsx                 # Root layout (NavBar, fonts, CatWalker)
+│   ├── globals.css                # Tailwind + CSS animations
+│   ├── page.tsx                   # Home page (renders CatTree)
+│   ├── onboarding/
+│   │   ├── page.tsx               # Welcome screen (redirect if has cats)
+│   │   └── getting-a-cat/page.tsx # Guide for prospective cat owners
+│   ├── cats/
+│   │   ├── page.tsx               # My Cats grid (all cats, links to cards)
+│   │   ├── new/page.tsx           # Add cat form
+│   │   └── [id]/
+│   │       ├── page.tsx           # Cat profile (view details)
+│   │       └── edit/page.tsx      # Edit cat form
+│   ├── schedule/page.tsx          # Schedule calendar + event form
+│   ├── breeds/page.tsx            # Breed catalog (browse all breeds)
+│   ├── guides/page.tsx            # Guides and tips for cat owners
+│   ├── resources/page.tsx         # External links and resources
+│   ├── about/page.tsx             # About the app
+│   ├── feeding/page.tsx           # Stub (placeholder)
+│   ├── health/page.tsx            # Stub (placeholder)
+│   ├── litter/page.tsx            # Stub (placeholder)
+│   ├── meds/page.tsx              # Stub (placeholder)
+│   ├── tips/page.tsx              # Stub (placeholder)
+│   └── shopping/page.tsx          # Stub (placeholder)
+│
+├── components/                    # Reusable React components
+│   ├── NavBar.tsx                 # Top navigation bar
+│   ├── CatCard.tsx                # Card in My Cats grid
+│   ├── CatForm.tsx                # Add/edit cat form (shared)
+│   ├── BreedTag.tsx               # Breed label (3 variants: pill, inline, removable)
+│   ├── CatTree.tsx                # Home page card UI
+│   ├── CatWalker.tsx              # Easter egg animation
+│   ├── CatssistantLogo.tsx         # Logo component
+│   ├── EmptyState.tsx             # No-cats fallback UI
+│   ├── ScheduleCalendar.tsx       # Month calendar grid
+│   └── ScheduleEventForm.tsx      # Add/edit schedule event form
+│
+├── lib/                           # Utilities and data access
+│   ├── storage.ts                 # localStorage helpers (getCats, saveCat, etc.)
+│   ├── breeds.ts                  # BREEDS array with data
+│   ├── utils.ts                   # Age calculation helpers
+│   ├── scheduleUtils.ts           # Calendar building, event expansion, formatting
+│   ├── catAttributes.ts           # Dropdown options (coat lengths, energy levels, etc.)
+│   └── scheduleAttributes.ts      # Schedule category options
+│
+├── types/                         # TypeScript interfaces
+│   ├── cat.ts                     # Cat, Vet interfaces
+│   └── scheduleEvent.ts           # ScheduleEvent and related types
+│
+├── public/                        # Static assets (images, icons)
+│   └── images/
+│
+├── .planning/                     # GSD planning artifacts
+│   └── codebase/                  # Codebase analysis docs (ARCHITECTURE.md, STRUCTURE.md)
+│
+├── docs/                          # User documentation (guides, FAQs)
+│
+├── .claude/                       # Claude Code settings
+│   └── settings.local.json        # Project-specific settings
+│
+├── package.json                   # Dependencies (Next.js, React, Tailwind)
+├── tsconfig.json                  # TypeScript config
+├── tailwind.config.ts             # Tailwind CSS config (brand colors, fonts)
+├── next.config.mjs                # Next.js config
+├── CLAUDE.md                      # Project instructions (git, tech stack, conventions)
+└── .gitignore                     # Ignored files
+```
+
+## Directory Purposes
+
+**app/**
+- Purpose: Next.js App Router page components — each file/folder maps to a route
+- Contains: Page components, layout boundaries, redirects
+- Key files: `layout.tsx` (root), `page.tsx` (each route), dynamic routes like `[id]`
+
+**components/**
+- Purpose: Reusable UI components used across multiple pages
+- Contains: Forms, cards, navigation, modal components
+- Key files: `CatForm.tsx` (largest component, ~660 lines), `ScheduleEventForm.tsx` (~700 lines), `NavBar.tsx`
+
+**lib/**
+- Purpose: Business logic, utilities, data access
+- Contains: Storage helpers, breed data, formatting utilities, constants
+- Key files: `storage.ts` (data access), `breeds.ts` (breed catalog), `scheduleUtils.ts` (calendar logic)
+
+**types/**
+- Purpose: TypeScript interfaces and types
+- Contains: Cat, Vet, ScheduleEvent, and related enums
+- Key files: `cat.ts` (Cat interface), `scheduleEvent.ts` (event types)
+
+**public/**
+- Purpose: Static assets served directly by Next.js
+- Contains: Images, icons, favicons
+- Key files: `images/cat-tree.png` (home page background)
+
+**docs/**
+- Purpose: User-facing documentation (guides, care tips)
+- Contains: Markdown files for guides feature
+
+**.planning/codebase/**
+- Purpose: Codebase analysis and planning documents (generated by GSD tools)
+- Contains: ARCHITECTURE.md, STRUCTURE.md, CONVENTIONS.md, etc.
+
+## Key File Locations
+
+**Entry Points:**
+- `app/layout.tsx`: Root layout, renders NavBar, fonts, easter egg
+- `app/page.tsx`: Home page, renders CatTree
+- `app/onboarding/page.tsx`: Onboarding flow (first-time user)
+- `app/cats/page.tsx`: My Cats listing
+
+**Configuration:**
+- `package.json`: Dependencies (Next.js 16, React 18, Tailwind 3)
+- `tsconfig.json`: TypeScript configuration
+- `tailwind.config.ts`: Tailwind CSS with custom brand colors and fonts
+- `next.config.mjs`: Next.js build config
+- `CLAUDE.md`: Project instructions, conventions, tech stack
+
+**Core Logic:**
+- `lib/storage.ts`: All localStorage read/write operations
+- `lib/breeds.ts`: Breed catalog (150+ breeds with data)
+- `lib/scheduleUtils.ts`: Calendar grid building, event expansion, date/time formatting
+- `lib/utils.ts`: Cat age calculation helpers
+
+**Major Forms:**
+- `components/CatForm.tsx`: Add/edit cat profile (~660 lines, complex with breed combobox, location detection)
+- `components/ScheduleEventForm.tsx`: Add/edit schedule events (~700 lines, category-specific fields)
+
+**Calendar & Schedule:**
+- `app/schedule/page.tsx`: Schedule page, month calendar view
+- `components/ScheduleCalendar.tsx`: Calendar grid rendering
+- `lib/scheduleUtils.ts`: Calendar building, event expansion logic
+
+## Naming Conventions
+
+**Files:**
+- Page files: lowercase, descriptive (e.g., `page.tsx`, `layout.tsx`)
+- Dynamic routes: square brackets `[id]`, `[slug]`
+- Components: PascalCase (e.g., `CatForm.tsx`, `NavBar.tsx`)
+- Utilities: camelCase (e.g., `storage.ts`, `breeds.ts`)
+- Types: single file per entity, name matches export (e.g., `cat.ts` exports Cat interface)
+
+**Directories:**
+- Feature folders: lowercase, no spaces (e.g., `onboarding`, `cats`, `schedule`)
+- Dynamic folder: square brackets `[id]`
+
+**Exports:**
+- Components: named exports (rarely used), or default export (common)
+- Utils: named exports (e.g., `export function getCats()`, `export const BREEDS`)
+- Types: named exports (e.g., `export interface Cat`)
+
+**Variables:**
+- camelCase for functions and variables (e.g., `handleSubmit`, `catAge`)
+- UPPER_SNAKE_CASE for constants (e.g., `STORAGE_KEY`, `BREEDS`, `COAT_LENGTHS`)
+- PascalCase for components (e.g., `CatForm`, `NavBar`)
+- PascalCase for types/interfaces (e.g., `Cat`, `ScheduleEvent`)
+
+## Where to Add New Code
+
+**New Feature/Page:**
+1. Create folder under `app/` (e.g., `app/vaccinations/`)
+2. Add `page.tsx` with route component
+3. Import any shared components
+4. Import types and utilities as needed
+5. Add any page-specific components to `components/` if reusable
+
+**New Reusable Component:**
+1. Create `components/MyComponent.tsx`
+2. Use 'use client' if it uses hooks or browser APIs
+3. Import types from `types/`
+4. Import utilities from `lib/`
+5. Export default function component
+
+**New Utility Function:**
+1. Determine which file in `lib/`:
+   - `storage.ts`: Data read/write operations
+   - `utils.ts`: Formatting, calculations
+   - `scheduleUtils.ts`: Schedule/calendar logic
+   - `catAttributes.ts`: Cat-related dropdown constants
+   - Or create new file if it's a distinct concern
+2. Export as named function
+3. Add TypeScript types
+
+**New Type/Interface:**
+1. Add to `types/cat.ts` if cat-related
+2. Add to `types/scheduleEvent.ts` if schedule-related
+3. Or create new file in `types/` if distinct entity
+4. Export as named interface/type
+
+**New Form:**
+1. Create `components/MyForm.tsx` (pattern: CatForm, ScheduleEventForm)
+2. Use `'use client'` directive
+3. Use `useState` for form state (pattern: `const [data, setData] = useState(initialValue)`)
+4. Use `useRouter` from `next/navigation` for navigation
+5. Call appropriate storage function on submit
+6. Import types and utilities
+
+**Adding Dropdown Options:**
+1. If cat-related (coat length, energy level, illness): add to `lib/catAttributes.ts`
+2. If schedule-related (category, recurrence): add to `lib/scheduleAttributes.ts`
+3. Export as array constant (pattern: `COAT_LENGTHS = ['Hairless', 'Short', ...]`)
+
+## Special Directories
+
+**app/**
+- Purpose: Next.js App Router — each file structure defines URL routes
+- Generated: No (hand-written)
+- Committed: Yes
+- Pattern: Each folder is a route segment, `page.tsx` is the page component, `layout.tsx` is a layout boundary
+
+**.next/**
+- Purpose: Build output from Next.js
+- Generated: Yes (by `npm run build`)
+- Committed: No (in .gitignore)
+- Do not edit
+
+**node_modules/**
+- Purpose: Installed npm dependencies
+- Generated: Yes (by `npm install`)
+- Committed: No (in .gitignore)
+- Do not edit
+
+**public/**
+- Purpose: Static assets served directly at root
+- Generated: No (hand-added)
+- Committed: Yes
+- Example: `public/images/cat-tree.png` → accessible at `/images/cat-tree.png`
+
+---
+
+*Structure analysis: 2026-07-04*
