@@ -132,15 +132,21 @@ export default function CatForm({ existing, prospective }: Props) {
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
         try {
+          // Round to ~1km precision — city/region lookup doesn't need exact GPS coordinates
+          const lat = coords.latitude.toFixed(2)
+          const lon = coords.longitude.toFixed(2)
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`,
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
             { headers: { 'Accept-Language': 'en' } }
           )
+          if (!res.ok) throw new Error('Location lookup failed')
           const data = await res.json()
           const city    = data.address?.city || data.address?.town || data.address?.village || undefined
           const region  = data.address?.state || data.address?.province || undefined
           const country = data.address?.country || undefined
           setCat(prev => ({ ...prev, locationCity: city, locationRegion: region, locationCountry: country }))
+        } catch {
+          // Nominatim unreachable or returned unexpected data — leave fields as-is, user can enter manually
         } finally {
           setDetectingLocation(false)
         }

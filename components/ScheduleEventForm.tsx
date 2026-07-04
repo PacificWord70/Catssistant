@@ -141,6 +141,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (catIds.length === 0 || !date) return
+    if (recurrenceEndDate && recurrenceEndDate < date) return
     const finalTitle = fallbackTitle().trim()
     if (!finalTitle) return
     if (category === 'Medication' && !title.trim()) return
@@ -342,7 +343,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
                   {medicationDuration === 'Set duration' && (
                     <div>
                       <label className="block text-sm font-medium text-brand-charcoal mb-1">Until</label>
-                      <input type="date" value={recurrenceEndDate} onChange={e => setRecurrenceEndDate(e.target.value)} className={inputClass} />
+                      <input type="date" min={date} value={recurrenceEndDate} onChange={e => setRecurrenceEndDate(e.target.value)} className={inputClass} />
                     </div>
                   )}
                   <TimesSection label="Dose times" requireFirst />
