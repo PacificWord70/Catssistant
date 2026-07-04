@@ -52,24 +52,22 @@ Explicitly excluded from this milestone. Documented to prevent scope creep.
 
 ## Traceability
 
-Populated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | CARE-01 | — | Complete (existing) |
 | CARE-02 | — | Complete (existing) |
-| CARE-03 | TBD | Pending |
-| CARE-04 | TBD | Pending |
+| CARE-03 | Phase 1 | Pending |
+| CARE-04 | Phase 1 | Pending |
 | CARE-05 | — | Complete (fixed 2026-07-04) |
-| DATA-01 | TBD | Pending |
-| DATA-02 | TBD | Pending |
-| DATA-03 | TBD | Pending |
+| DATA-01 | Phase 2 | Pending |
+| DATA-02 | Phase 2 | Pending |
+| DATA-03 | Phase 2 | Pending |
 
 **Coverage:**
 - v1 requirements: 8 total
 - Already complete: 3
-- Remaining to map to phases: 5
+- Mapped to phases: 5/5 ✓
 
 ---
 *Requirements defined: 2026-07-04*
-*Last updated: 2026-07-04 after initial definition*
+*Last updated: 2026-07-04 after roadmap creation*
