@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-07-04)
 Phase: 1 of 2 (Care Event List View)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-07-10 — Completed quick task 260710-f7b: Overhaul the visual design of the Catssistant web app on the design-experiment branch
+Last activity: 2026-07-10 — Completed quick task 260710-gvo: Modern navbar and scroll/hover interaction polish (Framer Motion) on the design-experiment branch
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -70,6 +70,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260710-f7b | Overhaul the visual design of the Catssistant web app (design-experiment branch): retuned brand color tokens, softened background, swapped display font (Tapestry → Fraunces), unified shape/shadow language across all components and pages. Presentation-only. | 2026-07-10 | 3c995e3 | [260710-f7b-overhaul-the-visual-design-of-the-catssi](./quick/260710-f7b-overhaul-the-visual-design-of-the-catssi/) |
+| 260710-gvo | Modern navbar (sliding active/hover indicator, shrink-on-scroll) and scroll/hover interaction polish (fade/slide reveal, parallax, site-wide hover-lift) using Framer Motion, on design-experiment branch. Presentation/interaction-only. | 2026-07-10 | 652211a | [260710-gvo-implement-modern-navbar-animated-active-](./quick/260710-gvo-implement-modern-navbar-animated-active-/) |
 
 ## Deferred Items
 
