@@ -62,7 +62,7 @@ export default function NavBar() {
               <span className="block w-4 h-0.5 bg-white rounded" />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[140px] z-50">
+              <div className="absolute right-0 top-full mt-1 bg-white rounded-2xl shadow-lg border border-brand-tan/40 py-1 min-w-[140px] z-50">
                 {MORE_LINKS.map(({ href, label }) => (
                   <Link
                     key={href}

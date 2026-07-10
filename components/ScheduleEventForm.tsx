@@ -71,7 +71,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
   const [vetAddress, setVetAddress] = useState(existing?.vetAddress ?? '')
   const [estimatedCost, setEstimatedCost] = useState<number | undefined>(existing?.estimatedCost)
 
-  const inputClass = 'w-full px-4 py-2.5 rounded-xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white'
+  const inputClass = 'w-full px-4 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white'
 
   const vetOptions: VetOption[] = []
   const seenVets = new Set<string>()
@@ -247,7 +247,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
             <label className="block text-sm font-medium text-brand-charcoal mb-1">
               Cats <span className="text-brand-orange">*</span>
             </label>
-            <div className="grid grid-cols-2 gap-2 bg-brand-tan/10 rounded-xl p-4">
+            <div className="grid grid-cols-2 gap-2 bg-brand-tan/10 rounded-2xl p-4">
               {cats.map(c => (
                 <label key={c.id} className="flex items-center gap-2 text-sm text-brand-charcoal">
                   <input
@@ -293,17 +293,17 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
                       const row = getFeedingAmount(id)
                       return (
                         <div key={id} className="flex items-center gap-2">
-                          <span className="text-sm text-gray-400 w-20 truncate">{cats.find(c => c.id === id)?.name}</span>
+                          <span className="text-sm text-brand-brown/60 w-20 truncate">{cats.find(c => c.id === id)?.name}</span>
                           <input
                             type="number" min="0.01" step="0.25" required
                             value={row.amount || ''}
                             onChange={e => setFeedingField(id, { amount: e.target.value ? parseFloat(e.target.value) : 0 })}
-                            className="flex-1 px-4 py-2.5 rounded-xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white"
+                            className="flex-1 px-4 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white"
                           />
                           <select
                             value={row.unit}
                             onChange={e => setFeedingField(id, { unit: e.target.value as FeedingUnit })}
-                            className="px-2 py-2.5 rounded-xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white text-sm"
+                            className="px-2 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white text-sm"
                           >
                             {FEEDING_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                           </select>
@@ -411,7 +411,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
                   <div className="space-y-2">
                     {catIds.map(id => (
                       <div key={id} className="flex items-center gap-2">
-                        <span className="text-sm text-gray-400 w-24 truncate">{cats.find(c => c.id === id)?.name}</span>
+                        <span className="text-sm text-brand-brown/60 w-24 truncate">{cats.find(c => c.id === id)?.name}</span>
                         <input
                           type="text" placeholder="e.g. Slicker brush"
                           value={getValue(groomingTools, id)}
@@ -463,7 +463,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
                   {vetOptions.map(v => <option key={v.key} value={v.key}>{v.name}</option>)}
                 </select>
               </div>
-              <div className="space-y-2 bg-brand-tan/10 rounded-xl p-4">
+              <div className="space-y-2 bg-brand-tan/10 rounded-2xl p-4">
                 <input type="text" required placeholder="Vet clinic name *" value={vetName} onChange={e => setVetName(e.target.value)} className={inputClass} />
                 <input type="tel" placeholder="Phone" value={vetPhone} onChange={e => setVetPhone(e.target.value)} className={inputClass} />
                 <input type="text" required placeholder="Address *" value={vetAddress} onChange={e => setVetAddress(e.target.value)} className={inputClass} />
@@ -517,10 +517,10 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="submit" className="flex-1 py-3 bg-brand-orange text-white rounded-xl font-semibold hover:bg-brand-orange/90 transition-colors shadow-sm">
+            <button type="submit" className="flex-1 py-3 bg-brand-orange text-white rounded-2xl font-semibold hover:bg-brand-orange/90 transition-colors shadow-soft">
               Save
             </button>
-            <button type="button" onClick={onCancel} className="px-6 py-3 bg-white text-brand-brown border border-brand-tan rounded-xl font-medium hover:bg-brand-tan/10 transition-colors">
+            <button type="button" onClick={onCancel} className="px-6 py-3 bg-white text-brand-brown border border-brand-tan rounded-2xl font-medium hover:bg-brand-tan/10 transition-colors">
               Cancel
             </button>
             {existing && onDelete && (
