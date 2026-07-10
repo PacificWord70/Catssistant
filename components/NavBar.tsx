@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRef, useState, useEffect } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import CatssistantLogo from '@/components/CatssistantLogo'
 
 const MORE_LINKS = [
@@ -12,10 +13,20 @@ const MORE_LINKS = [
   { href: '/about',     label: 'About' },
 ]
 
+const PRIMARY_LINKS = [
+  { href: '/',          label: 'Home' },
+  { href: '/cats',      label: 'My Cats' },
+  { href: '/schedule',  label: 'Schedule' },
+  { href: '/shopping',  label: 'Shopping' },
+]
+
 export default function NavBar() {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const [hoveredHref, setHoveredHref] = useState<string | null>(null)
+  const [scrolled, setScrolled] = useState(false)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -25,27 +36,56 @@ export default function NavBar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  useEffect(() => {
+    function handleScroll() {
+      setScrolled(window.scrollY > 8)
+    }
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   if (pathname === '/') return null
 
+  const indicatorTarget = hoveredHref ?? pathname
+
   return (
-    <nav className="bg-brand-orange text-white shadow-md">
-      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+    <nav
+      className={`sticky top-0 z-50 text-white transition-all duration-200 ${
+        scrolled ? 'bg-brand-orange/95 backdrop-blur-md shadow-card' : 'bg-brand-orange shadow-md'
+      }`}
+    >
+      <div
+        className={`max-w-5xl mx-auto px-4 flex items-center justify-between transition-all duration-200 ${
+          scrolled ? 'h-14' : 'h-16'
+        }`}
+      >
         <Link href="/" className="hover:opacity-90 transition-opacity">
-          <CatssistantLogo horizontal height={34} />
+          <CatssistantLogo horizontal height={scrolled ? 28 : 34} />
         </Link>
         <div className="flex items-center gap-1">
-          <Link href="/" className="px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">
-            Home
-          </Link>
-          <Link href="/cats" className="px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">
-            My Cats
-          </Link>
-          <Link href="/schedule" className="px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">
-            Schedule
-          </Link>
-          <Link href="/shopping" className="px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">
-            Shopping
-          </Link>
+          {PRIMARY_LINKS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              onMouseEnter={() => setHoveredHref(href)}
+              onMouseLeave={() => setHoveredHref(null)}
+              className="relative px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              {indicatorTarget === href && (
+                <motion.span
+                  layoutId={reduceMotion ? undefined : 'navIndicator'}
+                  className="absolute inset-0 rounded-lg bg-white/15"
+                  transition={
+                    reduceMotion
+                      ? { duration: 0 }
+                      : { type: 'spring', stiffness: 380, damping: 30 }
+                  }
+                />
+              )}
+              <span className="relative">{label}</span>
+            </Link>
+          ))}
           <Link href="/cats/new" className="px-3 py-2 rounded-lg text-sm font-medium bg-brand-slate hover:bg-brand-slate/90 transition-colors">
             + Add Cat
           </Link>
