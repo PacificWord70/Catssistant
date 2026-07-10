@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-07-04)
 Phase: 1 of 2 (Care Event List View)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-07-04 — ROADMAP.md created, 5 remaining v1 requirements mapped to 2 phases
+Last activity: 2026-07-10 — Completed quick task 260710-f7b: Overhaul the visual design of the Catssistant web app on the design-experiment branch
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -64,6 +64,12 @@ None yet.
 
 - Phase 2 planning must resolve DATA-03 (merge vs. overwrite vs. reject import conflict behavior) as an explicit, approved design decision before implementation begins — do not default to blind-overwrite.
 - Base64 photo storage may inflate export file size (flagged in codebase/CONCERNS.md and research/SUMMARY.md) — worth a concrete scoping decision during Phase 2 planning (e.g., exclude/separate photos from the JSON envelope).
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260710-f7b | Overhaul the visual design of the Catssistant web app (design-experiment branch): retuned brand color tokens, softened background, swapped display font (Tapestry → Fraunces), unified shape/shadow language across all components and pages. Presentation-only. | 2026-07-10 | 3c995e3 | [260710-f7b-overhaul-the-visual-design-of-the-catssi](./quick/260710-f7b-overhaul-the-visual-design-of-the-catssi/) |
 
 ## Deferred Items
 
