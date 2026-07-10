@@ -32,7 +32,7 @@ export default function CatsPage() {
           <h1 className="font-display text-3xl text-brand-brown">My Cats</h1>
           <Link
             href="/cats/new"
-            className="px-4 py-2 bg-brand-orange text-white rounded-2xl text-sm font-semibold hover:bg-brand-orange/90 transition-colors shadow-soft"
+            className="hover-lift px-4 py-2 bg-brand-orange text-white rounded-2xl text-sm font-semibold hover:bg-brand-orange/90 transition-colors shadow-soft"
           >
             + Add Cat
           </Link>

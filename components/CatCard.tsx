@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Cat } from '@/types/cat'
 import { catAgeShort } from '@/lib/utils'
 import BreedTag from '@/components/BreedTag'
@@ -8,9 +11,16 @@ interface Props {
 }
 
 export default function CatCard({ cat }: Props) {
+  const reduceMotion = useReducedMotion()
+
   return (
-    <Link href={`/cats/${cat.id}`} className="block group">
-      <div className="bg-brand-cream rounded-3xl shadow-soft border border-brand-tan/30 overflow-hidden group-hover:shadow-card group-hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
+    <Link href={`/cats/${cat.id}`} className="block">
+      <motion.div
+        className="bg-brand-cream rounded-3xl shadow-soft border border-brand-tan/30 overflow-hidden flex flex-col"
+        whileHover={reduceMotion ? undefined : { y: -2, scale: 1.02, boxShadow: '0 6px 24px -6px rgba(43, 38, 34, 0.12)' }}
+        whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      >
         <div className="h-44 bg-brand-tan/20 flex items-center justify-center overflow-hidden flex-shrink-0">
           {cat.photoUrl ? (
             <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
@@ -36,7 +46,7 @@ export default function CatCard({ cat }: Props) {
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
     </Link>
   )
 }

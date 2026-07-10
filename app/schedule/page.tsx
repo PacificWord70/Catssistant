@@ -69,7 +69,7 @@ export default function SchedulePage() {
           <h1 className="font-display text-3xl text-brand-brown">Schedule</h1>
           <button
             onClick={() => setEditingEvent('new')}
-            className="px-4 py-2 bg-brand-orange text-white rounded-2xl text-sm font-semibold hover:bg-brand-orange/90 transition-colors shadow-soft"
+            className="hover-lift px-4 py-2 bg-brand-orange text-white rounded-2xl text-sm font-semibold hover:bg-brand-orange/90 transition-colors shadow-soft"
           >
             + Add Event
           </button>
@@ -102,7 +102,7 @@ export default function SchedulePage() {
                   <button
                     key={`${event.id}-${i}`}
                     onClick={() => setEditingEvent(event)}
-                    className="w-full flex items-center gap-3 px-4 py-3 bg-brand-tan/10 rounded-2xl hover:bg-brand-tan/20 transition-colors text-left"
+                    className="hover-lift w-full flex items-center gap-3 px-4 py-3 bg-brand-tan/10 rounded-2xl hover:bg-brand-tan/20 transition-colors text-left"
                   >
                     <span className="text-xl select-none">{CATEGORY_EMOJI[event.category]}</span>
                     <div className="flex-1 min-w-0">
