@@ -22,7 +22,7 @@ export default function EditCatPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-3xl p-7 shadow-sm">
+      <div className="bg-white rounded-3xl p-7 shadow-soft">
         <Link href={`/cats/${id}`} className="text-brand-slate text-sm hover:underline mb-5 inline-block">
           ← Back to profile
         </Link>

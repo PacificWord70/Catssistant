@@ -16,18 +16,18 @@ export default function GuidesPage() {
       <div className="text-center mb-10">
         <div className="text-6xl mb-4 select-none">📚</div>
         <h1 className="font-display text-3xl text-brand-brown mb-2">New Cat Owner Guides</h1>
-        <p className="text-gray-400 max-w-md mx-auto">
+        <p className="text-brand-brown/60 max-w-md mx-auto">
           A growing series to help first-time owners get ready — more posts coming soon.
         </p>
       </div>
       <div className="space-y-4">
         {POSTS.map(post => (
-          <div key={post.title} className="bg-white rounded-2xl p-6 shadow-sm border border-brand-tan/30">
+          <div key={post.title} className="bg-white rounded-3xl p-6 shadow-soft border border-brand-tan/30">
             <h2 className="font-display text-xl text-brand-brown mb-1">{post.title}</h2>
-            <p className="text-gray-500 text-sm">{post.excerpt}</p>
+            <p className="text-brand-brown/60 text-sm">{post.excerpt}</p>
           </div>
         ))}
-        <div className="bg-brand-tan/10 rounded-2xl p-6 text-center text-gray-400 text-sm">
+        <div className="bg-brand-tan/10 rounded-2xl p-6 text-center text-brand-brown/60 text-sm">
           More guides on the way — vet visits, litter training, and more.
         </div>
       </div>
