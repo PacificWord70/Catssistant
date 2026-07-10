@@ -25,12 +25,12 @@ export default function CatsPage() {
   if (!loaded) return null
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm p-7 min-h-[calc(100vh-8rem)]">
+    <div className="bg-white rounded-3xl shadow-soft p-7 min-h-[calc(100vh-8rem)]">
       <div className="flex items-center justify-between mb-7">
         <h1 className="font-display text-3xl text-brand-brown">My Cats</h1>
         <Link
           href="/cats/new"
-          className="px-4 py-2 bg-brand-orange text-white rounded-xl text-sm font-semibold hover:bg-brand-orange/90 transition-colors shadow-sm"
+          className="px-4 py-2 bg-brand-orange text-white rounded-2xl text-sm font-semibold hover:bg-brand-orange/90 transition-colors shadow-soft"
         >
           + Add Cat
         </Link>

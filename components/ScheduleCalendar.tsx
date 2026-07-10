@@ -37,7 +37,7 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
 
       <div className="grid grid-cols-7 gap-1 mb-1">
         {WEEKDAYS.map(w => (
-          <div key={w} className="text-center text-xs font-semibold text-gray-400 py-1">{w}</div>
+          <div key={w} className="text-center text-xs font-semibold text-brand-brown/60 py-1">{w}</div>
         ))}
       </div>
 
@@ -51,7 +51,7 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
               key={cell.dateKey}
               type="button"
               onClick={() => onSelectDate(cell.dateKey)}
-              className={`aspect-square rounded-xl flex flex-col items-center justify-start pt-1.5 gap-0.5 text-sm transition-colors
+              className={`aspect-square rounded-2xl flex flex-col items-center justify-start pt-1.5 gap-0.5 text-sm transition-colors
                 ${isSelected ? 'bg-brand-orange text-white' : cell.isToday ? 'bg-brand-tan/20 text-brand-charcoal' : 'hover:bg-brand-tan/10 text-brand-charcoal'}
                 ${!cell.inCurrentMonth ? 'opacity-30' : ''}`}
             >

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Figtree, Tapestry } from 'next/font/google'
+import { Figtree, Fraunces } from 'next/font/google'
 import './globals.css'
 import NavBar from '@/components/NavBar'
 import CatWalker from '@/components/CatWalker'
@@ -10,10 +10,10 @@ const figtree = Figtree({
   display: 'swap',
 })
 
-const tapestry = Tapestry({
+const fraunces = Fraunces({
   subsets: ['latin'],
-  weight: '400',
-  variable: '--font-tapestry',
+  weight: ['400', '500', '600'],
+  variable: '--font-display',
   display: 'swap',
 })
 
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${figtree.variable} ${tapestry.variable}`}>
+    <html lang="en" className={`${figtree.variable} ${fraunces.variable}`}>
       <body className="text-brand-charcoal font-sans min-h-screen">
         <NavBar />
         <main className="max-w-5xl mx-auto px-4 py-8">

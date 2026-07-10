@@ -25,7 +25,7 @@ export default function CatProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-soft overflow-hidden">
 
         {/* Photo hero */}
         <div className="h-64 bg-brand-tan/20 flex items-center justify-center overflow-hidden relative">
@@ -36,7 +36,7 @@ export default function CatProfilePage() {
           )}
           <Link
             href="/cats"
-            className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm text-brand-brown text-sm font-medium px-3 py-1.5 rounded-full hover:bg-white transition-colors shadow-sm"
+            className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm text-brand-brown text-sm font-medium px-3 py-1.5 rounded-full hover:bg-white transition-colors shadow-soft"
           >
             ← My Cats
           </Link>
@@ -60,7 +60,7 @@ export default function CatProfilePage() {
             {cat.birthday && (
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm">
                 <span className="text-brand-brown font-medium">{catAgeLabel(cat.birthday)}</span>
-                <span className="text-gray-400">~{catHumanAge(cat.birthday)} in cat years</span>
+                <span className="text-brand-brown/60">~{catHumanAge(cat.birthday)} in cat years</span>
               </div>
             )}
           </div>
@@ -90,7 +90,7 @@ export default function CatProfilePage() {
                   {cat.vet.phone}
                 </a>
               )}
-              {cat.vet.address && <p className="text-sm text-gray-400 mt-0.5">{cat.vet.address}</p>}
+              {cat.vet.address && <p className="text-sm text-brand-brown/60 mt-0.5">{cat.vet.address}</p>}
             </div>
           )}
 
@@ -100,13 +100,13 @@ export default function CatProfilePage() {
               {cat.personality && (
                 <div className="bg-brand-tan/10 rounded-2xl p-5">
                   <h2 className="text-xs font-semibold text-brand-brown uppercase tracking-wide mb-2">Personality</h2>
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{cat.personality}</p>
+                  <p className="text-sm text-brand-charcoal/80 whitespace-pre-wrap leading-relaxed">{cat.personality}</p>
                 </div>
               )}
               {cat.notes && (
                 <div className="bg-brand-tan/10 rounded-2xl p-5">
                   <h2 className="text-xs font-semibold text-brand-brown uppercase tracking-wide mb-2">Notes</h2>
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{cat.notes}</p>
+                  <p className="text-sm text-brand-charcoal/80 whitespace-pre-wrap leading-relaxed">{cat.notes}</p>
                 </div>
               )}
             </div>
@@ -118,13 +118,13 @@ export default function CatProfilePage() {
               {FEATURE_TABS.map(tab => (
                 <button
                   key={tab}
-                  className="flex-1 min-w-[4rem] py-3 text-xs sm:text-sm font-medium text-gray-300 cursor-default"
+                  className="flex-1 min-w-[4rem] py-3 text-xs sm:text-sm font-medium text-brand-brown/40 cursor-default"
                 >
                   {tab}
                 </button>
               ))}
             </div>
-            <div className="p-8 text-center text-gray-400 text-sm">
+            <div className="p-8 text-center text-brand-brown/60 text-sm">
               More features coming soon 🐾
             </div>
           </div>
@@ -144,7 +144,7 @@ export default function CatProfilePage() {
 function StatCard({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="bg-brand-tan/10 rounded-2xl p-4">
-      <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
+      <p className="text-xs text-brand-brown/60 uppercase tracking-wide mb-1">{label}</p>
       <p className={`font-medium text-brand-charcoal ${mono ? 'font-mono text-sm break-all' : ''}`}>{value}</p>
     </div>
   )

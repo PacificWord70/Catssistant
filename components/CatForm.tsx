@@ -237,7 +237,7 @@ export default function CatForm({ existing, prospective }: Props) {
     router.push(`/cats/${cat.id}`)
   }
 
-  const inputClass = 'w-full px-4 py-2.5 rounded-xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white'
+  const inputClass = 'w-full px-4 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -275,7 +275,7 @@ export default function CatForm({ existing, prospective }: Props) {
       {/* Breed */}
       <div>
         <label className="block text-sm font-medium text-brand-charcoal mb-1">Breed</label>
-        <p className="text-xs text-gray-400 mb-2">Add multiple for mixed breeds</p>
+        <p className="text-xs text-brand-brown/60 mb-2">Add multiple for mixed breeds</p>
         <div className="flex gap-2 mb-2">
           <div className="relative flex-1" ref={breedBoxRef}>
             <input
@@ -288,7 +288,7 @@ export default function CatForm({ existing, prospective }: Props) {
                 if (e.key === 'Escape') setBreedOpen(false)
               }}
               placeholder="Type or pick a breed..."
-              className="w-full px-4 py-2.5 rounded-xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white"
+              className="w-full px-4 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white"
             />
             {breedOpen && (() => {
               const q = breedInput.toLowerCase()
@@ -297,7 +297,7 @@ export default function CatForm({ existing, prospective }: Props) {
               ).slice(0, 10)
               if (!filtered.length) return null
               return (
-                <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-brand-tan/40 rounded-xl shadow-lg max-h-56 overflow-y-auto overflow-x-hidden">
+                <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-brand-tan/40 rounded-2xl shadow-lg max-h-56 overflow-y-auto overflow-x-hidden">
                   {filtered.map(b => {
                     const info = BREED_MAP.get(b)
                     return (
@@ -314,7 +314,7 @@ export default function CatForm({ existing, prospective }: Props) {
                           className="w-full text-left px-4 py-2 text-sm text-brand-charcoal hover:bg-brand-tan/10 transition-colors"
                         >
                           {b}
-                          {info && <span className="ml-2 text-xs text-gray-400">{info.origin}</span>}
+                          {info && <span className="ml-2 text-xs text-brand-brown/60">{info.origin}</span>}
                         </button>
                       </li>
                     )
@@ -323,7 +323,7 @@ export default function CatForm({ existing, prospective }: Props) {
               )
             })()}
           </div>
-          <button type="button" onClick={() => { addBreed(breedInput); setBreedOpen(false) }} className="px-4 py-2.5 bg-brand-tan text-white rounded-xl text-sm font-medium hover:bg-brand-brown transition-colors">
+          <button type="button" onClick={() => { addBreed(breedInput); setBreedOpen(false) }} className="px-4 py-2.5 bg-brand-tan text-white rounded-2xl text-sm font-medium hover:bg-brand-brown transition-colors">
             Add
           </button>
         </div>
@@ -339,11 +339,11 @@ export default function CatForm({ existing, prospective }: Props) {
           if (!info) return null
           return createPortal(
             <div
-              className="fixed z-[9999] w-56 bg-white border border-brand-tan/40 rounded-xl shadow-lg p-3 pointer-events-none"
+              className="fixed z-[9999] w-56 bg-white border border-brand-tan/40 rounded-2xl shadow-lg p-3 pointer-events-none"
               style={{ top: breedTooltip.top, left: breedTooltip.left, transform: 'translateY(-100%)' }}
             >
               <p className="font-semibold text-xs text-brand-brown mb-1">{breedTooltip.name}</p>
-              <p className="text-xs text-gray-500 leading-relaxed line-clamp-4">{info.description}</p>
+              <p className="text-xs text-brand-brown/60 leading-relaxed line-clamp-4">{info.description}</p>
             </div>,
             document.body
           )
@@ -405,9 +405,9 @@ export default function CatForm({ existing, prospective }: Props) {
             value={cat.weight ?? ''}
             onChange={e => updateField('weight', e.target.value ? parseFloat(e.target.value) : undefined)}
             placeholder="0.0"
-            className="flex-1 px-4 py-2.5 rounded-xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white"
+            className="flex-1 px-4 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white"
           />
-          <select value={cat.weightUnit} onChange={e => updateField('weightUnit', e.target.value as 'lbs' | 'kg')} className="px-3 py-2.5 rounded-xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white">
+          <select value={cat.weightUnit} onChange={e => updateField('weightUnit', e.target.value as 'lbs' | 'kg')} className="px-3 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white">
             <option value="lbs">lbs</option>
             <option value="kg">kg</option>
           </select>
@@ -432,8 +432,8 @@ export default function CatForm({ existing, prospective }: Props) {
         <label className="block text-sm font-medium text-brand-charcoal mb-2">Hunting</label>
         <div className="space-y-2">
           <div>
-            <p className="text-xs text-gray-400 mb-1">Prey drive — what do they go after?</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 bg-brand-tan/10 rounded-xl p-4">
+            <p className="text-xs text-brand-brown/60 mb-1">Prey drive — what do they go after?</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 bg-brand-tan/10 rounded-2xl p-4">
               {PREY_DRIVES.map(drive => (
                 <label key={drive} className="flex items-center gap-2 text-sm text-brand-charcoal">
                   <input
@@ -459,8 +459,8 @@ export default function CatForm({ existing, prospective }: Props) {
             </div>
           </div>
           <div>
-            <p className="text-xs text-gray-400 mb-1">Where do they hunt?</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 bg-brand-tan/10 rounded-xl p-4">
+            <p className="text-xs text-brand-brown/60 mb-1">Where do they hunt?</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 bg-brand-tan/10 rounded-2xl p-4">
               {HUNTING_LOCATIONS.map(location => (
                 <label key={location} className="flex items-center gap-2 text-sm text-brand-charcoal">
                   <input
@@ -480,7 +480,7 @@ export default function CatForm({ existing, prospective }: Props) {
       {/* Known illnesses */}
       <div>
         <label className="block text-sm font-medium text-brand-charcoal mb-2">Known illnesses</label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-brand-tan/10 rounded-xl p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-brand-tan/10 rounded-2xl p-4">
           {KNOWN_ILLNESSES.map(illness => (
             <label key={illness} className="flex items-center gap-2 text-sm text-brand-charcoal">
               <input
@@ -502,7 +502,7 @@ export default function CatForm({ existing, prospective }: Props) {
             placeholder="Other illness…"
             className={inputClass}
           />
-          <button type="button" onClick={addCustomIllness} className="px-4 py-2.5 bg-brand-tan text-white rounded-xl text-sm font-medium hover:bg-brand-brown transition-colors">
+          <button type="button" onClick={addCustomIllness} className="px-4 py-2.5 bg-brand-tan text-white rounded-2xl text-sm font-medium hover:bg-brand-brown transition-colors">
             Add
           </button>
         </div>
@@ -535,7 +535,7 @@ export default function CatForm({ existing, prospective }: Props) {
               placeholder="15-digit chip number"
               className={`${inputClass} font-mono pr-12`}
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-300 pointer-events-none font-mono">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-brown/40 pointer-events-none font-mono">
               {(cat.chipId ?? '').length}/15
             </span>
           </div>
@@ -598,7 +598,7 @@ export default function CatForm({ existing, prospective }: Props) {
       {/* Vet */}
       <div>
         <label className="block text-sm font-medium text-brand-charcoal mb-2">Vet info</label>
-        <div className="space-y-2 bg-brand-tan/10 rounded-xl p-4">
+        <div className="space-y-2 bg-brand-tan/10 rounded-2xl p-4">
           <input
             type="text" placeholder="Vet clinic name"
             value={cat.vet?.name ?? ''}
@@ -650,10 +650,10 @@ export default function CatForm({ existing, prospective }: Props) {
 
       {/* Actions */}
       <div className="flex gap-3 pt-2 pb-8">
-        <button type="submit" className="flex-1 py-3 bg-brand-orange text-white rounded-xl font-semibold hover:bg-brand-orange/90 transition-colors shadow-sm">
+        <button type="submit" className="flex-1 py-3 bg-brand-orange text-white rounded-2xl font-semibold hover:bg-brand-orange/90 transition-colors shadow-soft">
           Save Cat
         </button>
-        <button type="button" onClick={() => router.back()} className="px-6 py-3 bg-white text-brand-brown border border-brand-tan rounded-xl font-medium hover:bg-brand-tan/10 transition-colors">
+        <button type="button" onClick={() => router.back()} className="px-6 py-3 bg-white text-brand-brown border border-brand-tan rounded-2xl font-medium hover:bg-brand-tan/10 transition-colors">
           Cancel
         </button>
       </div>

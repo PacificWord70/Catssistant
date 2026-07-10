@@ -10,7 +10,7 @@ interface Props {
 export default function CatCard({ cat }: Props) {
   return (
     <Link href={`/cats/${cat.id}`} className="block group">
-      <div className="bg-white rounded-2xl shadow-sm border border-brand-tan/30 overflow-hidden group-hover:shadow-md group-hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
+      <div className="bg-brand-cream rounded-3xl shadow-soft border border-brand-tan/30 overflow-hidden group-hover:shadow-card group-hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
         <div className="h-44 bg-brand-tan/20 flex items-center justify-center overflow-hidden flex-shrink-0">
           {cat.photoUrl ? (
             <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
@@ -29,10 +29,10 @@ export default function CatCard({ cat }: Props) {
           </div>
           <div className="flex items-center justify-between mt-2">
             {cat.color && (
-              <span className="text-xs text-gray-400 truncate">{cat.color}</span>
+              <span className="text-xs text-brand-brown/60 truncate">{cat.color}</span>
             )}
             {cat.birthday && (
-              <span className="text-xs text-gray-400 ml-auto">{catAgeShort(cat.birthday)}</span>
+              <span className="text-xs text-brand-brown/60 ml-auto">{catAgeShort(cat.birthday)}</span>
             )}
           </div>
         </div>

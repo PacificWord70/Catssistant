@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 body {
-  background-color: #F7BAD2;
+  background-color: #FBECF2;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 @keyframes catWalk {

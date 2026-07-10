@@ -30,11 +30,11 @@ export default function BreedTag({ name, variant = 'pill', onRemove }: Props) {
 
   const tooltip = breed && pos && createPortal(
     <div
-      className="fixed z-[9999] w-56 bg-white border border-brand-tan/40 rounded-xl shadow-lg p-3 pointer-events-none"
+      className="fixed z-[9999] w-56 bg-white border border-brand-tan/40 rounded-2xl shadow-lg p-3 pointer-events-none"
       style={{ top: pos.top, left: pos.left, transform: 'translateY(-100%)' }}
     >
       <p className="font-semibold text-xs text-brand-brown mb-1">{name}</p>
-      <p className="text-xs text-gray-500 leading-relaxed line-clamp-4">{breed.description}</p>
+      <p className="text-xs text-brand-brown/60 leading-relaxed line-clamp-4">{breed.description}</p>
     </div>,
     document.body
   )
