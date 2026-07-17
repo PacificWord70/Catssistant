@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import CatssistantLogo from '@/components/CatssistantLogo'
 
 const MORE_LINKS = [
+  { href: '/items',     label: 'My Items' },
   { href: '/breeds',    label: 'Breeds' },
   { href: '/guides',    label: 'Guides' },
   { href: '/resources', label: 'Resources' },
