@@ -29,7 +29,7 @@ export default function CatssistantLogo({
       src="/images/logo-vertical.png"
       alt="Catssistant"
       height={height}
-      style={{ height: `${height}px`, width: 'auto' }}
+      style={{ height: `${height}px`, width: 'auto', mixBlendMode: 'multiply' }}
       className={className}
     />
   )
