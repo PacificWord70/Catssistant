@@ -304,11 +304,11 @@ export default function CatForm({ existing, prospective }: Props) {
                       <li key={b}>
                         <button
                           type="button"
-                          onMouseDown={e => { e.preventDefault(); addBreed(b); setBreedOpen(false) }}
+                          onMouseDown={e => { e.preventDefault(); addBreed(b); setBreedOpen(false); setBreedTooltip(null) }}
                           onMouseEnter={e => {
                             if (!info) return
                             const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                            setBreedTooltip({ name: b, top: rect.top + window.scrollY - 8, left: rect.left + window.scrollX })
+                            setBreedTooltip({ name: b, top: rect.top - 8, left: rect.left })
                           }}
                           onMouseLeave={() => setBreedTooltip(null)}
                           className="w-full text-left px-4 py-2 text-sm text-brand-charcoal hover:bg-brand-tan/10 transition-colors"

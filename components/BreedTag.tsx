@@ -21,7 +21,7 @@ export default function BreedTag({ name, variant = 'pill', onRemove }: Props) {
   function showTooltip() {
     if (!ref.current) return
     const rect = ref.current.getBoundingClientRect()
-    setPos({ top: rect.top + window.scrollY - 8, left: rect.left + window.scrollX })
+    setPos({ top: rect.top - 8, left: rect.left })
   }
 
   function hideTooltip() {
@@ -86,9 +86,9 @@ export default function BreedTag({ name, variant = 'pill', onRemove }: Props) {
             onClick={e => e.stopPropagation()}
             onMouseEnter={showTooltip}
             onMouseLeave={hideTooltip}
-            className="text-xs px-2 py-0.5 rounded-full bg-brand-tan/20 text-brand-brown hover:bg-brand-tan/40 transition-colors"
+            className="text-xs px-2 py-0.5 rounded-full bg-brand-tan/20 text-brand-brown hover:bg-brand-tan/40 transition-colors whitespace-nowrap"
           >{name}</Link>
-        : <span className="text-xs px-2 py-0.5 rounded-full bg-brand-tan/20 text-brand-brown">{name}</span>
+        : <span className="text-xs px-2 py-0.5 rounded-full bg-brand-tan/20 text-brand-brown whitespace-nowrap">{name}</span>
       }
       {tooltip}
     </>
