@@ -294,7 +294,7 @@ export default function CatForm({ existing, prospective }: Props) {
               const q = breedInput.toLowerCase()
               const filtered = COMMON_BREEDS.filter(b =>
                 !cat.breed.includes(b) && b.toLowerCase().includes(q)
-              ).slice(0, 10)
+              )
               if (!filtered.length) return null
               return (
                 <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-brand-tan/40 rounded-2xl shadow-lg max-h-56 overflow-y-auto overflow-x-hidden">
@@ -311,10 +311,10 @@ export default function CatForm({ existing, prospective }: Props) {
                             setBreedTooltip({ name: b, top: rect.top - 8, left: rect.left })
                           }}
                           onMouseLeave={() => setBreedTooltip(null)}
-                          className="w-full text-left px-4 py-2 text-sm text-brand-charcoal hover:bg-brand-tan/10 transition-colors"
+                          className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-brand-charcoal hover:bg-brand-tan/10 transition-colors whitespace-nowrap"
                         >
-                          {b}
-                          {info && <span className="ml-2 text-xs text-brand-brown/60">{info.origin}</span>}
+                          <span className="truncate">{b}</span>
+                          {info && <span className="flex-shrink-0 text-xs text-brand-brown/60">{info.origin}</span>}
                         </button>
                       </li>
                     )
