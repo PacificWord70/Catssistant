@@ -18,7 +18,12 @@ npm-debug.log*
 # gitignored, so real art can be dropped in locally without landing in a
 # commit. CatAvatar falls back to its code-drawn placeholder when a layer is
 # missing, which is the normal state for a fresh clone.
-public/art-assets/
+#
+# Ignoring the *contents* rather than the folder itself. Git won't descend into
+# an excluded directory, so `public/art-assets/` would make the negation below
+# impossible and the README couldn't be tracked.
+public/art-assets/*
+!public/art-assets/README.md
 
 # No image files of any kind.
 # Note: git keeps tracking files committed before this rule was added (the

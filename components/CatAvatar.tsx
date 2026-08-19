@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { Cat } from '@/types/cat'
 import { AVATAR_VIEWBOX, drawPlaceholderCat } from '@/lib/avatar/placeholder'
+import { drawArtLayers, loadArtLayers } from '@/lib/avatar/artLayers'
 import { coatLabel } from '@/lib/utils'
 
 interface Props {
@@ -52,9 +53,9 @@ function setupCanvas(canvas: HTMLCanvasElement, size: number): CanvasRenderingCo
 /**
  * Per-cat avatar rendered on a canvas.
  *
- * Currently always draws the code-drawn placeholder. Hand-drawn art layers get
- * layered in next, and the swap happens inside this effect — nothing that
- * renders a CatAvatar has to change.
+ * Draws the code-drawn placeholder first, then swaps in hand-drawn artwork if
+ * any is installed in public/art-assets. That folder is gitignored, so a fresh
+ * clone always shows the placeholder and nothing breaks.
  */
 export default function CatAvatar({ cat, size = 96, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -70,7 +71,23 @@ export default function CatAvatar({ cat, size = 96, className }: Props) {
     if (!canvas) return
     const ctx = setupCanvas(canvas, size)
     if (!ctx) return
+
+    // Draw the placeholder synchronously so the avatar is never blank, then
+    // upgrade to hand-drawn art if any is installed. On a fresh clone there
+    // is none and this first draw is the final one.
     drawPlaceholderCat(ctx, { color, pattern, coatLength })
+
+    let cancelled = false
+    loadArtLayers({ color, pattern, coatLength }).then(layers => {
+      // Guards a race: if the cat or size changed while the images were
+      // loading, this effect has already been cleaned up and painting now
+      // would put stale art on a canvas that has moved on.
+      if (cancelled || !layers) return
+      const artCtx = setupCanvas(canvas, size)
+      if (artCtx) drawArtLayers(artCtx, layers, { color, pattern, coatLength })
+    })
+
+    return () => { cancelled = true }
   }, [color, pattern, coatLength, size])
 
   // A canvas is invisible to screen readers, so describe what was drawn.
