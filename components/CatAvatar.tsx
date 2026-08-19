@@ -2,9 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 import { Cat } from '@/types/cat'
-import { AVATAR_VIEWBOX, drawPlaceholderCat } from '@/lib/avatar/placeholder'
+import { AVATAR_VIEWBOX, drawPlaceholderSlot } from '@/lib/avatar/placeholder'
 import { drawArtLayers, loadArtLayers } from '@/lib/avatar/artLayers'
-import { coatLabel } from '@/lib/utils'
 
 interface Props {
   /** Only the fields that affect the drawing, so any cat-shaped object works. */
@@ -53,9 +52,11 @@ function setupCanvas(canvas: HTMLCanvasElement, size: number): CanvasRenderingCo
 /**
  * Per-cat avatar rendered on a canvas.
  *
- * Draws the code-drawn placeholder first, then swaps in hand-drawn artwork if
- * any is installed in public/art-assets. That folder is gitignored, so a fresh
- * clone always shows the placeholder and nothing breaks.
+ * Draws an empty placeholder slot first, then swaps in hand-drawn artwork if any
+ * is installed in public/art-assets, tinted to the cat's coat colour. That
+ * folder is gitignored, so with no art present every cat shows the placeholder —
+ * intentionally, since inventing cat art would make a stand-in look like a
+ * design decision.
  */
 export default function CatAvatar({ cat, size = 96, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -72,10 +73,10 @@ export default function CatAvatar({ cat, size = 96, className }: Props) {
     const ctx = setupCanvas(canvas, size)
     if (!ctx) return
 
-    // Draw the placeholder synchronously so the avatar is never blank, then
-    // upgrade to hand-drawn art if any is installed. On a fresh clone there
-    // is none and this first draw is the final one.
-    drawPlaceholderCat(ctx, { color, pattern, coatLength })
+    // Draw the empty slot synchronously so there is never a blank frame, then
+    // upgrade to hand-drawn art if any is installed. With no art present this
+    // first draw is the final one.
+    drawPlaceholderSlot(ctx)
 
     let cancelled = false
     loadArtLayers({ color, pattern, coatLength }).then(layers => {
@@ -90,16 +91,15 @@ export default function CatAvatar({ cat, size = 96, className }: Props) {
     return () => { cancelled = true }
   }, [color, pattern, coatLength, size])
 
-  // A canvas is invisible to screen readers, so describe what was drawn.
-  const description = [coatLabel(cat), cat.coatLength && `${cat.coatLength.toLowerCase()} coat`]
-    .filter(Boolean)
-    .join(', ')
-
+  // A canvas is invisible to screen readers, so it needs describing. It says
+  // "no photo" rather than describing the coat because, with no art installed,
+  // the coat isn't what's on screen — an empty slot is. Claiming otherwise would
+  // mislead anyone using a screen reader. Worth revisiting once real art lands.
   return (
     <canvas
       ref={canvasRef}
       role="img"
-      aria-label={description ? `${cat.name}: ${description}` : `${cat.name}`}
+      aria-label={`${cat.name} — no photo`}
       className={className}
     />
   )
