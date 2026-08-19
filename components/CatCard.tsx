@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { Cat } from '@/types/cat'
 import { catAgeShort, coatLabel } from '@/lib/utils'
 import BreedTag from '@/components/BreedTag'
+import CatAvatar from '@/components/CatAvatar'
 
 interface Props {
   cat: Cat
@@ -25,7 +26,9 @@ export default function CatCard({ cat }: Props) {
           {cat.photoUrl ? (
             <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-6xl select-none">🐱</span>
+            // No photo, so fall back to the drawn avatar rather than a generic
+            // emoji — it at least reflects this cat's colour and markings.
+            <CatAvatar cat={cat} size={128} />
           )}
         </div>
         <div className="p-4 flex flex-col justify-between flex-1 min-h-[5.5rem]">

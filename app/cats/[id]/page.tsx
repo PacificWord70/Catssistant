@@ -7,6 +7,7 @@ import { getCatById } from '@/lib/storage'
 import { Cat } from '@/types/cat'
 import { catAgeLabel, catHumanAge } from '@/lib/utils'
 import BreedTag from '@/components/BreedTag'
+import CatAvatar from '@/components/CatAvatar'
 
 const FEATURE_TABS = ['Feeding', 'Health', 'Litter', 'Meds', 'Notes']
 
@@ -32,7 +33,7 @@ export default function CatProfilePage() {
           {cat.photoUrl ? (
             <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-[7rem] select-none">🐱</span>
+            <CatAvatar cat={cat} size={210} />
           )}
           <Link
             href="/cats"
