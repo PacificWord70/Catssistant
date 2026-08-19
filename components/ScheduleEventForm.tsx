@@ -35,6 +35,86 @@ function setValue(list: PerCatValue[], catId: string, value: string): PerCatValu
 
 interface VetOption { key: string; name: string; phone: string; address: string }
 
+const inputClass = 'w-full px-4 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white'
+
+/**
+ * The times list plus its handlers, bundled so TimesSection takes one prop
+ * instead of four.
+ */
+interface TimesControl {
+  times: string[]
+  update: (index: number, value: string) => void
+  remove: (index: number) => void
+  add: () => void
+}
+
+/**
+ * Repeating time rows with an "add another" control.
+ *
+ * Declared at module scope, not inside ScheduleEventForm. A component defined
+ * inside another component is a *new type* on every parent render, so React
+ * unmounts and remounts it rather than updating it — which meant the time input
+ * lost focus after every keystroke, since typing updates parent state and
+ * re-renders the form.
+ */
+function TimesSection({
+  label = 'Times',
+  requireFirst = false,
+  control,
+}: {
+  label?: string
+  requireFirst?: boolean
+  control: TimesControl
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-brand-charcoal mb-1">
+        {label} {requireFirst && <span className="text-brand-orange">*</span>}
+      </label>
+      <div className="space-y-2">
+        {control.times.map((t, i) => (
+          <div key={i} className="flex gap-2">
+            <input
+              type="time" required={requireFirst && i === 0}
+              value={t} onChange={e => control.update(i, e.target.value)}
+              className={inputClass}
+            />
+            <button type="button" onClick={() => control.remove(i)} className="px-3 text-brand-slate hover:text-brand-brown">×</button>
+          </div>
+        ))}
+        <button type="button" onClick={control.add} className="text-sm text-brand-slate hover:underline">
+          + Add {control.times.length > 0 ? 'another' : 'a'} time
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** Expected-duration picker. Hoisted for the same reason as TimesSection. */
+function DurationSection({
+  label = 'Expected duration',
+  value,
+  onChange,
+}: {
+  label?: string
+  value?: number
+  onChange: (minutes: number | undefined) => void
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-brand-charcoal mb-1">{label}</label>
+      <select
+        value={value ?? ''}
+        onChange={e => onChange(e.target.value ? Number(e.target.value) : undefined)}
+        className={inputClass}
+      >
+        <option value="">Not sure</option>
+        {DURATION_OPTIONS_MINUTES.map(m => <option key={m} value={m}>{formatDurationLabel(m)}</option>)}
+      </select>
+    </div>
+  )
+}
+
 export default function ScheduleEventForm({ cats, existing, defaultDate, onSave, onCancel, onDelete }: Props) {
   const [catIds, setCatIds] = useState<string[]>(existing?.catIds ?? (cats.length === 1 ? [cats[0].id] : []))
   const initialCategory = existing?.category ?? 'Feeding'
@@ -71,7 +151,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
   const [vetAddress, setVetAddress] = useState(existing?.vetAddress ?? '')
   const [estimatedCost, setEstimatedCost] = useState<number | undefined>(existing?.estimatedCost)
 
-  const inputClass = 'w-full px-4 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white'
+  // inputClass is defined at module scope — see the top of this file.
 
   const vetOptions: VetOption[] = []
   const seenVets = new Set<string>()
@@ -189,45 +269,13 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
     })
   }
 
-  function TimesSection({ label = 'Times', requireFirst = false }: { label?: string; requireFirst?: boolean }) {
-    return (
-      <div>
-        <label className="block text-sm font-medium text-brand-charcoal mb-1">
-          {label} {requireFirst && <span className="text-brand-orange">*</span>}
-        </label>
-        <div className="space-y-2">
-          {times.map((t, i) => (
-            <div key={i} className="flex gap-2">
-              <input
-                type="time" required={requireFirst && i === 0}
-                value={t} onChange={e => updateTime(i, e.target.value)}
-                className={inputClass}
-              />
-              <button type="button" onClick={() => removeTime(i)} className="px-3 text-brand-slate hover:text-brand-brown">×</button>
-            </div>
-          ))}
-          <button type="button" onClick={addTime} className="text-sm text-brand-slate hover:underline">
-            + Add {times.length > 0 ? 'another' : 'a'} time
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  function DurationSection({ label = 'Expected duration' }: { label?: string }) {
-    return (
-      <div>
-        <label className="block text-sm font-medium text-brand-charcoal mb-1">{label}</label>
-        <select
-          value={durationMinutes ?? ''}
-          onChange={e => setDurationMinutes(e.target.value ? Number(e.target.value) : undefined)}
-          className={inputClass}
-        >
-          <option value="">Not sure</option>
-          {DURATION_OPTIONS_MINUTES.map(m => <option key={m} value={m}>{formatDurationLabel(m)}</option>)}
-        </select>
-      </div>
-    )
+  // Handed to TimesSection, which lives at module scope so it isn't recreated
+  // on every render.
+  const timesControl: TimesControl = {
+    times,
+    update: updateTime,
+    remove: removeTime,
+    add: addTime,
   }
 
   const routineBrandLabel = routineType === 'Changed litter' ? 'Litter brand' : 'Food brand'
@@ -313,7 +361,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
                   </div>
                 </div>
               )}
-              <TimesSection label="Feeding times" requireFirst />
+              <TimesSection label="Feeding times" requireFirst control={timesControl} />
             </>
           )}
 
@@ -346,7 +394,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
                       <input type="date" min={date} value={recurrenceEndDate} onChange={e => setRecurrenceEndDate(e.target.value)} className={inputClass} />
                     </div>
                   )}
-                  <TimesSection label="Dose times" requireFirst />
+                  <TimesSection label="Dose times" requireFirst control={timesControl} />
                 </>
               )}
             </>
@@ -423,7 +471,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
                   </div>
                 </div>
               )}
-              <TimesSection label="Time (optional)" />
+              <TimesSection label="Time (optional)" control={timesControl} />
             </>
           )}
 
@@ -442,8 +490,8 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
                 </label>
                 <input type="text" value={playDetail} onChange={e => setPlayDetail(e.target.value)} className={inputClass} />
               </div>
-              <TimesSection label="Time (optional)" />
-              <DurationSection />
+              <TimesSection label="Time (optional)" control={timesControl} />
+              <DurationSection value={durationMinutes} onChange={setDurationMinutes} />
             </>
           )}
 
@@ -454,8 +502,8 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
                 <label className="block text-sm font-medium text-brand-charcoal mb-1">Label (optional)</label>
                 <input type="text" placeholder="e.g. Annual checkup" value={title} onChange={e => setTitle(e.target.value)} className={inputClass} />
               </div>
-              <TimesSection label="Times" requireFirst />
-              <DurationSection label="Expected duration" />
+              <TimesSection label="Times" requireFirst control={timesControl} />
+              <DurationSection label="Expected duration" value={durationMinutes} onChange={setDurationMinutes} />
               <div>
                 <label className="block text-sm font-medium text-brand-charcoal mb-1">Vet</label>
                 <select value={vetChoice} onChange={e => handleVetChoice(e.target.value)} className={inputClass}>
@@ -489,8 +537,8 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, onSave,
                 </label>
                 <input type="text" required value={title} onChange={e => setTitle(e.target.value)} className={inputClass} />
               </div>
-              <TimesSection label="Times" />
-              <DurationSection />
+              <TimesSection label="Times" control={timesControl} />
+              <DurationSection value={durationMinutes} onChange={setDurationMinutes} />
             </>
           )}
 
