@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { catSelected } from '@/store/catsSlice'
-import { selectCatsLoaded, selectSelectedCat } from '@/store/selectors'
+import { selectCatById, selectCatsLoaded } from '@/store/selectors'
 import { catAgeLabel, catHumanAge } from '@/lib/utils'
 import BreedTag from '@/components/BreedTag'
 import CatAvatar from '@/components/CatAvatar'
@@ -17,20 +17,31 @@ export default function CatProfilePage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const loaded = useAppSelector(selectCatsLoaded)
-  const cat = useAppSelector(selectSelectedCat)
+  // Looked up from the URL id, not from selectedCatId in the store.
+  //
+  // Reading it from the store was a bug: this page is what *sets* selectedCatId,
+  // and it does so in an effect. On the first render the selection is still null,
+  // so the cat came back undefined while `loaded` was already true — and the
+  // redirect below fired before the re-render carrying the selection could land.
+  // Every visit to a profile bounced to the home page.
+  //
+  // The URL is the real source of truth for which cat this page shows, so
+  // deriving from it removes the race rather than papering over it.
+  const selectCat = useMemo(() => selectCatById(id), [id])
+  const cat = useAppSelector(selectCat)
 
-  // Tell the store which cat this page is about. Other components can then read
-  // selectSelectedCat instead of being passed the cat down through props.
+  // Still published to the store, for components elsewhere that want to know
+  // which cat is in view without having it threaded down as a prop. Nothing on
+  // this page reads it back.
   useEffect(() => {
     dispatch(catSelected(id))
-    // Clear it on the way out so a stale selection doesn't leak to the next page.
     return () => { dispatch(catSelected(null)) }
   }, [id, dispatch])
 
   useEffect(() => {
     // Only a genuine miss should redirect — before storage is read, every id
     // looks missing.
-    if (loaded && !cat) router.replace('/')
+    if (loaded && !cat) router.replace('/cats')
   }, [loaded, cat, router])
 
   if (!cat) return null
