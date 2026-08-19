@@ -241,7 +241,9 @@ export default function CatForm({ existing, prospective }: Props) {
     // Writes to localStorage and updates the store together, so every open view
     // of this cat reflects the change immediately.
     dispatch(persistCat(cat))
-    router.push(`/cats/${cat.id}`)
+    // Adding a cat returns to the grid, where the new one is visible alongside
+    // the others. Editing returns to the profile that was being edited.
+    router.push(existing ? `/cats/${cat.id}` : '/cats')
   }
 
   const inputClass = 'w-full px-4 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white'
