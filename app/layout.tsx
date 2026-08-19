@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Figtree, Fraunces } from 'next/font/google'
 import './globals.css'
 import NavBar from '@/components/NavBar'
+import StoreProvider from '@/store/StoreProvider'
 
 const figtree = Figtree({
   subsets: ['latin'],
@@ -25,10 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${figtree.variable} ${fraunces.variable}`}>
       <body className="text-brand-charcoal font-sans min-h-screen">
-        <NavBar />
-        <main className="max-w-5xl mx-auto px-4 py-8">
-          {children}
-        </main>
+        <StoreProvider>
+          <NavBar />
+          <main className="max-w-5xl mx-auto px-4 py-8">
+            {children}
+          </main>
+        </StoreProvider>
       </body>
     </html>
   )
