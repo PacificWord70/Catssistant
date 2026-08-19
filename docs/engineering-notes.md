@@ -138,7 +138,17 @@ it runs.
 
 ## Canvas rendering
 
-The avatar is drawn entirely with Canvas 2D primitives — no image files.
+The avatar renders on a canvas. With no artwork installed it draws an empty
+placeholder slot — a bordered box with a cross through it. An earlier version
+drew a cat face from primitives, but a generated stand-in reads as a finished
+design decision, so it was removed in favour of an obvious gap that real
+hand-drawn art will fill.
+
+Note what that means for the sections below: the **setup** (device pixel ratio,
+normalised coordinates, transform resets) runs on every avatar, while the
+**compositing and tinting** only runs once real PNGs exist in
+`public/art-assets/`. Worth being precise about that distinction rather than
+claiming more than the code does.
 
 ### Buffer size vs display size
 
@@ -166,29 +176,34 @@ ctx.scale(size / AVATAR_VIEWBOX, size / AVATAR_VIEWBOX)  // viewbox is 100
 Every drawing function works in a fixed 100×100 box, so one code path renders a
 28px icon and a 210px portrait — no branching, no per-size magic numbers.
 
-### Path2D reused as a clip
+### Path2D as a reusable shape
 
-`headPath()` returns a shape rather than drawing one. It gets filled for the
-silhouette, then reused as a clipping region:
+A `Path2D` is a shape you build once and then use for several operations —
+filling, stroking, or clipping — instead of re-issuing the same drawing commands:
 
 ```ts
-ctx.save()
-ctx.clip(headPath())
-// stripes and patches drawn here are trimmed to the head
-ctx.restore()
+const box = new Path2D()
+box.roundRect(INSET, INSET, SIZE, SIZE, RADIUS)
+ctx.fill(box)    // same shape
+ctx.stroke(box)  // used twice
 ```
 
-Without this, every stripe would need its own bounds calculation.
+Its other use is as a **clipping region** — `ctx.clip(path)` confines everything
+drawn afterwards to that shape, which is how you keep markings inside a
+silhouette without calculating bounds per stripe. Not currently needed, since
+the placeholder is one box, but it's the reason to reach for `Path2D` over plain
+`ctx.rect()`.
 
-`save()`/`restore()` push and pop the whole context state — transform, clip,
-fill style, alpha. Forgetting `restore()` leaks the clip into everything drawn
-afterwards.
+`save()`/`restore()` push and pop the *entire* context state — transform, clip,
+fill style, alpha, line width. Forgetting `restore()` after a clip leaks it into
+everything drawn afterwards, which is a genuinely confusing bug to chase.
 
 ### Draw order is the painter's algorithm
 
-Canvas has no z-index; later draws cover earlier ones. Order in the avatar:
-fur ruff → ears → head → clipped markings → face. Reorder and the face ends up
-behind the skull.
+Canvas has no z-index; later draws cover earlier ones, so the order of calls
+*is* the layering. In the avatar: fill the box, stroke its border, then the
+cross on top. With art layers it becomes body → markings, which is why a
+pattern PNG has to be drawn second to be visible at all.
 
 ### Transforms are cumulative
 
