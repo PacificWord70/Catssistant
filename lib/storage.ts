@@ -1,14 +1,38 @@
-import { Cat } from '@/types/cat'
+import { Cat, CoatPattern } from '@/types/cat'
 import { ScheduleEvent } from '@/types/scheduleEvent'
 
 const STORAGE_KEY = 'catssistant_cats'
 const SCHEDULE_KEY = 'catssistant_schedule_events'
 
+/**
+ * Coat markings that used to be stored in the single `color` field, back when
+ * one dropdown held both solids and patterns.
+ */
+const LEGACY_PATTERN_VALUES: CoatPattern[] = ['Tabby', 'Calico', 'Tortoiseshell', 'Tuxedo', 'Colorpoint']
+
+/**
+ * Brings a stored cat up to the current shape.
+ *
+ * Cats saved before colour and pattern were split apart may have a pattern
+ * name sitting in `color` (e.g. color: 'Tabby'). Move it to `pattern` so the
+ * two fields mean what they say.
+ *
+ * This runs on every read rather than rewriting localStorage, which keeps
+ * reads free of side effects — the new shape persists naturally the next time
+ * the cat is saved. It is safe to run repeatedly: once a value has moved,
+ * `color` no longer holds a pattern, so the branch simply stops matching.
+ */
+function migrateCat(stored: Cat): Cat {
+  const legacyPattern = LEGACY_PATTERN_VALUES.find(p => p === (stored.color as unknown as CoatPattern))
+  if (!legacyPattern) return stored
+  return { ...stored, color: undefined, pattern: stored.pattern ?? legacyPattern }
+}
+
 export function getCats(): Cat[] {
   if (typeof window === 'undefined') return []
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
+    return raw ? (JSON.parse(raw) as Cat[]).map(migrateCat) : []
   } catch {
     return []
   }

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Cat } from '@/types/cat'
-import { catAgeShort } from '@/lib/utils'
+import { catAgeShort, coatLabel } from '@/lib/utils'
 import BreedTag from '@/components/BreedTag'
 
 interface Props {
@@ -38,8 +38,8 @@ export default function CatCard({ cat }: Props) {
             </div>
           </div>
           <div className="flex items-center justify-between mt-2">
-            {cat.color && (
-              <span className="text-xs text-brand-brown/60 truncate">{cat.color}</span>
+            {coatLabel(cat) && (
+              <span className="text-xs text-brand-brown/60 truncate">{coatLabel(cat)}</span>
             )}
             {cat.birthday && (
               <span className="text-xs text-brand-brown/60 ml-auto">{catAgeShort(cat.birthday)}</span>

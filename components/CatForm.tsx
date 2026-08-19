@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Cat } from '@/types/cat'
 import { saveCat } from '@/lib/storage'
 import { BREEDS } from '@/lib/breeds'
-import { COAT_LENGTHS, ENERGY_LEVELS, PREY_DRIVES, HUNTING_LOCATIONS, KNOWN_ILLNESSES, YES_NO_UNKNOWN } from '@/lib/catAttributes'
+import { COAT_COLORS, COAT_LENGTHS, COAT_PATTERNS, ENERGY_LEVELS, PREY_DRIVES, HUNTING_LOCATIONS, KNOWN_ILLNESSES, YES_NO_UNKNOWN } from '@/lib/catAttributes'
 import BreedTag from '@/components/BreedTag'
 
 // ─── Country data ─────────────────────────────────────────────────────────────
@@ -350,31 +350,31 @@ export default function CatForm({ existing, prospective }: Props) {
         })()}
       </div>
 
-      {/* Color */}
-      <div>
-        <label className="block text-sm font-medium text-brand-charcoal mb-1">Color</label>
-        <select
-          value={cat.color ?? ''}
-          onChange={e => updateField('color', e.target.value || undefined)}
-          className={inputClass}
-        >
-          <option value="">Select a color…</option>
-          <optgroup label="Solids">
-            <option>Black</option>
-            <option>White</option>
-            <option>Gray</option>
-            <option>Orange</option>
-            <option>Brown</option>
-            <option>Cream</option>
-          </optgroup>
-          <optgroup label="Patterns">
-            <option>Tabby</option>
-            <option>Calico</option>
-            <option>Tortoiseshell</option>
-            <option>Tuxedo</option>
-            <option>Colorpoint</option>
-          </optgroup>
-        </select>
+      {/* Coat colour and pattern — kept separate so the avatar can tint the
+          base colour and pick a markings layer independently. */}
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-brand-charcoal mb-1">Color</label>
+          <select
+            value={cat.color ?? ''}
+            onChange={e => updateField('color', (e.target.value || undefined) as Cat['color'])}
+            className={inputClass}
+          >
+            <option value="">Select a color…</option>
+            {COAT_COLORS.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-brand-charcoal mb-1">Pattern</label>
+          <select
+            value={cat.pattern ?? ''}
+            onChange={e => updateField('pattern', (e.target.value || undefined) as Cat['pattern'])}
+            className={inputClass}
+          >
+            <option value="">Select a pattern…</option>
+            {COAT_PATTERNS.map(p => <option key={p}>{p}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* Coat length */}

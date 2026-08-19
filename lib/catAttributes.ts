@@ -1,6 +1,10 @@
-import { CoatLength, EnergyLevel, HuntingLocation, PreyDrive, YesNoUnknown } from '@/types/cat'
+import { CoatColor, CoatLength, CoatPattern, EnergyLevel, HuntingLocation, PreyDrive, YesNoUnknown } from '@/types/cat'
 
 export const COAT_LENGTHS: CoatLength[] = ['Hairless', 'Short', 'Medium', 'Long', 'Unknown']
+
+export const COAT_COLORS: CoatColor[] = ['Black', 'White', 'Gray', 'Orange', 'Brown', 'Cream']
+
+export const COAT_PATTERNS: CoatPattern[] = ['Solid', 'Tabby', 'Calico', 'Tortoiseshell', 'Tuxedo', 'Colorpoint']
 
 export const ENERGY_LEVELS: EnergyLevel[] = ['Low', 'Medium', 'High', 'Unknown']
 

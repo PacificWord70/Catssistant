@@ -1,3 +1,15 @@
+import { Cat } from '@/types/cat'
+
+/**
+ * Human-readable coat description, e.g. "Black Tabby", "Calico", "Gray".
+ * 'Solid' is left implicit — "Black" reads better than "Black Solid".
+ * Returns '' when neither field is set, so callers can skip rendering.
+ */
+export function coatLabel(cat: Pick<Cat, 'color' | 'pattern'>): string {
+  const pattern = cat.pattern === 'Solid' ? undefined : cat.pattern
+  return [cat.color, pattern].filter(Boolean).join(' ')
+}
+
 export function catHumanAge(birthday: string): string {
   const birth = new Date(birthday)
   const now = new Date()

@@ -5,6 +5,10 @@ export interface Vet {
 }
 
 export type CoatLength = 'Hairless' | 'Short' | 'Medium' | 'Long' | 'Unknown'
+/** The cat's base coat colour. Tints the avatar's body layer. */
+export type CoatColor = 'Black' | 'White' | 'Gray' | 'Orange' | 'Brown' | 'Cream'
+/** Markings drawn over the base colour. 'Solid' means no overlay. */
+export type CoatPattern = 'Solid' | 'Tabby' | 'Calico' | 'Tortoiseshell' | 'Tuxedo' | 'Colorpoint'
 export type EnergyLevel = 'Low' | 'Medium' | 'High' | 'Unknown'
 export type PreyDrive = 'Mouse' | 'Bird' | 'Bug' | 'Unknown'
 export type HuntingLocation = 'Indoor' | 'Outdoor'
@@ -18,7 +22,8 @@ export interface Cat {
   photoUrl?: string
   weight?: number
   weightUnit: 'lbs' | 'kg'
-  color?: string
+  color?: CoatColor
+  pattern?: CoatPattern
   coatLength?: CoatLength
   chipId?: string
   locationCountry?: string
