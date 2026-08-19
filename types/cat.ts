@@ -13,6 +13,8 @@ export type EnergyLevel = 'Low' | 'Medium' | 'High' | 'Unknown'
 export type PreyDrive = 'Mouse' | 'Bird' | 'Bug' | 'Unknown'
 export type HuntingLocation = 'Indoor' | 'Outdoor'
 export type YesNoUnknown = 'Yes' | 'No' | 'Unknown'
+/** Derived from birthday rather than stored, since it changes on its own. */
+export type LifeStage = 'Kitten' | 'Adult' | 'Senior'
 
 export interface Cat {
   id: string

@@ -1,4 +1,34 @@
-import { Cat } from '@/types/cat'
+import { Cat, LifeStage } from '@/types/cat'
+
+/** Pounds per kilogram, for normalising weights to a single unit. */
+const LBS_PER_KG = 2.20462
+
+/** Normalises a cat's weight to pounds so comparisons don't mix units. */
+export function catWeightLbs(cat: Pick<Cat, 'weight' | 'weightUnit'>): number | undefined {
+  if (cat.weight === undefined) return undefined
+  return cat.weightUnit === 'kg' ? cat.weight * LBS_PER_KG : cat.weight
+}
+
+/**
+ * Life stage from birthday, using the common veterinary split: under a year is
+ * a kitten, ten and over is senior. Returns undefined when no birthday is set,
+ * so callers can tell "unknown age" apart from "adult".
+ */
+export function catLifeStage(birthday?: string): LifeStage | undefined {
+  if (!birthday) return undefined
+  const birth = new Date(birthday)
+  const now = new Date()
+  let years = now.getFullYear() - birth.getFullYear()
+  // Subtract a year if this year's birthday hasn't come round yet.
+  const hasHadBirthdayThisYear =
+    now.getMonth() > birth.getMonth() ||
+    (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate())
+  if (!hasHadBirthdayThisYear) years--
+
+  if (years < 1) return 'Kitten'
+  if (years >= 10) return 'Senior'
+  return 'Adult'
+}
 
 /**
  * Human-readable coat description, e.g. "Black Tabby", "Calico", "Gray".
