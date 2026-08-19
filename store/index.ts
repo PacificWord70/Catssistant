@@ -1,5 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import catsReducer from '@/store/catsSlice'
+import itemsReducer from '@/store/itemsSlice'
+import scheduleReducer from '@/store/scheduleSlice'
 
 /**
  * The single store. One per app, created once per browser tab.
@@ -16,5 +18,7 @@ import catsReducer from '@/store/catsSlice'
 export const store = configureStore({
   reducer: {
     cats: catsReducer,
+    schedule: scheduleReducer,
+    items: itemsReducer,
   },
 })

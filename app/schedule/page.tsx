@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCats, getScheduleEvents, saveScheduleEvent, deleteScheduleEvent } from '@/lib/storage'
-import { Cat } from '@/types/cat'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { persistScheduleEvent, removeScheduleEvent } from '@/store/scheduleSlice'
+import {
+  selectAllCats,
+  selectCatsLoaded,
+  selectScheduleEvents,
+  selectScheduleLoaded,
+} from '@/store/selectors'
 import { ScheduleEvent } from '@/types/scheduleEvent'
 import { buildMonthGrid, formatDateLabel, formatTimesLabel, toDateKey, CATEGORY_EMOJI, adjustedDateNote } from '@/lib/scheduleUtils'
 import ScheduleCalendar from '@/components/ScheduleCalendar'
@@ -12,9 +18,16 @@ import Reveal from '@/components/motion/Reveal'
 
 export default function SchedulePage() {
   const router = useRouter()
-  const [cats, setCats] = useState<Cat[]>([])
-  const [events, setEvents] = useState<ScheduleEvent[]>([])
-  const [loaded, setLoaded] = useState(false)
+  const dispatch = useAppDispatch()
+  const cats = useAppSelector(selectAllCats)
+  const events = useAppSelector(selectScheduleEvents)
+  const catsLoaded = useAppSelector(selectCatsLoaded)
+  const scheduleLoaded = useAppSelector(selectScheduleLoaded)
+  const loaded = catsLoaded && scheduleLoaded
+
+  // Which month is shown and which day is picked stay local. They're view state:
+  // meaningful only to this screen, and there's no reason for them to survive
+  // navigating away.
   const [currentMonth, setCurrentMonth] = useState(() => {
     const d = new Date()
     return new Date(d.getFullYear(), d.getMonth(), 1)
@@ -23,27 +36,18 @@ export default function SchedulePage() {
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | 'new' | null>(null)
 
   useEffect(() => {
-    const storedCats = getCats()
-    if (storedCats.length === 0) {
-      router.replace('/onboarding')
-      return
-    }
-    setCats(storedCats)
-    setEvents(getScheduleEvents())
-    setLoaded(true)
-  }, [router])
+    if (loaded && cats.length === 0) router.replace('/onboarding')
+  }, [loaded, cats.length, router])
 
-  if (!loaded) return null
+  if (!loaded || cats.length === 0) return null
 
   function handleSave(event: ScheduleEvent) {
-    saveScheduleEvent(event)
-    setEvents(getScheduleEvents())
+    dispatch(persistScheduleEvent(event))
     setEditingEvent(null)
   }
 
   function handleDelete(id: string) {
-    deleteScheduleEvent(id)
-    setEvents(getScheduleEvents())
+    dispatch(removeScheduleEvent(id))
     setEditingEvent(null)
   }
 

@@ -35,3 +35,37 @@ export const selectCatById = (id: string) =>
 export const selectCatsByNewest = createSelector([selectAllCats], cats =>
   [...cats].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
 )
+
+// ─── Schedule ─────────────────────────────────────────────────────────────────
+
+export const selectScheduleEvents = (state: RootState) => state.schedule.items
+export const selectScheduleLoaded = (state: RootState) => state.schedule.loaded
+
+/** Events involving one cat, for a per-cat view of its care history. */
+export const selectEventsForCat = (catId: string) =>
+  createSelector([selectScheduleEvents], events =>
+    events.filter(e => e.catIds.includes(catId)),
+  )
+
+// ─── Items ────────────────────────────────────────────────────────────────────
+
+export const selectHouseholdItems = (state: RootState) => state.items.items
+export const selectCatalog = (state: RootState) => state.items.catalog
+export const selectItemsLoaded = (state: RootState) => state.items.loaded
+
+/**
+ * Catalogue as a Map keyed by id, so a list of items can resolve product names
+ * without a linear search per row.
+ *
+ * Memoised because it builds a new Map — an unmemoised version would return a
+ * different reference every call and re-render every subscriber on any state
+ * change anywhere in the store.
+ */
+export const selectCatalogById = createSelector([selectCatalog], catalog =>
+  new Map(catalog.map(p => [p.id, p])),
+)
+
+/** Items the user is currently using, as opposed to ones they've stopped. */
+export const selectCurrentItems = createSelector([selectHouseholdItems], items =>
+  items.filter(i => i.status === 'current'),
+)

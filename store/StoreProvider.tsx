@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react'
 import { Provider } from 'react-redux'
 import { store } from '@/store'
 import { loadCats } from '@/store/catsSlice'
+import { loadItems } from '@/store/itemsSlice'
+import { loadScheduleEvents } from '@/store/scheduleSlice'
 
 /**
  * Makes the store available to every component below it.
@@ -24,9 +26,11 @@ export default function StoreProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     if (loadedRef.current) return
     loadedRef.current = true
-    // localStorage isn't available during server rendering, so the read has to
+    // localStorage isn't available during server rendering, so the reads have to
     // happen in an effect — after the component has mounted in the browser.
     store.dispatch(loadCats())
+    store.dispatch(loadScheduleEvents())
+    store.dispatch(loadItems())
   }, [])
 
   return <Provider store={store}>{children}</Provider>

@@ -1,15 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { getCats } from '@/lib/storage'
+import { useState } from 'react'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { persistHouseholdItem, removeHouseholdItem } from '@/store/itemsSlice'
 import {
-  getCatalogProducts,
-  getHouseholdItems,
-  saveCatalogProduct,
-  saveHouseholdItem,
-  deleteHouseholdItem,
-} from '@/lib/itemStorage'
-import { Cat } from '@/types/cat'
+  selectAllCats,
+  selectCatalog,
+  selectHouseholdItems,
+  selectItemsLoaded,
+} from '@/store/selectors'
 import { CatalogProduct, HouseholdItem, ProductCategory } from '@/types/item'
 import { CATEGORY_ORDER, PRODUCT_CATEGORIES } from '@/lib/itemAttributes'
 import ItemForm from '@/components/ItemForm'
@@ -20,51 +19,42 @@ type StatusFilter = 'current' | 'past' | 'all'
 type SortBy = 'category' | 'name'
 
 export default function ItemsPage() {
-  const [cats, setCats] = useState<Cat[]>([])
-  const [products, setProducts] = useState<CatalogProduct[]>([])
-  const [items, setItems] = useState<HouseholdItem[]>([])
-  const [loaded, setLoaded] = useState(false)
+  const dispatch = useAppDispatch()
+  const cats = useAppSelector(selectAllCats)
+  const products = useAppSelector(selectCatalog)
+  const items = useAppSelector(selectHouseholdItems)
+  const loaded = useAppSelector(selectItemsLoaded)
 
+  // Filters and sort are view state — they belong to this screen only.
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('current')
   const [sortBy, setSortBy] = useState<SortBy>('category')
   const [editing, setEditing] = useState<HouseholdItem | 'new' | null>(null)
 
-  useEffect(() => {
-    setCats(getCats())
-    setProducts(getCatalogProducts())
-    setItems(getHouseholdItems())
-    setLoaded(true)
-  }, [])
-
   if (!loaded) return null
 
-  function reload() {
-    setProducts(getCatalogProducts())
-    setItems(getHouseholdItems())
-  }
-
+  // No reload() any more. Dispatching updates the store, and every subscriber
+  // re-renders on its own — that manual re-fetch after each write was exactly the
+  // bookkeeping the store removes.
   function handleSave(item: HouseholdItem, newProduct?: CatalogProduct) {
-    if (newProduct) saveCatalogProduct(newProduct)
-    saveHouseholdItem(item)
-    reload()
+    dispatch(persistHouseholdItem(item, newProduct))
     setEditing(null)
   }
 
   function handleDelete(id: string) {
-    deleteHouseholdItem(id)
-    reload()
+    dispatch(removeHouseholdItem(id))
     setEditing(null)
   }
 
   function handleMarkPast(e: React.MouseEvent, item: HouseholdItem) {
     e.stopPropagation()
-    saveHouseholdItem({
-      ...item,
-      status: 'past',
-      dateEnded: new Date().toISOString().slice(0, 10),
-    })
-    reload()
+    dispatch(
+      persistHouseholdItem({
+        ...item,
+        status: 'past',
+        dateEnded: new Date().toISOString().slice(0, 10),
+      }),
+    )
   }
 
   const rows = items
