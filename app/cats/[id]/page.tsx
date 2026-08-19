@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getCatById } from '@/lib/storage'
-import { Cat } from '@/types/cat'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { catSelected } from '@/store/catsSlice'
+import { selectCatsLoaded, selectSelectedCat } from '@/store/selectors'
 import { catAgeLabel, catHumanAge } from '@/lib/utils'
 import BreedTag from '@/components/BreedTag'
 import CatAvatar from '@/components/CatAvatar'
@@ -14,13 +15,23 @@ const FEATURE_TABS = ['Feeding', 'Health', 'Litter', 'Meds', 'Notes']
 export default function CatProfilePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const [cat, setCat] = useState<Cat | null>(null)
+  const dispatch = useAppDispatch()
+  const loaded = useAppSelector(selectCatsLoaded)
+  const cat = useAppSelector(selectSelectedCat)
+
+  // Tell the store which cat this page is about. Other components can then read
+  // selectSelectedCat instead of being passed the cat down through props.
+  useEffect(() => {
+    dispatch(catSelected(id))
+    // Clear it on the way out so a stale selection doesn't leak to the next page.
+    return () => { dispatch(catSelected(null)) }
+  }, [id, dispatch])
 
   useEffect(() => {
-    const found = getCatById(id)
-    if (!found) { router.replace('/'); return }
-    setCat(found)
-  }, [id, router])
+    // Only a genuine miss should redirect — before storage is read, every id
+    // looks missing.
+    if (loaded && !cat) router.replace('/')
+  }, [loaded, cat, router])
 
   if (!cat) return null
 

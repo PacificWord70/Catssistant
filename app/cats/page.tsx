@@ -1,29 +1,29 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getCats } from '@/lib/storage'
-import { Cat } from '@/types/cat'
+import { useAppSelector } from '@/store/hooks'
+import { selectCatsByNewest, selectCatsLoaded } from '@/store/selectors'
 import CatCard from '@/components/CatCard'
 import Reveal from '@/components/motion/Reveal'
 
 export default function CatsPage() {
-  const [cats, setCats] = useState<Cat[]>([])
-  const [loaded, setLoaded] = useState(false)
   const router = useRouter()
+  // Read straight from the store. No local copy, no reading storage here — the
+  // provider loaded it once at startup, and this stays current if a cat changes
+  // anywhere else in the app.
+  const cats = useAppSelector(selectCatsByNewest)
+  const loaded = useAppSelector(selectCatsLoaded)
 
+  // Redirecting is a side effect, so it belongs in an effect rather than in the
+  // render path. Waiting for `loaded` avoids bouncing to onboarding during the
+  // moment before storage has been read.
   useEffect(() => {
-    const stored = getCats()
-    if (stored.length === 0) {
-      router.replace('/onboarding')
-    } else {
-      setCats(stored)
-      setLoaded(true)
-    }
-  }, [router])
+    if (loaded && cats.length === 0) router.replace('/onboarding')
+  }, [loaded, cats.length, router])
 
-  if (!loaded) return null
+  if (!loaded || cats.length === 0) return null
 
   return (
     <div className="bg-white rounded-3xl shadow-soft p-7 min-h-[calc(100vh-8rem)]">

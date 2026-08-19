@@ -3,16 +3,17 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getCats } from '@/lib/storage'
+import { useAppSelector } from '@/store/hooks'
+import { selectAllCats, selectCatsLoaded } from '@/store/selectors'
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const loaded = useAppSelector(selectCatsLoaded)
+  const cats = useAppSelector(selectAllCats)
 
   useEffect(() => {
-    if (getCats().length > 0) {
-      router.replace('/')
-    }
-  }, [router])
+    if (loaded && cats.length > 0) router.replace('/')
+  }, [loaded, cats.length, router])
 
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">

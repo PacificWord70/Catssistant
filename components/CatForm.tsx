@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, ChangeEvent, FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { Cat } from '@/types/cat'
-import { saveCat } from '@/lib/storage'
+import { useAppDispatch } from '@/store/hooks'
+import { persistCat } from '@/store/catsSlice'
 import { BREEDS } from '@/lib/breeds'
 import { COAT_COLORS, COAT_LENGTHS, COAT_PATTERNS, ENERGY_LEVELS, PREY_DRIVES, HUNTING_LOCATIONS, KNOWN_ILLNESSES, YES_NO_UNKNOWN } from '@/lib/catAttributes'
 import BreedTag from '@/components/BreedTag'
@@ -103,6 +104,10 @@ interface Props { existing?: Cat; prospective?: boolean }
 
 export default function CatForm({ existing, prospective }: Props) {
   const router = useRouter()
+  const dispatch = useAppDispatch()
+  // Form fields stay local state on purpose. Only the *saved* cat belongs in the
+  // store — putting every keystroke there would dispatch an action per character
+  // and re-render subscribers for a value nothing else has any use for yet.
   const [cat, setCat] = useState<Cat>(existing ?? newCat())
   const [breedInput, setBreedInput] = useState('')
   const [breedOpen, setBreedOpen] = useState(false)
@@ -233,7 +238,9 @@ export default function CatForm({ existing, prospective }: Props) {
     if (!cat.name.trim()) return
     const phone = cat.vet?.phone ?? ''
     if (phone && !isPhoneValid(phone)) return
-    saveCat(cat)
+    // Writes to localStorage and updates the store together, so every open view
+    // of this cat reflects the change immediately.
+    dispatch(persistCat(cat))
     router.push(`/cats/${cat.id}`)
   }
 

@@ -1,22 +1,25 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getCatById } from '@/lib/storage'
-import { Cat } from '@/types/cat'
+import { useAppSelector } from '@/store/hooks'
+import { selectCatById, selectCatsLoaded } from '@/store/selectors'
 import CatForm from '@/components/CatForm'
 
 export default function EditCatPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const [cat, setCat] = useState<Cat | null>(null)
+  const loaded = useAppSelector(selectCatsLoaded)
+  // selectCatById is a factory — it builds a selector for this specific id, so it
+  // has to be memoised. Calling it inline would create a new selector every
+  // render and throw away the memoisation it exists to provide.
+  const selectCat = useMemo(() => selectCatById(id), [id])
+  const cat = useAppSelector(selectCat)
 
   useEffect(() => {
-    const found = getCatById(id)
-    if (!found) { router.replace('/cats'); return }
-    setCat(found)
-  }, [id, router])
+    if (loaded && !cat) router.replace('/cats')
+  }, [loaded, cat, router])
 
   if (!cat) return null
 
