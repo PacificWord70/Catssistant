@@ -1,6 +1,12 @@
 import { CoatLength, EnergyLevel, HuntingLocation, LifeStage, PreyDrive } from '@/types/cat'
 
-export type ProductCategory =
+/**
+ * Categories for the curated recommendation catalogue. Deliberately distinct
+ * from ProductCategory in types/item.ts, which categorises what a user already
+ * owns — these are finer-grained because recommendations need to tell a slicker
+ * brush apart from a nail clipper, where an inventory just says "Tool".
+ */
+export type RecommendedCategory =
   | 'Brush'
   | 'Grooming'
   | 'Litter'
@@ -32,10 +38,15 @@ export interface ProductMatch {
   maxWeightLbs?: number
 }
 
-export interface Product {
+/**
+ * A product the app can recommend. Separate from CatalogProduct in
+ * types/item.ts: that records something a user owns, this is a curated entry
+ * carrying the criteria that decide who it suits.
+ */
+export interface RecommendedProduct {
   id: string
   name: string
-  category: ProductCategory
+  category: RecommendedCategory
   /** One line explaining what the product is for. Shown on the results card. */
   description: string
   match: ProductMatch

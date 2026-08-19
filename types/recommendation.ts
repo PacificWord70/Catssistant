@@ -1,4 +1,4 @@
-import { Product } from '@/types/product'
+import { RecommendedProduct } from '@/types/product'
 
 /**
  * A product matched to a cat, with the reasoning kept alongside it.
@@ -10,7 +10,7 @@ import { Product } from '@/types/product'
  * asserted on directly in tests.
  */
 export interface Recommendation {
-  product: Product
+  product: RecommendedProduct
   /** Number of criteria the cat satisfied. Higher sorts first. */
   score: number
   /**

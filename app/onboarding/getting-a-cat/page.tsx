@@ -6,7 +6,7 @@ export default function GettingACatPage() {
       <div className="text-8xl mb-6 select-none">🔍</div>
       <h1 className="font-display text-4xl text-brand-brown mb-3">Exciting! Where are you in the process?</h1>
       <p className="text-brand-brown/60 mb-12 max-w-md text-lg leading-relaxed">
-        We'll tailor things a bit depending on where you're at.
+        We&apos;ll tailor things a bit depending on where you&apos;re at.
       </p>
       <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
         <Link
