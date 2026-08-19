@@ -217,6 +217,128 @@ alpha. Done on an offscreen canvas so the tint affects only that layer.
 
 ---
 
+## Redux Toolkit
+
+### The problem it solves here
+
+Before the store, every page did this independently:
+
+```tsx
+const [cats, setCats] = useState<Cat[]>([])
+useEffect(() => { setCats(getCats()) }, [])
+```
+
+Three pages, three private copies of the same list. Renaming a cat on the
+profile page left the grid showing the old name until it remounted.
+
+A **store** is one shared box of state living outside the component tree. One
+cat list; everyone reads it; change it once and everything updates.
+
+### Vocabulary
+
+| Term | What it is |
+| --- | --- |
+| Store | The single state object. One per app. |
+| Slice | A named section of it (`cats`, `schedule`, `items`) |
+| Action | A message describing what happened (`catSaved`) |
+| Reducer | `(state, action) => newState`. Where the change happens. |
+| Selector | A function that reads one piece out |
+| Thunk | A function that gets `dispatch`, for side effects |
+
+Flow: component **dispatches** → **reducer** produces new state → **selectors**
+notify only subscribed components → those re-render.
+
+### Reducers look like they mutate, but don't
+
+```ts
+if (index >= 0) state.items[index] = cat
+else state.items.push(cat)
+```
+
+Illegal in plain Redux. Redux Toolkit runs reducers through **Immer**, which
+records writes against a draft and produces a new immutable object. Readable
+code, immutability preserved.
+
+### Side effects go in thunks
+
+Reducers must be pure — same input, same output, always. A reducer touching
+`localStorage` gives different results depending on when it ran, which breaks
+DevTools replay. So:
+
+```ts
+export function persistCat(cat: Cat) {
+  return (dispatch: AppDispatch) => {
+    writeToStorage(cat)   // side effect first
+    dispatch(catSaved(cat))  // then the plain action
+  }
+}
+```
+
+### Infer types, don't declare them
+
+```ts
+export type RootState = ReturnType<typeof store.getState>
+export type AppDispatch = typeof store.dispatch
+```
+
+Adding a slice updates every selector's types automatically. Hand-writing this
+shape is the standard way Redux types silently go stale.
+
+These live in their own file so slices can import `AppDispatch` without a
+circular dependency on the store. `import type` is erased at compile time, so
+there's no runtime cycle either way.
+
+### Memoise selectors that derive
+
+```ts
+export const selectCatalogById = createSelector([selectCatalog], catalog =>
+  new Map(catalog.map(p => [p.id, p])),
+)
+```
+
+A plain function returning a **new** array, object, or Map hands back a
+different reference every call, so subscribers re-render on any state change
+anywhere. `createSelector` memoises: it only recomputes when its inputs change.
+
+Selectors that just read an existing value (`state.cats.items`) don't need it —
+the reference is already stable.
+
+**Selector factories must be memoised at the call site:**
+
+```ts
+const selectCat = useMemo(() => selectCatById(id), [id])
+```
+
+`selectCatById(id)` *returns* a selector. Calling it inline builds a new one
+every render and throws away the memoisation it exists to provide.
+
+### What doesn't belong in the store
+
+Worth being able to argue, because "put everything in Redux" is the usual
+overcorrection:
+
+- **Form fields** — `CatForm` keeps them in `useState`. Dispatching per keystroke
+  would re-render subscribers for a half-typed value nothing else needs. Only the
+  *saved* cat goes in.
+- **View state** — which calendar month is showing, which filters are set. It
+  belongs to one screen and shouldn't survive navigating away.
+- **Genuinely static data** — `lib/breeds.ts`, the option lists. Plain imports;
+  nothing to keep in sync.
+
+The real test for store membership is not "is it user-specific" but **"does it
+change at runtime, and do multiple components need to see the change?"** That's
+why the product catalogue is in the store despite being conceptually shared: it's
+mutable, so it has the same staleness problem as anything else.
+
+### The lint rule that confirmed it
+
+`react-hooks/set-state-in-effect` fired five times on exactly the
+read-storage-into-useState pattern the store replaced, and went silent as each
+page was converted. Useful signal that the change was right rather than merely
+different.
+
+---
+
 ## React patterns
 
 ### Dependency arrays and object identity
