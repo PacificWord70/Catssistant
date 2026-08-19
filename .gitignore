@@ -1,9 +1,34 @@
 # Node.js / Next.js
 node_modules/
 .next/
-.env*.local
+dist/
 npm-debug.log*
 *.tsbuildinfo
+
+# Secrets. Next only ignores .env*.local by default, on the convention that a
+# plain .env holds shared non-secret defaults. Ignoring both, so there is no
+# way to commit a key by putting it in the wrong file.
+.env
+.env*.local
+
+# Artwork. No images are committed to this repo.
+#
+# Hand-drawn avatar layers go here. Next only serves static files from public/,
+# so the folder has to live inside it to be fetchable at runtime — but it stays
+# gitignored, so real art can be dropped in locally without landing in a
+# commit. CatAvatar falls back to its code-drawn placeholder when a layer is
+# missing, which is the normal state for a fresh clone.
+public/art-assets/
+
+# No image files of any kind.
+# Note: git keeps tracking files committed before this rule was added (the
+# brand logos, the docs/design mockups), so those are unaffected. New images
+# need an explicit `git add -f` to get in, which is the point.
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
 
 # Xcode
 #
