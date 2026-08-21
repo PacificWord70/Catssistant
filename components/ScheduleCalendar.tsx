@@ -56,8 +56,11 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
                 ${!cell.inCurrentMonth ? 'opacity-30' : ''}`}
             >
               <span className={cell.isToday && !isSelected ? 'font-bold text-brand-orange' : ''}>{cell.dayNumber}</span>
+              {/* Emoji size steps up on wider screens. At the smallest widths a day
+                  cell is only about 45px across, and three emojis plus a "+N" at
+                  the larger size would spill past its edge. */}
               {cell.items.length > 0 && (
-                <span className="text-[10px] leading-none">
+                <span className="text-xs sm:text-sm leading-none tracking-tighter">
                   {categories.map(c => CATEGORY_EMOJI[c]).join('')}
                   {extra > 0 && `+${extra}`}
                 </span>
