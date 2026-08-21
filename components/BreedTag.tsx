@@ -8,7 +8,7 @@ import { BREEDS, breedSlug } from '@/lib/breeds'
 const BREED_MAP = new Map(BREEDS.map(b => [b.name, b]))
 
 /** How long to keep hovering before the full description opens up. */
-const EXPAND_DELAY_MS = 5000
+const EXPAND_DELAY_MS = 3000
 
 /**
  * Roughly how tall the tooltip gets once expanded. Used only to decide which
