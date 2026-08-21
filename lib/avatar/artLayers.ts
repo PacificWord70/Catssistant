@@ -1,6 +1,6 @@
 import { Cat, CoatLength } from '@/types/cat'
 import { AVATAR_VIEWBOX } from '@/lib/avatar/placeholder'
-import { HAIRLESS_PALETTE, paletteFor } from '@/lib/avatar/palette'
+import { tonesFor } from '@/lib/avatar/palette'
 
 /**
  * Optional hand-drawn artwork for the avatar.
@@ -116,15 +116,17 @@ function tintLayer(img: HTMLImageElement, color: string, cacheKey: string): HTML
  * to, so this lines up with the placeholder it replaces.
  */
 export function drawArtLayers(ctx: CanvasRenderingContext2D, layers: ArtLayers, cat: CatArtInput) {
-  const palette = cat.coatLength === 'Hairless' ? HAIRLESS_PALETTE : paletteFor(cat.color)
+  const tones = tonesFor(cat.color, cat.pattern, cat.coatLength)
   const variant = baseVariant(cat.coatLength)
 
-  const body = tintLayer(layers.base, palette.base, `base-${variant}:${palette.base}`)
+  const body = tintLayer(layers.base, tones.base, `base-${variant}:${tones.base}`)
   ctx.drawImage(body, 0, 0, AVATAR_VIEWBOX, AVATAR_VIEWBOX)
 
   if (layers.pattern) {
-    // Markings use the shade tone so they read against the body colour.
-    const markings = tintLayer(layers.pattern, palette.shade, `pattern-${cat.pattern}:${palette.shade}`)
+    // `marking` already accounts for the pattern: a darker tone of the coat for
+    // tonal patterns like tabby, and a second hue for the two-colour ones, so
+    // a tuxedo's bib comes out white instead of near-invisible dark grey.
+    const markings = tintLayer(layers.pattern, tones.marking, `pattern-${cat.pattern}:${tones.marking}`)
     ctx.drawImage(markings, 0, 0, AVATAR_VIEWBOX, AVATAR_VIEWBOX)
   }
 }
