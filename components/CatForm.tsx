@@ -292,6 +292,10 @@ export default function CatForm({ existing, prospective }: Props) {
               value={breedInput}
               onChange={e => { setBreedInput(e.target.value); setBreedOpen(true) }}
               onFocus={() => setBreedOpen(true)}
+              // onFocus only fires when focus is gained, so it does nothing if the
+              // input already has it. Clicking a focused input still has to reopen
+              // the list after Escape has closed it.
+              onClick={() => setBreedOpen(true)}
               onKeyDown={e => {
                 if (e.key === 'Enter') { e.preventDefault(); addBreed(breedInput) }
                 if (e.key === 'Escape') setBreedOpen(false)
@@ -313,7 +317,13 @@ export default function CatForm({ existing, prospective }: Props) {
                       <li key={b}>
                         <button
                           type="button"
-                          onMouseDown={e => { e.preventDefault(); addBreed(b); setBreedOpen(false); setBreedTooltip(null) }}
+                          // The list deliberately stays open after a pick. This is a
+                          // multi-select and the list already drops anything chosen,
+                          // so closing it made adding a second breed impossible
+                          // without clicking away first: preventDefault keeps focus
+                          // in the input, and onFocus cannot refire on an input that
+                          // never lost focus.
+                          onMouseDown={e => { e.preventDefault(); addBreed(b); setBreedTooltip(null) }}
                           onMouseEnter={e => {
                             if (!info) return
                             const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
