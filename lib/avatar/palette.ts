@@ -44,6 +44,9 @@ const PALETTES: Record<CoatColor, { base: string; shade: string }> = {
   Orange: { base: '#E08A45', shade: '#B96A2C' },
   Brown: { base: '#8B5E3C', shade: '#68452B' },
   Cream: { base: '#EBD9BE', shade: '#D0B892' },
+  Silver: { base: '#C7CBD0', shade: '#9AA1A9' },
+  Chocolate: { base: '#6B4630', shade: '#4E3222' },
+  Lilac: { base: '#B9A8A8', shade: '#968484' },
 }
 
 /** Used when a cat has no colour recorded — a neutral tan. */

@@ -6,7 +6,16 @@ export interface Vet {
 
 export type CoatLength = 'Hairless' | 'Short' | 'Medium' | 'Long' | 'Unknown'
 /** The cat's base coat colour. Tints the avatar's body layer. */
-export type CoatColor = 'Black' | 'White' | 'Gray' | 'Orange' | 'Brown' | 'Cream'
+export type CoatColor =
+  | 'Black'
+  | 'White'
+  | 'Gray'
+  | 'Orange'
+  | 'Brown'
+  | 'Cream'
+  | 'Silver'
+  | 'Chocolate'
+  | 'Lilac'
 /** Markings drawn over the base colour. 'Solid' means no overlay. */
 export type CoatPattern = 'Solid' | 'Tabby' | 'Calico' | 'Tortoiseshell' | 'Tuxedo' | 'Colorpoint'
 export type EnergyLevel = 'Low' | 'Medium' | 'High' | 'Unknown'
