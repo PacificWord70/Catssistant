@@ -65,28 +65,34 @@ export default function NavBar() {
           <CatssistantLogo horizontal height={scrolled ? 28 : 34} />
         </Link>
         <div className="flex items-center gap-1">
-          {PRIMARY_LINKS.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              onMouseEnter={() => setHoveredHref(href)}
-              onMouseLeave={() => setHoveredHref(null)}
-              className="relative px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              {indicatorTarget === href && (
-                <motion.span
-                  layoutId={reduceMotion ? undefined : 'navIndicator'}
-                  className="absolute inset-0 rounded-lg bg-white/15"
-                  transition={
-                    reduceMotion
-                      ? { duration: 0 }
-                      : { type: 'spring', stiffness: 380, damping: 30 }
-                  }
-                />
-              )}
-              <span className="relative">{label}</span>
-            </Link>
-          ))}
+          {/* Hidden on narrow screens. The full row — logo, four links, Add Cat
+              and the menu button — needs about 400px of its own, so on a phone
+              it ran past the edge of the viewport and took the whole page into
+              a sideways scroll. Below md these links live in the menu instead. */}
+          <div className="hidden md:flex items-center gap-1">
+            {PRIMARY_LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                onMouseEnter={() => setHoveredHref(href)}
+                onMouseLeave={() => setHoveredHref(null)}
+                className="relative px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                {indicatorTarget === href && (
+                  <motion.span
+                    layoutId={reduceMotion ? undefined : 'navIndicator'}
+                    className="absolute inset-0 rounded-lg bg-white/15"
+                    transition={
+                      reduceMotion
+                        ? { duration: 0 }
+                        : { type: 'spring', stiffness: 380, damping: 30 }
+                    }
+                  />
+                )}
+                <span className="relative">{label}</span>
+              </Link>
+            ))}
+          </div>
           <Link href="/cats/new" className="px-3 py-2 rounded-lg text-sm font-medium bg-brand-slate hover:bg-brand-slate/90 transition-colors">
             + Add Cat
           </Link>
@@ -104,12 +110,30 @@ export default function NavBar() {
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-full mt-1 bg-white rounded-2xl shadow-lg border border-brand-tan/40 py-1 min-w-[140px] z-50">
+                {/* Only below md, where the bar itself is not showing these. */}
+                <div className="md:hidden">
+                  {PRIMARY_LINKS.map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMenuOpen(false)}
+                      className={`block px-4 py-2.5 text-sm transition-colors hover:bg-brand-tan/10 ${
+                        pathname === href ? 'text-brand-orange font-medium' : 'text-brand-charcoal'
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                  <div className="my-1 border-t border-brand-tan/30" />
+                </div>
                 {MORE_LINKS.map(({ href, label }) => (
                   <Link
                     key={href}
                     href={href}
                     onClick={() => setMenuOpen(false)}
-                    className="block px-4 py-2.5 text-sm text-brand-charcoal hover:bg-brand-tan/10 transition-colors"
+                    className={`block px-4 py-2.5 text-sm transition-colors hover:bg-brand-tan/10 ${
+                      pathname === href ? 'text-brand-orange font-medium' : 'text-brand-charcoal'
+                    }`}
                   >
                     {label}
                   </Link>
