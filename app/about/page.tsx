@@ -1,3 +1,12 @@
+/**
+ * The Patreon paragraph in the Privacy section is written and ready, but parked
+ * until we want to ask people for money. Flip this to true to bring it back.
+ *
+ * Kept in the file rather than deleted so the wording survives intact and does
+ * not have to be rewritten or dug back out of git history.
+ */
+const SHOW_SUPPORT_NOTE: boolean = false
+
 export default function AboutPage() {
   return (
     <div className="max-w-2xl mx-auto">
@@ -111,12 +120,14 @@ export default function AboutPage() {
             retargeting, or third-party data brokers. What you do on Catssistant stays on
             Catssistant.
           </p>
-          <p className="text-brand-charcoal/80 leading-relaxed mt-3">
-            If you&apos;d like to support Catssistant directly, we have a Patreon where you can
-            contribute on your own terms. It means a lot and helps us keep building. And if you
-            never donate, never click an ad, and never buy a thing — thank you for being here.
-            That matters too.
-          </p>
+          {SHOW_SUPPORT_NOTE && (
+            <p className="text-brand-charcoal/80 leading-relaxed mt-3">
+              If you&apos;d like to support Catssistant directly, we have a Patreon where you can
+              contribute on your own terms. It means a lot and helps us keep building. And if you
+              never donate, never click an ad, and never buy a thing — thank you for being here.
+              That matters too.
+            </p>
+          )}
         </section>
 
       </div>
