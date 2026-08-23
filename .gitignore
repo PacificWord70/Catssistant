@@ -35,6 +35,15 @@ public/art-assets/*
 *.gif
 *.webp
 
+# The one exception to the no-images rule: the pet photos on the About page.
+# They are real content rather than artwork, they have to ship with the site to
+# render on it, and the blanket rule above still covers everything else. Their
+# metadata is stripped before they are added — see the note in app/about/page.tsx.
+!public/images/pets/*.jpg
+!public/images/pets/*.jpeg
+!public/images/pets/*.png
+!public/images/pets/*.webp
+
 # Xcode
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
