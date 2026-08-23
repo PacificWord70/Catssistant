@@ -5,14 +5,13 @@ import { CoatLength } from '@/types/cat'
  *
  * The avatar draws a head at 28px in the nav and 128px in a card. At those
  * sizes most breed detail is invisible — coat sheen, body length, tail set all
- * vanish. Three traits survive, so those are the only ones recorded here:
- * face shape, hair length, and pattern.
+ * vanish. Three traits survive, so those are the only ones recorded: face
+ * shape, hair length, and pattern.
  *
- * Face and hair are properties of the *breed* — every Persian has a flat face.
- * Pattern mostly is not: a Maine Coon can be any colour or marking. The
- * exception is breeds defined by their coat, like Siamese or Bengal, where the
- * pattern is part of what makes it that breed. Those carry a `pattern`; the
- * rest leave it undefined, meaning "whatever the owner picked".
+ * Every category holds at least two breeds. A category of one is not worth a
+ * drawing, so single breeds are approximated into the closest group and the
+ * compromise is noted on the entry. Losing a Scottish Fold's ears costs less
+ * than a whole drawing used once.
  */
 
 /**
@@ -20,27 +19,40 @@ import { CoatLength } from '@/types/cat'
  * breeders classify cats.
  *
  * Cat fanciers group breeds by *body* type — cobby, foreign, oriental. That is
- * the wrong axis here, because the avatar never draws a body. Ear shape and
+ * the wrong axis here, because the avatar never draws a body. Ear size and
  * muzzle length are what survive being shrunk to 28px.
  */
-export type FaceShape = 'Round' | 'Wedge' | 'Flat' | 'BigEars' | 'Folded'
+export type FaceShape = 'Round' | 'Wedge' | 'Flat' | 'BigEars'
 
 /**
- * Patterns a breed is defined by. Kept as its own list rather than reusing
- * CoatPattern, because these describe the *breed* while CoatPattern describes
- * an individual cat, and the two lists only partly overlap.
+ * Hair as the artwork treats it: an overlay on top of a face, not part of it.
  *
- * 'Ticked' and 'Spotted' have no CoatPattern equivalent yet — adding them there
- * is a separate decision, since it changes the options in the cat form.
+ * Three buckets rather than the five in CoatLength, because 'Medium' and
+ * 'Unknown' have no drawing of their own — a medium coat reads as short once
+ * shrunk, so it borrows that overlay. Keeping this separate from CoatLength
+ * means the stored data stays as precise as the owner entered it, and only the
+ * drawing rounds off.
  */
-export type BreedPattern = 'Colorpoint' | 'Spotted' | 'Ticked' | 'Solid'
+export type DrawHair = 'Long' | 'Short' | 'None'
+
+/**
+ * Pattern groups that get their own artwork.
+ *
+ * 'Ticked' is deliberately absent. An Abyssinian's coat is banded hair by hair
+ * with no marking shape at all, so at icon size it reads as a plain warm cat —
+ * 'Solid' draws it correctly by drawing nothing.
+ */
+export type DrawPattern = 'Solid' | 'Tabby' | 'Spotted' | 'Colorpoint'
 
 export interface BreedTraits {
   face: FaceShape
-  hair: CoatLength
-  /** Only set when the breed is defined by its coat. Undefined means it varies. */
-  pattern?: BreedPattern
-  /** Why this breed sits where it does, when the placement is not obvious. */
+  hair: DrawHair
+  /**
+   * The pattern the breed always carries. Undefined means it varies by cat, so
+   * whatever the owner picked is used instead.
+   */
+  pattern?: DrawPattern
+  /** Records what was given up when a breed was approximated into a group. */
   note?: string
 }
 
@@ -50,51 +62,96 @@ export interface BreedTraits {
  * entry.
  */
 export const BREED_TRAITS: Record<string, BreedTraits> = {
-  Abyssinian: { face: 'Wedge', hair: 'Short', pattern: 'Ticked' },
+  // ─── Round ──────────────────────────────────────────────────────────────
   'American Shorthair': { face: 'Round', hair: 'Short' },
-  Balinese: { face: 'Wedge', hair: 'Long', pattern: 'Colorpoint' },
-  Bengal: { face: 'Wedge', hair: 'Short', pattern: 'Spotted' },
-  Bombay: { face: 'Round', hair: 'Short', pattern: 'Solid' },
-  Burmese: { face: 'Round', hair: 'Short', pattern: 'Solid' },
   Birman: { face: 'Round', hair: 'Long', pattern: 'Colorpoint' },
-  Chartreux: { face: 'Round', hair: 'Short', pattern: 'Solid' },
-  'Cornish Rex': { face: 'BigEars', hair: 'Short' },
-  'Devon Rex': { face: 'BigEars', hair: 'Short' },
+  Bombay: { face: 'Round', hair: 'Short', pattern: 'Solid' },
   'British Shorthair': { face: 'Round', hair: 'Short' },
+  Burmese: { face: 'Round', hair: 'Short', pattern: 'Solid' },
+  Chartreux: { face: 'Round', hair: 'Short', pattern: 'Solid' },
   'Domestic Shorthair': { face: 'Round', hair: 'Short' },
   'Domestic Longhair': { face: 'Round', hair: 'Long' },
-  'Egyptian Mau': { face: 'Wedge', hair: 'Short', pattern: 'Spotted' },
-  Himalayan: { face: 'Flat', hair: 'Long', pattern: 'Colorpoint' },
-  'Maine Coon': {
-    face: 'Wedge',
-    hair: 'Long',
-    note: 'Squarer muzzle than a true wedge, but the long-hair ruff is what reads at icon size.',
-  },
-  Persian: { face: 'Flat', hair: 'Long' },
-  Ragdoll: { face: 'Round', hair: 'Long', pattern: 'Colorpoint' },
   Manx: {
     face: 'Round',
     hair: 'Short',
     note: 'Defined by taillessness, which a head-only avatar cannot show.',
   },
+  Ragdoll: { face: 'Round', hair: 'Long', pattern: 'Colorpoint' },
+  'Scottish Fold': {
+    face: 'Round',
+    hair: 'Short',
+    note: 'Folded ears are its signature and are lost here. Its face is otherwise round, and one breed did not justify a drawing of its own.',
+  },
+  Siberian: { face: 'Round', hair: 'Long' },
+  Singapura: {
+    face: 'Round',
+    hair: 'Short',
+    pattern: 'Solid',
+    note: 'Ticked coat has no marking shape, so Solid draws it correctly.',
+  },
+
+  // ─── Wedge ──────────────────────────────────────────────────────────────
+  Abyssinian: {
+    face: 'Wedge',
+    hair: 'Short',
+    pattern: 'Solid',
+    note: 'Ticked coat has no marking shape, so Solid draws it correctly.',
+  },
+  Balinese: { face: 'Wedge', hair: 'Long', pattern: 'Colorpoint' },
+  Bengal: { face: 'Wedge', hair: 'Short', pattern: 'Spotted' },
+  'Egyptian Mau': { face: 'Wedge', hair: 'Short', pattern: 'Spotted' },
+  'Maine Coon': {
+    face: 'Wedge',
+    hair: 'Long',
+    note: 'Squarer muzzle than a true wedge, but the long ruff is what reads at icon size.',
+  },
   'Oriental Shorthair': { face: 'Wedge', hair: 'Short' },
   'Russian Blue': { face: 'Wedge', hair: 'Short', pattern: 'Solid' },
-  'Scottish Fold': {
-    face: 'Folded',
-    hair: 'Short',
-    note: 'Long-haired folds exist, but the ears are the recognisable part.',
-  },
-  Siamese: { face: 'Wedge', hair: 'Short', pattern: 'Colorpoint' },
-  Siberian: { face: 'Round', hair: 'Long' },
   Savannah: { face: 'Wedge', hair: 'Short', pattern: 'Spotted' },
-  Singapura: { face: 'Round', hair: 'Short', pattern: 'Ticked' },
-  Sphynx: { face: 'BigEars', hair: 'Hairless' },
+  Siamese: { face: 'Wedge', hair: 'Short', pattern: 'Colorpoint' },
   Tonkinese: { face: 'Wedge', hair: 'Short', pattern: 'Colorpoint' },
   'Turkish Angora': { face: 'Wedge', hair: 'Long' },
+
+  // ─── Flat ───────────────────────────────────────────────────────────────
+  Himalayan: { face: 'Flat', hair: 'Long', pattern: 'Colorpoint' },
+  Persian: { face: 'Flat', hair: 'Long' },
+
+  // ─── BigEars ────────────────────────────────────────────────────────────
+  'Cornish Rex': {
+    face: 'BigEars',
+    hair: 'None',
+    note: 'Has a fine curly coat, but it reads as bare skin at icon size and shares the Sphynx silhouette.',
+  },
+  'Devon Rex': {
+    face: 'BigEars',
+    hair: 'None',
+    note: 'Same approximation as the Cornish Rex — sparse curls read as bare.',
+  },
+  Sphynx: { face: 'BigEars', hair: 'None' },
 }
 
 /** Used when a cat has no breed recorded, or a breed with no entry above. */
 export const DEFAULT_TRAITS: BreedTraits = { face: 'Round', hair: 'Short' }
+
+/**
+ * Collapses the five stored coat lengths onto the three that have artwork.
+ *
+ * A cat's own coat length wins over its breed's, since an owner recording
+ * 'Long' for a moggie knows better than the default does.
+ */
+export function drawHairFor(coatLength: CoatLength | undefined, fallback: DrawHair): DrawHair {
+  switch (coatLength) {
+    case 'Hairless':
+      return 'None'
+    case 'Long':
+      return 'Long'
+    case 'Short':
+    case 'Medium':
+      return 'Short'
+    default:
+      return fallback
+  }
+}
 
 /**
  * Traits for a cat, resolved from the first breed listed.
