@@ -70,10 +70,10 @@ export default function AboutPage() {
               The emoji below stay as a fallback if a file ever goes missing. */}
           <div className="grid grid-cols-4 gap-3">
             {[
-              { name: 'Mabel', species: 'cat', src: '/images/pets/mabel.jpg', alt: 'Mabel, a black cat wearing an orange collar bell' },
               { name: 'Polly', species: 'cat', src: '/images/pets/polly.jpg', alt: 'Polly, a black cat sitting upright on a ledge' },
-              { name: 'Theo', species: 'dog', src: '/images/pets/theo.jpg', alt: 'Theo, a small white dog standing on grass' },
+              { name: 'Mabel', species: 'cat', src: '/images/pets/mabel.jpg', alt: 'Mabel, a black cat wearing an orange collar bell' },
               { name: 'Primrose', species: 'dog', src: '/images/pets/prim.jpg', alt: 'Primrose, a small white dog in a pink harness' },
+              { name: 'Theo', species: 'dog', src: '/images/pets/theo.jpg', alt: 'Theo, a small white dog standing on grass' },
             ].map(({ name, species, alt, src }) => (
               <div key={name} className="flex flex-col items-center gap-1.5">
                 <div className="aspect-square w-full rounded-2xl overflow-hidden bg-brand-tan/20 flex items-center justify-center">
