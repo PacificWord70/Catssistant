@@ -125,3 +125,7 @@ fastlane/test_output
 # https://github.com/johnno1962/injectionforxcode
 
 iOSInjectionProject/
+
+# Local Claude notes — kept out of the repo.
+.claude/commit-style.md
+.claude/settings.local.json
