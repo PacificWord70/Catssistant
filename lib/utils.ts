@@ -10,13 +10,27 @@ export function catWeightLbs(cat: Pick<Cat, 'weight' | 'weightUnit'>): number | 
 }
 
 /**
+ * Parses a YYYY-MM-DD birthday as a local date.
+ *
+ * `new Date('2026-06-01')` treats a bare ISO date as UTC midnight, so reading it
+ * back with getDate() in any timezone behind UTC lands on the day before. That
+ * shifted every age and life stage by a day for anyone west of Greenwich — a
+ * cat turned Adult the day before its birthday. Building the date from parts
+ * keeps it in local time, matching parseDateKey in scheduleUtils.
+ */
+function parseBirthday(birthday: string): Date {
+  const [y, m, d] = birthday.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+/**
  * Life stage from birthday, using the common veterinary split: under a year is
  * a kitten, ten and over is senior. Returns undefined when no birthday is set,
  * so callers can tell "unknown age" apart from "adult".
  */
 export function catLifeStage(birthday?: string): LifeStage | undefined {
   if (!birthday) return undefined
-  const birth = new Date(birthday)
+  const birth = parseBirthday(birthday)
   const now = new Date()
   let years = now.getFullYear() - birth.getFullYear()
   // Subtract a year if this year's birthday hasn't come round yet.
@@ -41,7 +55,7 @@ export function coatLabel(cat: Pick<Cat, 'color' | 'pattern'>): string {
 }
 
 export function catHumanAge(birthday: string): string {
-  const birth = new Date(birthday)
+  const birth = parseBirthday(birthday)
   const now = new Date()
   const totalMonths =
     (now.getFullYear() - birth.getFullYear()) * 12 +
@@ -64,7 +78,7 @@ export function catHumanAge(birthday: string): string {
 }
 
 export function catAgeShort(birthday: string): string {
-  const birth = new Date(birthday)
+  const birth = parseBirthday(birthday)
   const now = new Date()
   const totalMonths =
     (now.getFullYear() - birth.getFullYear()) * 12 +
@@ -77,7 +91,7 @@ export function catAgeShort(birthday: string): string {
 }
 
 export function catAgeLabel(birthday: string): string {
-  const birth = new Date(birthday)
+  const birth = parseBirthday(birthday)
   const now = new Date()
   const totalMonths =
     (now.getFullYear() - birth.getFullYear()) * 12 +
