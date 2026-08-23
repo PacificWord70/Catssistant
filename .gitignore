@@ -129,3 +129,6 @@ iOSInjectionProject/
 # Local Claude notes — kept out of the repo.
 .claude/commit-style.md
 .claude/settings.local.json
+
+# Vercel
+.vercel
