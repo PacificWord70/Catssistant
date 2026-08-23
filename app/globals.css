@@ -3,7 +3,18 @@
 @tailwind utilities;
 
 body {
-  background-color: #F7BAD2;
+  /* Yellow at the tone of the pink it replaces — hsl(336, 79%, 85%) rotated to
+     50deg — then warmed with roughly a tenth of brand-orange.
+
+     The orange is not only for warmth. A plain yellow at that lightness sits
+     almost on top of the white cards (1.18:1), so their edges go soft; pulling
+     the background toward orange puts distance back between the two.
+
+     hsl(32, 85%, 77%). The orange should not go further: its hue already sits
+     7deg off brand-orange, so more of it starts blending the page into the
+     buttons and nav rather than sitting behind them. Lightness is the safer
+     dial from here, since it leaves that hue gap alone. */
+  background-color: #F6C892;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
