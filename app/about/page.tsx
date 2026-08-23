@@ -14,11 +14,11 @@ export default function AboutPage() {
         <section>
           <h2 className="font-display text-2xl text-brand-brown mb-3">Why</h2>
           <p className="text-brand-charcoal/80 leading-relaxed">
-            Finding the right brush for a short-haired cat, figuring out which toys actually match
-            your cat&apos;s playing style, searching for a sitter and having to re-explain care
-            routines and medication schedules every time, cross-referencing ingredient lists to find
-            foods that work for a specific diet — we kept running into the same friction, over and
-            over. So we built Catssistant. We wanted one place to understand everything in our
+            Whether it&apos;s finding the right brush for a short-haired cat, figuring out which
+            toys actually match your cat&apos;s playing style, searching for a sitter and having to
+            re-explain care routines and medication schedules every time, or cross-referencing
+            ingredient lists to find foods that work for a specific diet — we kept running into the
+            same friction, over and over. So we built Catssistant. We wanted one place to understand everything in our
             cats&apos; lives — the products, the food, the care — and actually get the best for
             our little families.
           </p>
@@ -28,8 +28,8 @@ export default function AboutPage() {
         <section>
           <h2 className="font-display text-2xl text-brand-brown mb-3">What</h2>
           <p className="text-brand-charcoal/80 leading-relaxed">
-            Catssistant is a web-based cat care app built around everything your cat needs in one
-            place. You can create profiles for each of your cats and manage them all from a central
+            Catssistant is a web-based cat care app built around having everything your cat needs
+            in one place. You can create profiles for each of your cats and manage them all from a central
             dashboard. Beyond profiles, the app covers scheduling for vet appointments and health
             events, product recommendations for food, toys, and gear customized for your cats, cat
             breed information, and a directory of vets, emergency clinics, and boarding facilities
@@ -86,6 +86,12 @@ export default function AboutPage() {
             The code was written by AI, thoughtfully directed and shaped by our team at every turn. We treat AI as a tool for
             bringing our vision to life — one that lets a small team build something they
             truly care about.
+          </p>
+          <p className="text-brand-charcoal/80 leading-relaxed mt-3">
+            Under the hood it&apos;s a Next.js app written in TypeScript, styled with Tailwind, with
+            Redux keeping your cats in sync across every page. For now your data lives in your own
+            browser rather than on our servers — no account, nothing to sign up for — which is part
+            of why the privacy promise below is an easy one to keep.
           </p>
         </section>
 
