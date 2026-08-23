@@ -65,20 +65,22 @@ export default function AboutPage() {
             shortage of spaces built for them, but cats are kind of our thing.
           </p>
           <p className="text-sm text-brand-tan font-medium mt-5 mb-3">Some of who we&apos;re building for —</p>
-          {/* Pet photos — replace src values when photos are ready */}
+          {/* Photos live in public/images/pets/, the one exception to the no-images
+              rule in .gitignore. Their metadata is stripped before they are added.
+              The emoji below stay as a fallback if a file ever goes missing. */}
           <div className="grid grid-cols-4 gap-3">
             {[
-              { name: 'Mabel', alt: 'Cat 1', src: null },
-              { name: 'Polly', alt: 'Cat 2', src: null },
-              { name: 'Theo',  alt: 'Dog 1', src: null },
-              { name: 'Primrose', alt: 'Dog 2', src: null },
-            ].map(({ name, alt, src }) => (
+              { name: 'Mabel', species: 'cat', src: '/images/pets/mabel.jpg', alt: 'Mabel, a black cat wearing an orange collar bell' },
+              { name: 'Polly', species: 'cat', src: '/images/pets/polly.jpg', alt: 'Polly, a black cat sitting upright on a ledge' },
+              { name: 'Theo', species: 'dog', src: '/images/pets/theo.jpg', alt: 'Theo, a small white dog standing on grass' },
+              { name: 'Primrose', species: 'dog', src: '/images/pets/prim.jpg', alt: 'Primrose, a small white dog in a pink harness' },
+            ].map(({ name, species, alt, src }) => (
               <div key={name} className="flex flex-col items-center gap-1.5">
                 <div className="aspect-square w-full rounded-2xl overflow-hidden bg-brand-tan/20 flex items-center justify-center">
                   {src ? (
                     <img src={src} alt={alt} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-3xl select-none">{alt.startsWith('Cat') ? '🐱' : '🐶'}</span>
+                    <span className="text-3xl select-none">{species === 'cat' ? '🐱' : '🐶'}</span>
                   )}
                 </div>
                 <span className="text-xs text-brand-brown/60">{name}</span>
