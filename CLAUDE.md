@@ -70,11 +70,12 @@ committed before this rule (brand logos, design mockups) stay tracked.
 
 ## Privacy-First Architecture (core product value)
 The app uses **only data the user explicitly enters**. No passive tracking, no
-behavioral analytics, no data selling. This is non-negotiable.
+behavioral analytics, no data selling. Location features pull from profile fields
+(`locationCity` / `locationRegion` / `locationCountry`), **never from device GPS
+unless the owner opts in** by pressing "Detect my location" in `CatForm`. This is
+non-negotiable.
 
-Location features read the profile fields (`locationCity` / `locationRegion` /
-`locationCountry`). Device GPS is never consulted on its own — the one exception
-is the "Detect my location" button in `CatForm`, and it is bound by three rules:
+That opt-in is bound by three rules:
 
 - It only ever runs from that button. Never on load, never in an effect, never
   as a side effect of anything else.
