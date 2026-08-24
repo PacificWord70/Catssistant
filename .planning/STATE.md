@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-07-04)
 Phase: 1 of 2 (Care Event List View)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-08-21 — Completed quick task 260821-h76: breed tooltip hover-expand, breed picker reopen fix, larger schedule emojis
+Last activity: 2026-08-23 — Built out the canvas cat avatars: hand-drawn artwork committed, breed/coat/energy resolution, breed-derived form defaults, and an About section on the cat profile
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -58,7 +58,26 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+Avatar artwork (see the avatar-system memory for how the layers and filenames work):
+
+- **No pattern artwork exists.** `pattern-tabby.png` is the highest-value one
+  missing — tabby is the most common cat there is, and one file works across
+  every coat colour and face shape. Also unmade: spotted, colorpoint, tuxedo,
+  tortoiseshell, and calico (which needs two layers for its third colour).
+- **The features layers are inferred, not exported.** The 36 installed PNGs were
+  pulled out of Heidi's flattened sheets by a throwaway script. The eye whites
+  come out clean; the pink nose and inner ears are found by a colour threshold
+  and are ragged and inconsistent between drawings, because her tan fur sits too
+  close in hue to the pink. The fix is Heidi exporting eyes/nose/inner-ears as
+  their own transparent layer named `features-{face}-{hair}-{eyes}.png`, which
+  the code already looks for.
+
+Elsewhere:
+
+- Derived values now show on the cat profile and card. Nothing else surfaces
+  `effectiveEnergy` yet.
+- The repo is still private and undeployed. Vercel is chosen for hosting,
+  Firebase intended for the backend when accounts and photo storage are needed.
 
 ### Blockers/Concerns
 
