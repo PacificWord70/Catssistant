@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAppSelector } from '@/store/hooks'
 import { selectAllCats, selectCatsLoaded } from '@/store/selectors'
+import CatAvatar from '@/components/CatAvatar'
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -17,7 +18,15 @@ export default function OnboardingPage() {
 
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="text-8xl mb-6 select-none">🐱</div>
+      {/* The app's own cat rather than the system emoji, so the first thing a
+          new owner sees is the drawing they will meet on every card. Nothing is
+          specified, so it renders the default the avatars fall back to. */}
+      <div className="mb-6 select-none">
+        <CatAvatar
+          cat={{ name: 'Catssistant', breed: [], color: undefined, pattern: undefined, coatLength: undefined, energyLevel: undefined }}
+          size={140}
+        />
+      </div>
       <h1 className="font-display text-4xl text-brand-brown mb-3">Welcome to Catssistant!</h1>
       <p className="text-brand-brown/60 mb-12 max-w-md text-lg leading-relaxed">
         The best assistant for cat owners — helping your baby be as healthy, happy, and cute as is humanly possible.
