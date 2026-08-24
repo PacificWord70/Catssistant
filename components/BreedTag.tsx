@@ -111,20 +111,25 @@ export default function BreedTag({ name, variant = 'pill', onRemove }: Props) {
     )
   }
 
-  // Pill — card use
+  /* Pill — card use.
+   *
+   * Never a link, even for a known breed. CatCard wraps the whole card in one,
+   * and an anchor inside an anchor is invalid HTML: React warns about it in
+   * development, and in production the browser silently closes the outer one
+   * early, which breaks the card's own click target. The breed is still
+   * reachable as a link from the cat's profile, where the inline variant is not
+   * nested inside anything.
+   */
   return (
     <>
-      {breed
-        ? <Link
-            ref={ref as React.RefObject<HTMLAnchorElement>}
-            href={`/breeds#${breedSlug(name)}`}
-            onClick={e => e.stopPropagation()}
-            onMouseEnter={showTooltip}
-            onMouseLeave={hideTooltip}
-            className="text-xs px-2 py-0.5 rounded-full bg-brand-tan/20 text-brand-brown hover:bg-brand-tan/40 transition-colors whitespace-nowrap"
-          >{name}</Link>
-        : <span className="text-xs px-2 py-0.5 rounded-full bg-brand-tan/20 text-brand-brown whitespace-nowrap">{name}</span>
-      }
+      <span
+        ref={ref as React.RefObject<HTMLSpanElement>}
+        onMouseEnter={breed ? showTooltip : undefined}
+        onMouseLeave={breed ? hideTooltip : undefined}
+        className="text-xs px-2 py-0.5 rounded-full bg-brand-tan/20 text-brand-brown whitespace-nowrap"
+      >
+        {name}
+      </span>
       {tooltip}
     </>
   )
