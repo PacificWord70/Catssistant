@@ -65,7 +65,14 @@ export default function NavBar() {
           scrolled ? 'h-14' : 'h-16'
         }`}
       >
-        <Link href="/" className="hover:opacity-90 transition-opacity">
+        {/* The logo sits on the orange bar, where its own colours have little
+            to push against. A pale apricot chip behind it gives it an edge —
+            lighter than the page background, so the logo reads as sitting on
+            its own ground rather than on a patch of the page. */}
+        <Link
+          href="/"
+          className="hover:opacity-90 transition-opacity rounded-2xl bg-[#FEEBD6] px-3 py-1.5 flex items-center"
+        >
           <CatssistantLogo horizontal height={scrolled ? 28 : 34} />
         </Link>
         <div className="flex items-center gap-1">
