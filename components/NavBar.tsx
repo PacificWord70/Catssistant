@@ -6,10 +6,11 @@ import { useRef, useState, useEffect } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import CatssistantLogo from '@/components/CatssistantLogo'
 
+/* Breeds and Guides are deliberately absent: they are reference material rather
+   than places you work, so they hang off Resources instead of adding two more
+   entries to every screen. */
 const MORE_LINKS = [
   { href: '/items',     label: 'My Items' },
-  { href: '/breeds',    label: 'Breeds' },
-  { href: '/guides',    label: 'Guides' },
   { href: '/resources', label: 'Resources' },
   { href: '/about',     label: 'About' },
 ]
