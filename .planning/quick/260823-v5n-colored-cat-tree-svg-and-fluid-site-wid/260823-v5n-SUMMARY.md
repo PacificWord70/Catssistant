@@ -6,6 +6,7 @@ status: complete
 commits:
   - a3218db feat(home) draw the cat tree in colour
   - c6ec467 style(layout) let the page width follow the screen
+  - a3cb603 feat(home) colour in the cat tree drawing itself
 ---
 
 # Summary
@@ -69,3 +70,44 @@ the shape, with colour spent only on perches, sling and pom-poms.
   predates the no-images rule). Left in place deliberately — deleting a tracked
   file was not asked for.
 - Nothing has been pushed.
+
+
+## Correction — the tree was redone a third time
+
+Heidi asked why the avatar work went well and this did not. The answer is that
+**the cats were never drawn by the code.** She exported the artwork and the code
+only tinted and layered her PNGs, so the geometry was always hers. The tree was
+traced by eye from her image, which made it an imitation of the drawing rather
+than the drawing. Canvas versus SVG was never the issue; re-deriving her
+linework was.
+
+The fix, on her instruction: keep her lines exactly, change only the colours.
+
+**How.** Her source line art is flood-filled by enclosed region — connected
+components of non-line pixels are labelled, each is assigned a brand token, and
+line pixels are never written to. Anti-aliased pixels are blended toward the
+fill by their own lightness rather than snapped to one side, so edges stay
+smooth. Regions left open: the surround and the space under the hammock.
+
+The region-labelling pass also numbers the spots, which is what the nav buttons
+hang off (1 top perch, 2 left perch, 3 box doorway, 4 crescent shelf, 5 low
+shelf, 6 hammock).
+
+Scripts live in the session scratchpad (`regions.js`, `colorize.js`). Worth
+keeping the technique in mind: for any future artwork, label the regions, look
+at the numbered map, then assign colours — do not re-draw by hand.
+
+`lib/catTree.ts` and `components/CatTreeCanvas.tsx` were deleted; the traced
+drawing they held is gone.
+
+### Also found
+
+- `public/images/cat-tree.png` had **never been committed** — it matched the
+  blanket `*.png` ignore, so the home page's main navigation image existed only
+  on Heidi's machine. The replacement carries an explicit gitignore exception,
+  matching the precedent set for the avatar layers and the About-page photos.
+- The old (pre-replacement) tree image is backed up in the session scratchpad as
+  `cat-tree-OLD-backup.png`. It was untracked, so git cannot recover it.
+- Pre-existing and unrelated: `/cats` logs a hydration error for nested `<a>`
+  elements — `CatCard` wraps the card in a `Link` and `BreedTag` renders another
+  `Link` inside it — plus one 404. Not touched here.
