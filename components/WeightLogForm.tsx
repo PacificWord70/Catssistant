@@ -1,17 +1,21 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
+import CatAvatar from '@/components/CatAvatar'
 import { Cat } from '@/types/cat'
 import { HealthRecord } from '@/types/healthRecord'
 import { toDateKey } from '@/lib/scheduleUtils'
 import { toLbs, validateWeightEntry, WeightEntryError } from '@/lib/healthValidation'
 
 interface Props {
-  cat: Cat
+  /** Cats the reading can be filed against. One entry hides the picker. */
+  cats: Cat[]
+  /** Which of them starts selected. */
+  defaultCatId: string
   /** The reading being edited. Absent when logging a new one. */
   record?: HealthRecord
-  /** Dates that already have a reading for this cat, for the clash check. */
-  existingDates: string[]
+  /** Dates that already have a reading, for whichever cat is chosen. */
+  existingDatesFor: (catId: string) => string[]
   onSave: (record: HealthRecord) => void
   onDelete?: (id: string) => void
   onClose: () => void
@@ -27,17 +31,30 @@ const LBS_PER_KG = 2.20462
 /**
  * Logs or edits one dated weight reading.
  *
- * The owner enters weight in whichever unit their cat's profile uses, and it is
- * converted to pounds on the way in — HealthRecord stores pounds canonically so
- * a chart series can never mix units. Switching a cat from kg to lbs later
- * therefore rescales nothing already recorded.
+ * The owner enters weight in whichever unit the chosen cat's profile uses, and
+ * it is converted to pounds on the way in — HealthRecord stores pounds
+ * canonically so a chart series can never mix units. Switching a cat from kg to
+ * lbs later therefore rescales nothing already recorded.
  *
  * Validation lives in lib/healthValidation so the rules are testable; this file
  * only decides where the message goes.
  */
-export default function WeightLogForm({ cat, record, existingDates, onSave, onDelete, onClose }: Props) {
-  const unit = cat.weightUnit
+export default function WeightLogForm({
+  cats,
+  defaultCatId,
+  record,
+  existingDatesFor,
+  onSave,
+  onDelete,
+  onClose,
+}: Props) {
   const editing = record !== undefined
+
+  /* A reading belongs to the cat it was taken from, so editing cannot move it
+     to another one — that would silently rewrite two cats' histories at once. */
+  const [catId, setCatId] = useState(record?.catId ?? defaultCatId)
+  const cat = cats.find(c => c.id === catId) ?? cats[0]
+  const unit = cat.weightUnit
 
   const [date, setDate] = useState(record?.date ?? toDateKey(new Date()))
   const [weight, setWeight] = useState(() => {
@@ -54,11 +71,18 @@ export default function WeightLogForm({ cat, record, existingDates, onSave, onDe
   /* Clear the message as soon as the owner starts fixing the thing it is about.
      Leaving a stale error under a field they have already corrected reads as the
      form still being wrong. */
-  function edit<T>(setter: (v: T) => void, field: WeightEntryError['field']) {
-    return (value: T) => {
-      setter(value)
-      setError(current => (current?.field === field ? null : current))
-    }
+  function clearIfAbout(field: WeightEntryError['field']) {
+    setError(current => (current?.field === field ? null : current))
+  }
+
+  function pickCat(nextId: string) {
+    const next = cats.find(c => c.id === nextId)
+    /* A number typed for a cat measured in pounds must not be re-read as
+       kilograms just because the picker moved. Clearing forces a deliberate
+       re-entry, and only happens when the units actually differ. */
+    if (next && next.weightUnit !== unit) setWeight('')
+    setCatId(nextId)
+    setError(null)
   }
 
   function handleSubmit(e: FormEvent) {
@@ -71,7 +95,7 @@ export default function WeightLogForm({ cat, record, existingDates, onSave, onDe
       birthday: cat.birthday,
       // A record must not clash with its own date, or editing the notes on an
       // existing reading would be rejected for colliding with itself.
-      existingDates: existingDates.filter(d => d !== record?.date),
+      existingDates: existingDatesFor(cat.id).filter(d => d !== record?.date),
     })
     if (problem) {
       setError(problem)
@@ -94,9 +118,37 @@ export default function WeightLogForm({ cat, record, existingDates, onSave, onDe
         onClick={e => e.stopPropagation()}
       >
         <h2 className="font-display text-2xl text-brand-brown mb-1">{editing ? 'Edit weight' : 'Log a weight'}</h2>
-        <p className="text-sm text-brand-brown/60 mb-6">for {cat.name}</p>
+        <p className="text-sm text-brand-brown/60 mb-6">
+          {editing ? `for ${cat.name}` : cats.length === 1 ? `for ${cat.name}` : 'Pick which cat this is for.'}
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          {/* Only offered when creating. Moving an existing reading to another
+              cat would rewrite two histories at once. */}
+          {!editing && cats.length > 1 && (
+            <div>
+              <span className="block text-sm font-medium text-brand-brown mb-1.5">Cat</span>
+              <div className="flex flex-wrap gap-2">
+                {cats.map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => pickCat(c.id)}
+                    aria-pressed={c.id === cat.id}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-2xl border transition-colors ${
+                      c.id === cat.id
+                        ? 'border-brand-orange bg-brand-orange/10 text-brand-brown'
+                        : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
+                    }`}
+                  >
+                    <CatAvatar cat={c} size={22} />
+                    <span className="text-sm font-medium">{c.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <label htmlFor="weight-date" className="block text-sm font-medium text-brand-brown mb-1.5">
               Date
@@ -107,7 +159,10 @@ export default function WeightLogForm({ cat, record, existingDates, onSave, onDe
               value={date}
               max={toDateKey(new Date())}
               min={cat.birthday}
-              onChange={e => edit(setDate, 'date')(e.target.value)}
+              onChange={e => {
+                setDate(e.target.value)
+                clearIfAbout('date')
+              }}
               aria-invalid={error?.field === 'date'}
               className={`${inputClass} ${error?.field === 'date' ? badBorder : okBorder}`}
             />
@@ -124,7 +179,10 @@ export default function WeightLogForm({ cat, record, existingDates, onSave, onDe
               min="0"
               inputMode="decimal"
               value={weight}
-              onChange={e => edit(setWeight, 'weight')(e.target.value)}
+              onChange={e => {
+                setWeight(e.target.value)
+                clearIfAbout('weight')
+              }}
               placeholder={unit === 'kg' ? '4.5' : '10.0'}
               aria-invalid={error?.field === 'weight'}
               className={`${inputClass} ${error?.field === 'weight' ? badBorder : okBorder}`}
@@ -168,7 +226,7 @@ export default function WeightLogForm({ cat, record, existingDates, onSave, onDe
             </button>
           </div>
 
-          {editing && onDelete && (
+          {editing && onDelete && record && (
             <div className="pt-2 border-t border-brand-tan/30 mt-2">
               {confirmingDelete ? (
                 <div className="flex items-center gap-3 pt-3">

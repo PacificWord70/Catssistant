@@ -130,7 +130,9 @@ export default function HealthPage() {
   /** The cat the edited record belongs to — in compare mode that is not
       necessarily the focused cat, since any line's point can be clicked. */
   const editingCat = editingRecord ? cats.find(c => c.id === editingRecord.catId) : undefined
-  const formCat = editingCat ?? cat
+  /* In comparison mode there is no single focused cat, so a new reading starts
+     on the first selected one and the form offers the rest. */
+  const formCat = editingCat ?? cat ?? selectedCats[0]
 
   const lastVet = useMemo(() => {
     if (!cat) return undefined
@@ -190,14 +192,12 @@ export default function HealthPage() {
     <div>
       <div className="flex items-baseline justify-between gap-4 mb-6 flex-wrap">
         <h1 className="font-display text-3xl text-brand-brown">Health</h1>
-        {cat && (
-          <button
-            onClick={() => setLogging(true)}
-            className="px-4 py-2 rounded-2xl bg-brand-orange text-white text-sm font-medium hover:bg-brand-orange/90 transition-colors"
-          >
-            + Log weight
-          </button>
-        )}
+        <button
+          onClick={() => setLogging(true)}
+          className="px-4 py-2 rounded-2xl bg-brand-orange text-white text-sm font-medium hover:bg-brand-orange/90 transition-colors"
+        >
+          + Log weight
+        </button>
       </div>
 
       {cats.length > 1 && (
@@ -452,9 +452,12 @@ export default function HealthPage() {
 
       {(logging || editingRecord) && formCat && (
         <WeightLogForm
-          cat={formCat}
+          /* Editing is pinned to the record's own cat; a new reading can be
+             filed against any of the ones currently selected. */
+          cats={editingRecord ? [formCat] : selectedCats}
+          defaultCatId={formCat.id}
           record={editingRecord}
-          existingDates={allRecords.filter(r => r.catId === formCat.id).map(r => r.date)}
+          existingDatesFor={id => allRecords.filter(r => r.catId === id).map(r => r.date)}
           onSave={handleSave}
           onDelete={handleDelete}
           onClose={closeForm}
