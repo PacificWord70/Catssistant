@@ -122,9 +122,9 @@ export default function SchedulePage() {
   const catNames = (ids: string[]) => ids.map(id => cats.find(c => c.id === id)?.name ?? 'Unknown cat').join(', ')
 
   return (
-    <div className="bg-white rounded-3xl shadow-soft p-7 min-h-[calc(100vh-8rem)]">
+    <div className="bg-white rounded-3xl shadow-soft p-4 sm:p-6 min-h-[calc(100vh-8rem)]">
       <Reveal>
-        <div className="flex items-center justify-between mb-7">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="font-display text-3xl text-brand-brown">Schedule</h1>
           <div className="flex items-center gap-2">
             {/* Weight belongs to the health page, but the moment you are most

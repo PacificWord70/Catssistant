@@ -51,7 +51,12 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
               key={cell.dateKey}
               type="button"
               onClick={() => onSelectDate(cell.dateKey)}
-              className={`aspect-square rounded-2xl flex flex-col items-center justify-start pt-1.5 gap-0.5 text-sm transition-colors
+              /* Height follows the viewport rather than the container's width.
+               aspect-square grew the month with the screen, so a wide display
+               pushed it past the fold; a plain fixed height ignores how much
+               room there actually is. Clamped so six rows stay usable on a short
+               laptop and do not become vast on a tall monitor. */
+            className={`h-[clamp(2.25rem,5.6vh,4.25rem)] rounded-2xl flex flex-col items-center justify-start pt-1.5 gap-0.5 text-sm transition-colors
                 ${isSelected ? 'bg-brand-orange text-white' : cell.isToday ? 'bg-brand-tan/20 text-brand-charcoal' : 'hover:bg-brand-tan/10 text-brand-charcoal'}
                 ${!cell.inCurrentMonth ? 'opacity-30' : ''}`}
             >
