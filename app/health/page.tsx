@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import CatAvatar from '@/components/CatAvatar'
-import WeightChart from '@/components/WeightChart'
 import MetricChart, { lineColor } from '@/components/MetricChart'
 import WeightLogForm from '@/components/WeightLogForm'
 import ScheduleEventForm from '@/components/ScheduleEventForm'
@@ -59,12 +58,13 @@ export default function HealthPage() {
   /** Which metrics are charted. Null means "the default", which is weight only. */
   const [pickedMetrics, setPickedMetrics] = useState<Set<string> | null>(null)
 
-  /* Memoised because the fallback builds a new Set on every render, which would
+  /* Every cat by default: the chart is a comparison, and starting on one of
+     them hides the rest of the household behind a control the owner has to find
+     first.
+
+     Memoised because the fallback builds a new Set on every render, which would
      give the memos below a fresh dependency each time and recompute them all. */
-  const selected = useMemo(
-    () => picked ?? new Set(cats.length ? [cats[0].id] : []),
-    [picked, cats],
-  )
+  const selected = useMemo(() => picked ?? new Set(cats.map(c => c.id)), [picked, cats])
   const selectedCats = cats.filter(c => selected.has(c.id))
   const comparing = selectedCats.length > 1
   /** The one cat in focus, when exactly one is picked. */
@@ -317,7 +317,7 @@ export default function HealthPage() {
         </div>
       )}
 
-      {shownMetrics.length === 0 && (
+      {shownMetrics.length === 0 && available.length > 0 && (
         <div className={`${CARD} mb-6 text-center py-10`}>
           <p className="text-brand-brown/60">Nothing selected to plot.</p>
         </div>
@@ -355,18 +355,17 @@ export default function HealthPage() {
         )
       })}
 
-      {/* Weight drops out of `available` when nothing is recorded, so this is
-          the prompt to start it — shown only then, and only with one cat in
-          focus, since there is one cat to log for. */}
-      {!available.some(m => m.id === 'weight') && cat && (
-      <Reveal>
-        <div className={`${CARD} mb-6`}>
-          <h2 className="font-display text-xl text-brand-brown mb-4">Weight over time</h2>
-          {series.length > 0 ? (
-            <WeightChart series={series} onSelect={setEditingId} />
-          ) : (
+      {/* Weight drops out of `available` when none of the selected cats have a
+          reading, so this is the prompt to start it. It has to work for a whole
+          household now that they are all selected by default. */}
+      {!available.some(m => m.id === 'weight') && (
+        <Reveal>
+          <div className={`${CARD} mb-6`}>
+            <h2 className="font-display text-xl text-brand-brown mb-4">Weight over time</h2>
             <div className="text-center py-10">
-              <p className="text-brand-brown/60 mb-1">No weight readings yet for {cat?.name}.</p>
+              <p className="text-brand-brown/60 mb-1">
+                {cat ? `No weight readings yet for ${cat.name}.` : 'No weight readings yet.'}
+              </p>
               <p className="text-sm text-brand-brown/45 max-w-md mx-auto mb-6">
                 {profileWeight !== undefined
                   ? `The profile says ${profileWeight.toFixed(1)} lbs, but not when that was measured — so it can't go on a timeline. Log it with a date to start the chart.`
@@ -379,9 +378,8 @@ export default function HealthPage() {
                 Log the first weight
               </button>
             </div>
-          )}
-        </div>
-      </Reveal>
+          </div>
+        </Reveal>
       )}
 
       {/* Stats and the reading list describe one cat, so they only appear when
