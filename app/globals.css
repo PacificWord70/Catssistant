@@ -10,11 +10,16 @@ body {
      almost on top of the white cards (1.18:1), so their edges go soft; pulling
      the background toward orange puts distance back between the two.
 
-     hsl(32, 85%, 77%). The orange should not go further: its hue already sits
-     7deg off brand-orange, so more of it starts blending the page into the
-     buttons and nav rather than sitting behind them. Lightness is the safer
-     dial from here, since it leaves that hue gap alone. */
-  background-color: #F6C892;
+     hsl(32, 95%, 80%). The hue should not go further: it already sits 7deg off
+     brand-orange, so more of it starts blending the page into the buttons and
+     nav rather than sitting behind them. Saturation and lightness are the safe
+     dials, since they leave that hue gap alone.
+
+     Lightness has a cost, though. The white cards separate from this only by
+     luminance, and lifting the page narrows that gap: 77% gave 1.55:1 against
+     white, 80% gives 1.44:1. Extra saturation buys some of it back. Going much
+     lighter than this softens every card edge on the site. */
+  background-color: #FCCF9C;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

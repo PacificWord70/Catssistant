@@ -57,7 +57,7 @@ performance, tests) is framework-agnostic.
 ---
 
 ## Design System
-- Background: warm apricot `#F6C892` — `hsl(32, 85%, 77%)`, set on `body` in
+- Background: warm apricot `#FCCF9C` — `hsl(32, 95%, 80%)`, set on `body` in
   `globals.css`. Do not push it further toward orange: its hue already sits
   within 7° of `brand-orange`, so the page would start blending into the buttons
   and nav instead of sitting behind them. Adjust lightness instead.
