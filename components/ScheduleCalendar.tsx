@@ -60,7 +60,7 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
                   cell is only about 45px across, and three emojis plus a "+N" at
                   the larger size would spill past its edge. */}
               {cell.items.length > 0 && (
-                <span className="text-xs sm:text-sm leading-none tracking-tighter">
+                <span className="text-xl sm:text-3xl leading-none tracking-tighter">
                   {categories.map(c => CATEGORY_EMOJI[c]).join('')}
                   {extra > 0 && `+${extra}`}
                 </span>

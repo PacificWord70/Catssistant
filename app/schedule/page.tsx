@@ -199,7 +199,7 @@ export default function SchedulePage() {
                     onClick={() => setEditingEvent(event)}
                     className="hover-lift w-full flex items-center gap-3 px-4 py-3 bg-brand-tan/10 rounded-2xl hover:bg-brand-tan/20 transition-colors text-left"
                   >
-                    <span className="text-2xl select-none">{CATEGORY_EMOJI[event.category]}</span>
+                    <span className="text-5xl select-none leading-none">{CATEGORY_EMOJI[event.category]}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-brand-charcoal truncate">{event.title}</p>
                       <p className="text-xs text-brand-brown/60">{catNames(event.catIds)}</p>
