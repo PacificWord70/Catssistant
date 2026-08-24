@@ -14,6 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Care Event List View** - Owner can view, filter, and sort care events in a list, alongside the existing calendar
 - [ ] **Phase 2: Data Export & Import** - Owner can back up all app data to a JSON file and restore it safely
+- [x] **Phase 3: Health Tracking** - Owner can record dated weights and chart health data per cat *(delivered 2026-08-24, out of order)*
 
 ## Phase Details
 
@@ -44,12 +45,37 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Owner can export, then later import that same file (e.g., after clearing browser data or moving devices), and end up with the same cats and events they started with.
 **Plans**: TBD
 
+### Phase 3: Health Tracking
+**Goal**: Owner can record dated health measurements and see them, and the care
+data already in the app, charted over time per cat.
+**Status**: Delivered 2026-08-24 — **as two quick tasks, not as planned phase
+work.** Recorded here so the roadmap describes the app that exists.
+**Requirements**: None — this was not in the milestone's requirements.
+**What shipped**:
+  1. `HealthRecord` made real: localStorage layer, a fourth Redux slice, and a
+     form to log and correct dated weights.
+  2. A metric-agnostic chart: several cats on shared axes, an interactive key,
+     and a readout for every cat sharing a date.
+  3. Filters for cats and for metrics, with matching filters added to Schedule.
+  4. 35 tests, all on the pure logic in `lib/`.
+**Known gaps**:
+  - `ScheduleEvent` has no completion field, so every non-weight metric is
+    *planned*, never actual. "How much they ate" cannot be answered until a
+    record of what happened exists. This is the single largest next step.
+  - Stats cards are single-cat only; a household shows summary rows instead.
+
+**Note for Phase 2:** health records are a **fourth localStorage key**
+(`catssistant_health_records`). Export and import must cover it or a backup will
+silently lose a cat's weight history.
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2
+Phases execute in numeric order: 1 → 2. Phase 3 was built before either of
+them, which is why both still read as not started.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Care Event List View | 0/TBD | Not started | - |
 | 2. Data Export & Import | 0/TBD | Not started | - |
+| 3. Health Tracking | n/a | Delivered out of order | 2026-08-24 |
