@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { multiSeriesGeometry, NamedSeries } from '@/lib/healthAnalysis'
 
 interface Props {
   series: NamedSeries[]
-  /** Unit label for the tooltip, e.g. "lbs" or "min/day". */
+  /** Unit label for the readout, e.g. "lbs" or "min/day". */
   unit: string
   /**
    * Called with the record id when a point is clicked.
@@ -31,49 +31,87 @@ const PADDING = { top: 16, right: 16, bottom: 34, left: 46 }
  */
 const LINE_COLORS = ['#F26A1B', '#5F8AA8', '#2F8F83', '#8E5B8E', '#C99A2E', '#6B4A34']
 
+export function lineColor(index: number): string {
+  return LINE_COLORS[index % LINE_COLORS.length]
+}
+
 /**
  * Past this many points a line stops drawing its markers.
  *
  * A daily metric over a couple of months is sixty-odd readings; at that density
  * the dots touch and the line reads as a fat dotted band rather than a trend.
- * The line itself still carries the shape.
+ * The line itself still carries the shape, and the hovered date always draws its
+ * markers regardless.
  */
 const MAX_DOTS = 40
-
-export function lineColor(index: number): string {
-  return LINE_COLORS[index % LINE_COLORS.length]
-}
 
 function shortDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-/**
- * One metric, one or more cats, on a shared pair of axes.
- *
- * The axes are shared across cats, not per-line — see multiSeriesGeometry.
- * Hovering a cat in the key fades the others rather than hiding them, so the
- * highlighted line keeps its context instead of jumping to a different-looking
- * chart.
- */
 export default function MetricChart({ series, unit, onSelect }: Props) {
   const [highlighted, setHighlighted] = useState<string | null>(null)
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
   const geo = multiSeriesGeometry(series, VIEW.width, VIEW.height, PADDING)
+
+  /**
+   * Every plotted point, grouped by the date it belongs to.
+   *
+   * This is what makes several cats on one date visible at all. Cats are often
+   * measured on the same day, and for a scheduled metric they frequently share
+   * the *value* too — every cat fed the same amount puts every dot at exactly
+   * the same place, where all but the last are invisible.
+   */
+  const byDate = useMemo(() => {
+    const map = new Map<string, { id: string; label: string; value: number; x: number; y: number }[]>()
+    if (!geo) return map
+    for (const line of geo.lines) {
+      for (const p of line.points) {
+        const at = map.get(p.point.date) ?? []
+        at.push({ id: line.id, label: line.label, value: p.point.value, x: p.x, y: p.y })
+        map.set(p.point.date, at)
+      }
+    }
+    return map
+  }, [geo])
 
   if (!geo) return null
 
-  // Colour is keyed off the caller's order, not the drawn order, so a cat keeps
-  // its colour even when it has no readings and drops out of the chart.
   const colorOf = (id: string) => lineColor(series.findIndex(s => s.id === id))
+  const hovered = hoveredDate ? byDate.get(hoveredDate) : undefined
+
+  /** Nearest date to the pointer, so hovering works between the markers too. */
+  function trackPointer(clientX: number) {
+    const svg = svgRef.current
+    if (!svg) return
+    const box = svg.getBoundingClientRect()
+    // The SVG scales to its container, so pointer pixels have to be mapped back
+    // into viewBox units before they mean anything against the geometry.
+    const x = ((clientX - box.left) / box.width) * VIEW.width
+    let best: string | null = null
+    let bestDistance = Infinity
+    for (const [date, points] of byDate) {
+      const distance = Math.abs(points[0].x - x)
+      if (distance < bestDistance) {
+        bestDistance = distance
+        best = date
+      }
+    }
+    setHoveredDate(best)
+  }
 
   return (
-    <div>
+    <div className="relative">
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
         role="img"
         aria-label={`${geo.lines.length} ${geo.lines.length === 1 ? 'cat' : 'cats'}, ${unit}, ${geo.from} to ${geo.to}`}
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+        onMouseMove={e => trackPointer(e.clientX)}
+        onMouseLeave={() => setHoveredDate(null)}
       >
         {geo.ticks.map(t => (
           <g key={t.value}>
@@ -92,9 +130,25 @@ export default function MetricChart({ series, unit, onSelect }: Props) {
           </g>
         ))}
 
+        {/* Guide for the hovered date, so it is clear every marker on it belongs
+            to the same day even when the lines are far apart. */}
+        {hovered && (
+          <line
+            x1={hovered[0].x}
+            y1={PADDING.top}
+            x2={hovered[0].x}
+            y2={VIEW.height - PADDING.bottom}
+            stroke="#6B4A34"
+            strokeWidth={1}
+            strokeDasharray="2 3"
+            opacity={0.45}
+          />
+        )}
+
         {geo.lines.map(line => {
           const dimmed = highlighted !== null && highlighted !== line.id
           const color = colorOf(line.id)
+          const showDots = line.points.length <= MAX_DOTS
           return (
             <g key={line.id} opacity={dimmed ? 0.18 : 1} style={{ transition: 'opacity 0.15s ease' }}>
               <path
@@ -105,25 +159,58 @@ export default function MetricChart({ series, unit, onSelect }: Props) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              {line.points.length <= MAX_DOTS &&
-                line.points.map(p => (
-                <circle
-                  key={p.point.id}
-                  cx={p.x}
-                  cy={p.y}
-                  r={4}
-                  fill="#FFFBF6"
-                  stroke={color}
-                  strokeWidth={2.5}
-                  style={{ cursor: onSelect ? 'pointer' : 'default' }}
-                  onClick={() => onSelect?.(p.point.id)}
-                >
-                  <title>{`${line.label} — ${p.point.value.toFixed(1)} ${unit} on ${p.point.date}`}</title>
-                </circle>
-                ))}
+              {line.points.map(p => {
+                const onHoveredDate = p.point.date === hoveredDate
+                // A dense line still marks the hovered date, or there would be
+                // nothing to read the guide against.
+                if (!showDots && !onHoveredDate) return null
+                return (
+                  <circle
+                    key={p.point.id}
+                    cx={p.x}
+                    cy={p.y}
+                    r={onHoveredDate ? 6 : 4}
+                    fill="#FFFBF6"
+                    stroke={color}
+                    strokeWidth={2.5}
+                    style={{ cursor: onSelect ? 'pointer' : 'default' }}
+                    onClick={() => onSelect?.(p.point.id)}
+                  />
+                )
+              })}
             </g>
           )
         })}
+
+        {/* Count badge where cats sit on top of each other. Without it a shared
+            value looks like a single cat, since the dots are exactly congruent. */}
+        {hovered && hovered.length > 1 && (
+          <>
+            {Object.entries(
+              hovered.reduce<Record<string, number>>((acc, p) => {
+                const key = p.y.toFixed(1)
+                acc[key] = (acc[key] ?? 0) + 1
+                return acc
+              }, {}),
+            )
+              .filter(([, count]) => count > 1)
+              .map(([y, count]) => (
+                <g key={y}>
+                  <circle cx={hovered[0].x + 13} cy={Number(y) - 11} r={8.5} fill="#6B4A34" />
+                  <text
+                    x={hovered[0].x + 13}
+                    y={Number(y) - 7.5}
+                    textAnchor="middle"
+                    fontSize={10}
+                    fontWeight={700}
+                    fill="#FFFBF6"
+                  >
+                    {count}
+                  </text>
+                </g>
+              ))}
+          </>
+        )}
 
         <text x={PADDING.left} y={VIEW.height - 12} textAnchor="start" fontSize={11} fill="#6B4A34" opacity={0.65}>
           {shortDate(geo.from)}
@@ -141,6 +228,38 @@ export default function MetricChart({ series, unit, onSelect }: Props) {
           </text>
         )}
       </svg>
+
+      {/* Readout for the hovered date: every cat with a value that day, named,
+          so overlapping markers stop hiding each other. */}
+      {hovered && (
+        <div
+          className="absolute -translate-x-1/2 pointer-events-none z-10 bg-white rounded-2xl shadow-card border border-brand-tan/40 px-3 py-2 min-w-[9rem]"
+          style={{
+            left: `${Math.min(Math.max((hovered[0].x / VIEW.width) * 100, 14), 86)}%`,
+            top: '100%',
+            marginTop: -8,
+          }}
+        >
+          <p className="text-xs text-brand-brown/55 mb-1">{shortDate(hoveredDate!)}</p>
+          <ul className="space-y-0.5">
+            {[...hovered]
+              .sort((a, b) => b.value - a.value)
+              .map(p => (
+                <li key={p.id} className="flex items-center gap-2 text-sm whitespace-nowrap">
+                  <span
+                    className="w-3 h-1.5 rounded-full shrink-0"
+                    style={{ background: colorOf(p.id) }}
+                    aria-hidden="true"
+                  />
+                  <span className="text-brand-brown/70 flex-1">{p.label}</span>
+                  <span className="font-medium text-brand-brown">
+                    {p.value.toFixed(1)} {unit}
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
 
       {/* The key. Hovering one fades the others. */}
       <ul className="flex flex-wrap gap-x-4 gap-y-2 justify-center mt-4">
