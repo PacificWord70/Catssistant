@@ -98,13 +98,22 @@ function baseCandidates(cat: CatArtInput): string[] {
   const traits = traitsForBreed(cat.breed)
   const face = traits.face.toLowerCase()
   const hair = drawHairFor(cat.coatLength, traits.hair).toLowerCase()
+  const breedHair = traits.hair.toLowerCase()
   const eyes = eyeVariant(cat)
-  return [
-    `base-${face}-${hair}-${eyes}`,
-    `base-${face}-${hair}`,
-    `base-${face}`,
-    `base-${baseVariant(cat.coatLength)}`,
-  ]
+
+  const names = [`base-${face}-${hair}-${eyes}`, `base-${face}-${hair}`]
+
+  // Owners can record a coat length the breed never comes in — a hairless
+  // Siamese, a short-haired Persian — and there is no drawing for those. Rather
+  // than dropping to the placeholder, keep the face and borrow the breed's own
+  // hair: the face is what identifies the cat, and a wedge with the wrong coat
+  // beats no cat at all.
+  if (breedHair !== hair) {
+    names.push(`base-${face}-${breedHair}-${eyes}`, `base-${face}-${breedHair}`)
+  }
+
+  names.push(`base-${face}`, `base-${baseVariant(cat.coatLength)}`)
+  return names
 }
 
 /** First name that resolves to an image, or null when none of them do. */
