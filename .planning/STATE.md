@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-07-04)
 Phase: 1 of 2 (Care Event List View)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-08-24 — Coloured in Heidi's own cat tree drawing by flood-filling its enclosed regions, and made the site shell width follow the screen (quick task 260823-v5n)
+Last activity: 2026-08-24 — Built the start of the Health page: dated weight records, a weight-over-time chart and summary stats (quick task 260824-28p)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -93,6 +93,7 @@ Elsewhere:
 | 260717-gbs | New "My Items" feature (design-experiment branch): two-tier localStorage data model (CatalogProduct catalog + HouseholdItem usage records tagged by cat/status/dates), ItemForm add/edit modal, and a filterable/sortable /items table page (default current-only, Food/Litter/Medication grouped first) with a nav link. | 2026-07-17 | d590f92 | [260717-gbs-add-a-my-items-page-nav-accessible-for-t](./quick/260717-gbs-add-a-my-items-page-nav-accessible-for-t/) |
 | 260821-h76 | Breed tooltip expands to the full paragraph after three seconds of hover; breed picker keeps its list open so consecutive breeds can be added without clicking away; schedule category emojis enlarged in both the calendar cells and the per-day list. | 2026-08-21 | 157572f | [260821-h76-breed-tooltip-hover-expand-breed-selecto](./quick/260821-h76-breed-tooltip-hover-expand-breed-selecto/) |
 | 260823-v5n | Replaced the home page cat tree with Heidi's own drawing colour-filled by region (her linework untouched), with nav buttons on six numbered spots; and moved the site shell off max-w-5xl so the width follows the screen. | 2026-08-24 | c6ec467 | [260823-v5n-colored-cat-tree-svg-and-fluid-site-wid](./quick/260823-v5n-colored-cat-tree-svg-and-fluid-site-wid/) |
+| 260824-28p | Health page: made the unused HealthRecord type real (localStorage + a fourth Redux slice), added a hand-drawn SVG weight-over-time chart with time-proportional spacing, a dated weight log form, and summary stats drawn from existing schedule and profile data. 15 new tests. | 2026-08-24 | 49ba0d3 | [260824-28p-health-page-weight-over-time](./quick/260824-28p-health-page-weight-over-time/) |
 
 ## Deferred Items
 
