@@ -57,7 +57,7 @@ export default function NavBar() {
       }`}
     >
       <div
-        className={`max-w-5xl mx-auto px-4 flex items-center justify-between transition-all duration-200 ${
+        className={`w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 flex items-center justify-between transition-all duration-200 ${
           scrolled ? 'h-14' : 'h-16'
         }`}
       >
