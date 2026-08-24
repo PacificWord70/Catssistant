@@ -45,14 +45,14 @@ export default function WeightChart({ series, onSelect }: Props) {
         role="img"
         aria-label={
           series.length === 1
-            ? `Weight over time: one reading, ${series[0].lbs.toFixed(1)} pounds on ${series[0].date}`
-            : `Weight over time: ${series.length} readings, from ${series[0].lbs.toFixed(1)} to ${series[series.length - 1].lbs.toFixed(1)} pounds`
+            ? `Weight over time: one reading, ${series[0].value.toFixed(1)} pounds on ${series[0].date}`
+            : `Weight over time: ${series.length} readings, from ${series[0].value.toFixed(1)} to ${series[series.length - 1].value.toFixed(1)} pounds`
         }
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
       >
         {/* Gridlines and the pound labels they carry */}
         {geo.ticks.map(t => (
-          <g key={t.lbs}>
+          <g key={t.value}>
             <line
               x1={PADDING.left}
               y1={t.y}
@@ -63,7 +63,7 @@ export default function WeightChart({ series, onSelect }: Props) {
               strokeDasharray="3 4"
             />
             <text x={PADDING.left - 8} y={t.y + 4} textAnchor="end" fontSize={11} fill="#6B4A34" opacity={0.65}>
-              {t.lbs.toFixed(1)}
+              {t.value.toFixed(1)}
             </text>
           </g>
         ))}
@@ -85,7 +85,7 @@ export default function WeightChart({ series, onSelect }: Props) {
               onMouseLeave={() => setActive(null)}
               onClick={() => onSelect?.(p.point.id)}
             >
-              <title>{`${p.point.lbs.toFixed(1)} lbs on ${p.point.date}${onSelect ? ' — click to edit' : ''}`}</title>
+              <title>{`${p.point.value.toFixed(1)} lbs on ${p.point.date}${onSelect ? ' — click to edit' : ''}`}</title>
             </circle>
             <circle
               cx={p.x}
@@ -119,7 +119,7 @@ export default function WeightChart({ series, onSelect }: Props) {
       </svg>
 
       <p className="text-center text-sm text-brand-brown/70 mt-2">
-        <span className="font-semibold text-brand-brown">{shown.point.lbs.toFixed(1)} lbs</span>
+        <span className="font-semibold text-brand-brown">{shown.point.value.toFixed(1)} lbs</span>
         {' · '}
         {shortDate(shown.point.date)}
         {active === null && series.length > 1 && <span className="text-brand-brown/45"> (latest)</span>}

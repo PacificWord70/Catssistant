@@ -5,7 +5,16 @@ import { multiSeriesGeometry, NamedSeries } from '@/lib/healthAnalysis'
 
 interface Props {
   series: NamedSeries[]
-  /** Called with the record id when a point is clicked, to edit that reading. */
+  /** Unit label for the tooltip, e.g. "lbs" or "min/day". */
+  unit: string
+  /**
+   * Called with the record id when a point is clicked.
+   *
+   * Only pass this for metrics whose points map to a real stored record.
+   * Scheduled metrics are aggregated per day and their point ids are synthetic,
+   * so making them clickable would open an editor for a record that does not
+   * exist.
+   */
   onSelect?: (id: string) => void
 }
 
@@ -22,6 +31,15 @@ const PADDING = { top: 16, right: 16, bottom: 34, left: 46 }
  */
 const LINE_COLORS = ['#F26A1B', '#5F8AA8', '#2F8F83', '#8E5B8E', '#C99A2E', '#6B4A34']
 
+/**
+ * Past this many points a line stops drawing its markers.
+ *
+ * A daily metric over a couple of months is sixty-odd readings; at that density
+ * the dots touch and the line reads as a fat dotted band rather than a trend.
+ * The line itself still carries the shape.
+ */
+const MAX_DOTS = 40
+
 export function lineColor(index: number): string {
   return LINE_COLORS[index % LINE_COLORS.length]
 }
@@ -32,13 +50,14 @@ function shortDate(iso: string): string {
 }
 
 /**
- * Several cats' weights on one pair of axes.
+ * One metric, one or more cats, on a shared pair of axes.
  *
- * The axes are shared, not per-cat — see multiSeriesGeometry. Hovering a cat in
- * the key fades the others rather than hiding them, so the highlighted line
- * keeps its context instead of jumping to a different-looking chart.
+ * The axes are shared across cats, not per-line — see multiSeriesGeometry.
+ * Hovering a cat in the key fades the others rather than hiding them, so the
+ * highlighted line keeps its context instead of jumping to a different-looking
+ * chart.
  */
-export default function WeightComparisonChart({ series, onSelect }: Props) {
+export default function MetricChart({ series, unit, onSelect }: Props) {
   const [highlighted, setHighlighted] = useState<string | null>(null)
   const geo = multiSeriesGeometry(series, VIEW.width, VIEW.height, PADDING)
 
@@ -53,11 +72,11 @@ export default function WeightComparisonChart({ series, onSelect }: Props) {
       <svg
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
         role="img"
-        aria-label={`Weight over time for ${geo.lines.length} cats, ${geo.from} to ${geo.to}`}
+        aria-label={`${geo.lines.length} ${geo.lines.length === 1 ? 'cat' : 'cats'}, ${unit}, ${geo.from} to ${geo.to}`}
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
       >
         {geo.ticks.map(t => (
-          <g key={t.lbs}>
+          <g key={t.value}>
             <line
               x1={PADDING.left}
               y1={t.y}
@@ -68,7 +87,7 @@ export default function WeightComparisonChart({ series, onSelect }: Props) {
               strokeDasharray="3 4"
             />
             <text x={PADDING.left - 8} y={t.y + 4} textAnchor="end" fontSize={11} fill="#6B4A34" opacity={0.65}>
-              {t.lbs.toFixed(1)}
+              {t.value.toFixed(1)}
             </text>
           </g>
         ))}
@@ -86,7 +105,8 @@ export default function WeightComparisonChart({ series, onSelect }: Props) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              {line.points.map(p => (
+              {line.points.length <= MAX_DOTS &&
+                line.points.map(p => (
                 <circle
                   key={p.point.id}
                   cx={p.x}
@@ -98,9 +118,9 @@ export default function WeightComparisonChart({ series, onSelect }: Props) {
                   style={{ cursor: onSelect ? 'pointer' : 'default' }}
                   onClick={() => onSelect?.(p.point.id)}
                 >
-                  <title>{`${line.label} — ${p.point.lbs.toFixed(1)} lbs on ${p.point.date}`}</title>
+                  <title>{`${line.label} — ${p.point.value.toFixed(1)} ${unit} on ${p.point.date}`}</title>
                 </circle>
-              ))}
+                ))}
             </g>
           )
         })}
@@ -138,7 +158,7 @@ export default function WeightComparisonChart({ series, onSelect }: Props) {
                 className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-colors ${
                   drawn ? 'hover:bg-brand-tan/20 cursor-default' : 'opacity-40 cursor-not-allowed'
                 }`}
-                title={drawn ? `Highlight ${s.label}` : `${s.label} has no readings yet`}
+                title={drawn ? `Highlight ${s.label}` : `${s.label} has nothing recorded for this`}
               >
                 <span
                   className="w-4 h-1.5 rounded-full shrink-0"
@@ -146,7 +166,7 @@ export default function WeightComparisonChart({ series, onSelect }: Props) {
                   aria-hidden="true"
                 />
                 <span className="text-sm text-brand-brown">{s.label}</span>
-                {!drawn && <span className="text-xs text-brand-brown/50">no readings</span>}
+                {!drawn && <span className="text-xs text-brand-brown/50">no data</span>}
               </button>
             </li>
           )

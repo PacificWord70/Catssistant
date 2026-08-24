@@ -8,13 +8,17 @@ import { HealthRecord } from '@/types/healthRecord'
  * is geometry nobody can assert on.
  */
 
-export interface WeightPoint {
-  /** The record this came from, so a point on the chart can be edited. */
+export interface SeriesPoint {
+  /** The record this came from, where a point maps to one — used for editing. */
   id: string
   /** ISO date, YYYY-MM-DD. */
   date: string
-  lbs: number
+  /** The measurement, in whatever unit the metric declares. */
+  value: number
 }
+
+/** @deprecated Use SeriesPoint. Kept so weight code reads naturally. */
+export type WeightPoint = SeriesPoint
 
 /**
  * Same local-time parsing as `scheduleUtils`. `new Date('2026-06-01')` reads a
@@ -35,7 +39,7 @@ function parseDateKey(key: string): Date {
 export function weightSeries(records: HealthRecord[]): WeightPoint[] {
   return records
     .filter((r): r is HealthRecord & { weightLbs: number } => typeof r.weightLbs === 'number')
-    .map(r => ({ id: r.id, date: r.date, lbs: r.weightLbs }))
+    .map(r => ({ id: r.id, date: r.date, value: r.weightLbs }))
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
@@ -62,11 +66,11 @@ export function weightTrend(series: WeightPoint[], steadyBandLbs = 0.1): WeightT
   if (series.length < 2) return undefined
   const from = series[0]
   const to = series[series.length - 1]
-  const changeLbs = to.lbs - from.lbs
+  const changeLbs = to.value - from.value
   const msPerDay = 1000 * 60 * 60 * 24
   return {
     changeLbs,
-    percent: from.lbs === 0 ? 0 : (changeLbs / from.lbs) * 100,
+    percent: from.value === 0 ? 0 : (changeLbs / from.value) * 100,
     direction: Math.abs(changeLbs) <= steadyBandLbs ? 'steady' : changeLbs > 0 ? 'up' : 'down',
     from,
     to,
@@ -77,9 +81,9 @@ export function weightTrend(series: WeightPoint[], steadyBandLbs = 0.1): WeightT
 export interface ChartGeometry {
   points: { x: number; y: number; point: WeightPoint }[]
   /** Y axis labels, low to high, with the y each sits at. */
-  ticks: { lbs: number; y: number }[]
-  minLbs: number
-  maxLbs: number
+  ticks: { value: number; y: number }[]
+  min: number
+  max: number
 }
 
 /**
@@ -102,18 +106,18 @@ export function chartGeometry(
 ): ChartGeometry | undefined {
   if (series.length === 0) return undefined
 
-  const lows = series.map(p => p.lbs)
+  const lows = series.map(p => p.value)
   const rawMin = Math.min(...lows)
   const rawMax = Math.max(...lows)
   // A flat series has no range to scale against; give it one so it draws as a
   // level line through the middle rather than collapsing onto an edge.
   const span = rawMax - rawMin || Math.max(rawMax * 0.1, 1)
-  const minLbs = rawMin - span * 0.15
-  const maxLbs = rawMax + span * 0.15
+  const min = rawMin - span * 0.15
+  const max = rawMax + span * 0.15
 
   const plotW = width - padding.left - padding.right
   const plotH = height - padding.top - padding.bottom
-  const yFor = (lbs: number) => padding.top + plotH - ((lbs - minLbs) / (maxLbs - minLbs)) * plotH
+  const yFor = (value: number) => padding.top + plotH - ((value - min) / (max - min)) * plotH
 
   const times = series.map(p => parseDateKey(p.date).getTime())
   const tMin = times[0]
@@ -124,16 +128,16 @@ export function chartGeometry(
     // One reading, or several on the same day, has no time span to spread over.
     // Centre it rather than dividing by zero.
     x: tSpan === 0 ? padding.left + plotW / 2 : padding.left + ((times[i] - tMin) / tSpan) * plotW,
-    y: yFor(point.lbs),
+    y: yFor(point.value),
     point,
   }))
 
   const ticks = Array.from({ length: tickCount }, (_, i) => {
-    const lbs = minLbs + ((maxLbs - minLbs) * i) / (tickCount - 1)
-    return { lbs, y: yFor(lbs) }
+    const value = min + ((max - min) * i) / (tickCount - 1)
+    return { value, y: yFor(value) }
   })
 
-  return { points, ticks, minLbs, maxLbs }
+  return { points, ticks, min, max }
 }
 
 export interface NamedSeries {
@@ -149,9 +153,9 @@ export interface MultiSeriesGeometry {
     label: string
     points: { x: number; y: number; point: WeightPoint }[]
   }[]
-  ticks: { lbs: number; y: number }[]
-  minLbs: number
-  maxLbs: number
+  ticks: { value: number; y: number }[]
+  min: number
+  max: number
   /** Date range covered, for the axis labels. */
   from: string
   to: string
@@ -177,16 +181,16 @@ export function multiSeriesGeometry(
   if (withPoints.length === 0) return undefined
 
   const allPoints = withPoints.flatMap(s => s.points)
-  const weights = allPoints.map(p => p.lbs)
+  const weights = allPoints.map(p => p.value)
   const rawMin = Math.min(...weights)
   const rawMax = Math.max(...weights)
   const span = rawMax - rawMin || Math.max(rawMax * 0.1, 1)
-  const minLbs = rawMin - span * 0.15
-  const maxLbs = rawMax + span * 0.15
+  const min = rawMin - span * 0.15
+  const max = rawMax + span * 0.15
 
   const plotW = width - padding.left - padding.right
   const plotH = height - padding.top - padding.bottom
-  const yFor = (lbs: number) => padding.top + plotH - ((lbs - minLbs) / (maxLbs - minLbs)) * plotH
+  const yFor = (value: number) => padding.top + plotH - ((value - min) / (max - min)) * plotH
 
   const dates = allPoints.map(p => p.date).sort()
   const from = dates[0]
@@ -206,16 +210,16 @@ export function multiSeriesGeometry(
           tSpan === 0
             ? padding.left + plotW / 2
             : padding.left + ((parseDateKey(point.date).getTime() - tMin) / tSpan) * plotW,
-        y: yFor(point.lbs),
+        y: yFor(point.value),
         point,
       })),
     })),
     ticks: Array.from({ length: tickCount }, (_, i) => {
-      const lbs = minLbs + ((maxLbs - minLbs) * i) / (tickCount - 1)
-      return { lbs, y: yFor(lbs) }
+      const value = min + ((max - min) * i) / (tickCount - 1)
+      return { value, y: yFor(value) }
     }),
-    minLbs,
-    maxLbs,
+    min,
+    max,
     from,
     to,
   }

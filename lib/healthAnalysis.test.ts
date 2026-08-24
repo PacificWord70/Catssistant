@@ -17,7 +17,7 @@ describe('weightSeries', () => {
   it('drops records with no weight rather than plotting them as zero', () => {
     const series = weightSeries([record('2026-01-01', 9), record('2026-02-01', undefined), record('2026-03-01', 10)])
     expect(series).toHaveLength(2)
-    expect(series.every(p => p.lbs > 0)).toBe(true)
+    expect(series.every(p => p.value > 0)).toBe(true)
   })
 
   it('is empty when nothing has a weight', () => {
@@ -77,7 +77,7 @@ describe('chartGeometry', () => {
 
   it('gives a flat series a band so the line does not collapse onto an edge', () => {
     const geo = chartGeometry(weightSeries([record('2026-01-01', 10), record('2026-02-01', 10)]), 430, 200, PADDING)!
-    expect(geo.maxLbs).toBeGreaterThan(geo.minLbs)
+    expect(geo.max).toBeGreaterThan(geo.min)
     expect(geo.points.every(p => Number.isFinite(p.y))).toBe(true)
     // Both readings are equal, so both sit at the same height, mid-plot.
     expect(geo.points[0].y).toBeCloseTo(geo.points[1].y)
@@ -95,15 +95,15 @@ describe('chartGeometry', () => {
 
   it('pads the domain past the data so the line never runs along the frame', () => {
     const geo = chartGeometry(weightSeries([record('2026-01-01', 9), record('2026-02-01', 11)]), 430, 200, PADDING)!
-    expect(geo.minLbs).toBeLessThan(9)
-    expect(geo.maxLbs).toBeGreaterThan(11)
+    expect(geo.min).toBeLessThan(9)
+    expect(geo.max).toBeGreaterThan(11)
   })
 
   it('returns ticks low to high, spanning the domain', () => {
     const geo = chartGeometry(weightSeries([record('2026-01-01', 9), record('2026-02-01', 11)]), 430, 200, PADDING)!
     expect(geo.ticks).toHaveLength(4)
-    expect(geo.ticks[0].lbs).toBeCloseTo(geo.minLbs)
-    expect(geo.ticks[3].lbs).toBeCloseTo(geo.maxLbs)
+    expect(geo.ticks[0].value).toBeCloseTo(geo.min)
+    expect(geo.ticks[3].value).toBeCloseTo(geo.max)
     // Higher weight means a smaller y — screen coordinates run downward.
     expect(geo.ticks[3].y).toBeLessThan(geo.ticks[0].y)
   })
@@ -137,8 +137,8 @@ describe('multiSeriesGeometry', () => {
     const heavy = geo.lines.find(l => l.id === 'heavy')!
     // Smaller y is higher on screen: the heavy cat must be above the light one.
     expect(heavy.points[0].y).toBeLessThan(light.points[0].y)
-    expect(geo.minLbs).toBeLessThan(8)
-    expect(geo.maxLbs).toBeGreaterThan(15.4)
+    expect(geo.min).toBeLessThan(8)
+    expect(geo.max).toBeGreaterThan(15.4)
   })
 
   it('shares one time axis, so the same date lands at the same x on every line', () => {
