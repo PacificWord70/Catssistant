@@ -18,6 +18,11 @@ import { buildMetrics, metricsWithData } from '@/lib/healthMetrics'
 import { catWeightLbs } from '@/lib/utils'
 import { HealthRecord } from '@/types/healthRecord'
 
+/* All/None sit at the head of both filter rows and have to look identical, so
+   the class lives in one place rather than being typed twice. */
+const PICK_BTN =
+  'px-2.5 py-1.5 rounded-xl border border-brand-tan/50 text-xs font-medium text-brand-brown/70 hover:bg-brand-tan/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
+
 const CARD = 'bg-white rounded-3xl shadow-soft border border-brand-tan/30 p-6'
 
 function daysAgoLabel(iso: string): string {
@@ -55,7 +60,7 @@ export default function HealthPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   /** Schedule category being added inline, so the graph is never left behind. */
   const [addingCategory, setAddingCategory] = useState<ScheduleCategory | null>(null)
-  /** Which metrics are charted. Null means "the default", which is weight only. */
+  /** Which metrics are charted. Null means the default, which is none of them. */
   const [pickedMetrics, setPickedMetrics] = useState<Set<string> | null>(null)
 
   /* Every cat by default: the chart is a comparison, and starting on one of
@@ -72,8 +77,7 @@ export default function HealthPage() {
 
   function toggle(id: string) {
     const next = new Set(selected)
-    // Never let the selection empty out — a chart of nothing is not a view.
-    if (next.has(id) && next.size > 1) next.delete(id)
+    if (next.has(id)) next.delete(id)
     else next.add(id)
     setPicked(next)
     setEditingId(null)
@@ -107,10 +111,10 @@ export default function HealthPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [metrics, selectedCatIds.join(',')],
   )
-  const shownMetrics = available.filter(m => (pickedMetrics ?? new Set(['weight'])).has(m.id))
+  const shownMetrics = available.filter(m => (pickedMetrics ?? new Set<string>()).has(m.id))
 
   function toggleMetric(id: string) {
-    const next = new Set(pickedMetrics ?? new Set(['weight']))
+    const next = new Set(pickedMetrics ?? new Set<string>())
     if (next.has(id)) next.delete(id)
     else next.add(id)
     setPickedMetrics(next)
@@ -213,6 +217,12 @@ export default function HealthPage() {
 
       {cats.length > 1 && (
         <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+          <button onClick={() => setPicked(new Set(cats.map(c => c.id)))} disabled={selected.size === cats.length} className={PICK_BTN}>
+            All
+          </button>
+          <button onClick={() => setPicked(new Set())} disabled={selected.size === 0} className={PICK_BTN}>
+            None
+          </button>
           {cats.map(c => {
             const on = selected.has(c.id)
             return (
@@ -240,12 +250,6 @@ export default function HealthPage() {
               </button>
             )
           })}
-          <button
-            onClick={() => setPicked(new Set(cats.map(c => c.id)))}
-            className="px-3 py-2 rounded-2xl border border-brand-tan/50 text-sm text-brand-brown/70 hover:bg-brand-tan/15 transition-colors whitespace-nowrap"
-          >
-            All cats
-          </button>
         </div>
       )}
 
@@ -254,6 +258,16 @@ export default function HealthPage() {
           really it was never recorded. */}
       {metrics.length > 1 && (
         <div className="flex items-center gap-2 mb-6 flex-wrap">
+          <button
+            onClick={() => setPickedMetrics(new Set(available.map(m => m.id)))}
+            disabled={available.length === 0 || shownMetrics.length === available.length}
+            className={PICK_BTN}
+          >
+            All
+          </button>
+          <button onClick={() => setPickedMetrics(new Set())} disabled={shownMetrics.length === 0} className={PICK_BTN}>
+            None
+          </button>
           {metrics.map(m => {
             const on = shownMetrics.some(x => x.id === m.id)
             /* Every metric the app can chart is listed, not just the ones with
@@ -301,25 +315,20 @@ export default function HealthPage() {
               </button>
             )
           })}
-          <button
-            onClick={() => setPickedMetrics(new Set(available.map(m => m.id)))}
-            disabled={available.length === 0}
-            className="px-3 py-1.5 rounded-2xl border border-brand-tan/50 text-sm text-brand-brown/70 hover:bg-brand-tan/15 transition-colors"
-          >
-            All
-          </button>
-          <button
-            onClick={() => setPickedMetrics(new Set())}
-            className="px-3 py-1.5 rounded-2xl border border-brand-tan/50 text-sm text-brand-brown/70 hover:bg-brand-tan/15 transition-colors"
-          >
-            None
-          </button>
+        </div>
+      )}
+
+      {selectedCats.length === 0 && (
+        <div className={`${CARD} mb-6 text-center py-10`}>
+          <p className="text-brand-brown/60">No cats selected.</p>
+          <p className="text-sm text-brand-brown/45 mt-1">Pick one above to see its charts.</p>
         </div>
       )}
 
       {shownMetrics.length === 0 && available.length > 0 && (
         <div className={`${CARD} mb-6 text-center py-10`}>
-          <p className="text-brand-brown/60">Nothing selected to plot.</p>
+          <p className="text-brand-brown/60">Nothing charted yet.</p>
+          <p className="text-sm text-brand-brown/45 mt-1">Pick a category above to plot it.</p>
         </div>
       )}
 
@@ -358,7 +367,7 @@ export default function HealthPage() {
       {/* Weight drops out of `available` when none of the selected cats have a
           reading, so this is the prompt to start it. It has to work for a whole
           household now that they are all selected by default. */}
-      {!available.some(m => m.id === 'weight') && (
+      {selectedCats.length > 0 && !available.some(m => m.id === 'weight') && (
         <Reveal>
           <div className={`${CARD} mb-6`}>
             <h2 className="font-display text-xl text-brand-brown mb-4">Weight over time</h2>
