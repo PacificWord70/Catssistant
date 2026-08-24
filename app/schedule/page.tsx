@@ -27,7 +27,7 @@ const PICK_BTN =
   'px-2.5 py-1.5 rounded-xl border border-brand-tan/50 text-xs font-medium text-brand-brown/70 hover:bg-brand-tan/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
 
 const CHIP = (on: boolean) =>
-  `flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-sm whitespace-nowrap transition-colors ${
+  `flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs sm:text-sm whitespace-nowrap transition-colors ${
     on
       ? 'border-brand-orange bg-brand-orange/10 text-brand-brown'
       : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
@@ -147,26 +147,34 @@ export default function SchedulePage() {
       </Reveal>
 
       <Reveal delay={0.05}>
-        <div className="mb-4 space-y-2">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <button onClick={() => setPickedCats(new Set(cats.map(c => c.id)))} disabled={shownCats.size === cats.length} className={PICK_BTN}>All</button>
-            <button onClick={() => setPickedCats(new Set())} disabled={shownCats.size === 0} className={PICK_BTN}>None</button>
-            {cats.map(c => (
-              <button key={c.id} onClick={() => toggleCat(c.id)} aria-pressed={shownCats.has(c.id)} className={CHIP(shownCats.has(c.id))}>
-                <CatAvatar cat={c} size={20} />
-                <span className="font-medium">{c.name}</span>
-              </button>
-            ))}
+        <div className="mb-4 space-y-3">
+          {/* Labelled and wrapping, rather than two anonymous rows that ran off
+              the side of a phone and had to be scrolled sideways to read. */}
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-brand-brown/45 mb-1.5">Cats</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button onClick={() => setPickedCats(new Set(cats.map(c => c.id)))} disabled={shownCats.size === cats.length} className={PICK_BTN}>All</button>
+              <button onClick={() => setPickedCats(new Set())} disabled={shownCats.size === 0} className={PICK_BTN}>None</button>
+              {cats.map(c => (
+                <button key={c.id} onClick={() => toggleCat(c.id)} aria-pressed={shownCats.has(c.id)} className={CHIP(shownCats.has(c.id))}>
+                  <CatAvatar cat={c} size={18} />
+                  <span className="font-medium">{c.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={() => setPickedCategories(new Set(SCHEDULE_CATEGORIES))} disabled={shownCategories.size === SCHEDULE_CATEGORIES.length} className={PICK_BTN}>All</button>
-            <button onClick={() => setPickedCategories(new Set())} disabled={shownCategories.size === 0} className={PICK_BTN}>None</button>
-            {SCHEDULE_CATEGORIES.map(c => (
-              <button key={c} onClick={() => toggleCategory(c)} aria-pressed={shownCategories.has(c)} className={CHIP(shownCategories.has(c))}>
-                <span aria-hidden="true">{CATEGORY_EMOJI[c]}</span>
-                {c}
-              </button>
-            ))}
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-brand-brown/45 mb-1.5">Categories</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button onClick={() => setPickedCategories(new Set(SCHEDULE_CATEGORIES))} disabled={shownCategories.size === SCHEDULE_CATEGORIES.length} className={PICK_BTN}>All</button>
+              <button onClick={() => setPickedCategories(new Set())} disabled={shownCategories.size === 0} className={PICK_BTN}>None</button>
+              {SCHEDULE_CATEGORIES.map(c => (
+                <button key={c} onClick={() => toggleCategory(c)} aria-pressed={shownCategories.has(c)} className={CHIP(shownCategories.has(c))}>
+                  <span aria-hidden="true">{CATEGORY_EMOJI[c]}</span>
+                  {c}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </Reveal>

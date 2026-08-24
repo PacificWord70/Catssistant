@@ -57,15 +57,25 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
                room there actually is. Clamped so six rows stay usable on a short
                laptop and do not become vast on a tall monitor. */
             className={`h-[clamp(2.25rem,5.6vh,4.25rem)] rounded-2xl flex flex-col items-center justify-start pt-1.5 gap-0.5 text-sm transition-colors
-                ${isSelected ? 'bg-brand-orange text-white' : cell.isToday ? 'bg-brand-tan/20 text-brand-charcoal' : 'hover:bg-brand-tan/10 text-brand-charcoal'}
+                ${
+                  isSelected
+                    ? 'bg-brand-orange text-white'
+                    : cell.items.length > 0
+                      ? // A day with something on it is tinted, which is the only
+                        // signal small screens get once the emoji are hidden.
+                        'bg-brand-orange/15 text-brand-charcoal hover:bg-brand-orange/25'
+                      : cell.isToday
+                        ? 'bg-brand-tan/20 text-brand-charcoal'
+                        : 'hover:bg-brand-tan/10 text-brand-charcoal'
+                }
                 ${!cell.inCurrentMonth ? 'opacity-30' : ''}`}
             >
               <span className={cell.isToday && !isSelected ? 'font-bold text-brand-orange' : ''}>{cell.dayNumber}</span>
-              {/* Emoji size steps up on wider screens. At the smallest widths a day
-                  cell is only about 45px across, and three emojis plus a "+N" at
-                  the larger size would spill past its edge. */}
+              {/* Hidden on phones: a cell is about 45px across there, and three
+                  emoji plus a "+N" cannot be read at that size — the tint says
+                  "something is on" and tapping the day shows what. */}
               {cell.items.length > 0 && (
-                <span className="text-xl sm:text-3xl leading-none tracking-tighter">
+                <span className="hidden sm:inline text-3xl leading-none tracking-tighter">
                   {categories.map(c => CATEGORY_EMOJI[c]).join('')}
                   {extra > 0 && `+${extra}`}
                 </span>
