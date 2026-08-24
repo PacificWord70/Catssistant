@@ -32,10 +32,10 @@ const SPOTS = {
 
 const PERCHES: { href: string; label: string; emoji: string; spot: keyof typeof SPOTS }[] = [
   { href: '/cats', label: 'My Cats', emoji: '🐱', spot: 1 },
-  { href: '/shopping', label: 'Shopping', emoji: '🛍️', spot: 2 },
+  { href: '/health', label: 'Health Home', emoji: '🩺', spot: 2 },
   { href: '/schedule', label: 'Schedule', emoji: '📅', spot: 3 },
-  { href: '/resources', label: 'Resources', emoji: '🔗', spot: 4 },
-  { href: '/health', label: 'Health Home', emoji: '🩺', spot: 6 },
+  { href: '/shopping', label: 'Shopping', emoji: '🛍️', spot: 4 },
+  { href: '/resources', label: 'Resources', emoji: '🔗', spot: 6 },
   { href: '/about', label: 'About', emoji: '💬', spot: 7 },
 ]
 
