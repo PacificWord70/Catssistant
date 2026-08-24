@@ -1,6 +1,8 @@
 import { Cat, CoatLength } from '@/types/cat'
 import { AVATAR_VIEWBOX } from '@/lib/avatar/placeholder'
 import { tonesFor } from '@/lib/avatar/palette'
+import { drawHairFor, traitsForBreed } from '@/lib/avatar/breedTraits'
+import { effectiveEnergy } from '@/lib/breedDefaults'
 
 /**
  * Optional hand-drawn artwork for the avatar.
@@ -14,7 +16,28 @@ import { tonesFor } from '@/lib/avatar/palette'
  * colour, rather than needing one file per colour.
  */
 
-type CatArtInput = Pick<Cat, 'color' | 'pattern' | 'coatLength'>
+type CatArtInput = Pick<Cat, 'breed' | 'color' | 'pattern' | 'coatLength' | 'energyLevel'>
+
+/**
+ * Which set of eyes to draw.
+ *
+ * A cat's pupils widen when it is roused — stalking, playing, startled — and
+ * narrow to slits when it is settled in ordinary light. Drawing convention
+ * agrees: wide eyes read as alert, narrow ones as relaxed. So the high-energy
+ * cat gets the big pupils and the low-energy cat the slits, not the other way
+ * round.
+ *
+ * The owner's own answer wins; where they left it blank effectiveEnergy falls
+ * back to the breed's typical level.
+ */
+function eyeVariant(cat: CatArtInput): string {
+  switch (effectiveEnergy(cat)) {
+    case 'Low': return 'calm'
+    case 'High': return 'active'
+    // Medium and Unknown both land on the neutral pair.
+    default: return 'normal'
+  }
+}
 
 /**
  * Loaded images, keyed by layer name. Promises are cached rather than images,
@@ -56,24 +79,69 @@ function baseVariant(coatLength?: CoatLength): string {
   }
 }
 
+/**
+ * Names to try for a cat's body art, best fit first.
+ *
+ * Breed decides the face and coat length decides the hair, so a Siamese gets a
+ * wedge and a Persian a flat face rather than both getting whatever the coat
+ * length happened to map to. Three shapes of name are tried in turn:
+ *
+ *   base-wedge-short-calm   face, hair and eyes — the fullest set
+ *   base-wedge-short        face and hair, for art drawn with one pair of eyes
+ *   base-wedge              face only, for art drawn as a face plus a separate ruff
+ *   base-short              coat length only, the original naming
+ *
+ * Falling through rather than demanding an exact match means partial sets work:
+ * draw two faces and every other breed still resolves to something.
+ */
+function baseCandidates(cat: CatArtInput): string[] {
+  const traits = traitsForBreed(cat.breed)
+  const face = traits.face.toLowerCase()
+  const hair = drawHairFor(cat.coatLength, traits.hair).toLowerCase()
+  const eyes = eyeVariant(cat)
+  return [
+    `base-${face}-${hair}-${eyes}`,
+    `base-${face}-${hair}`,
+    `base-${face}`,
+    `base-${baseVariant(cat.coatLength)}`,
+  ]
+}
+
+/** First name that resolves to an image, or null when none of them do. */
+async function loadFirst(names: string[]): Promise<HTMLImageElement | null> {
+  for (const name of names) {
+    const img = await loadLayer(name)
+    if (img) return img
+  }
+  return null
+}
+
 export interface ArtLayers {
   base: HTMLImageElement
   pattern?: HTMLImageElement
+  /** Drawn in its own colours and never tinted. See drawArtLayers. */
+  features?: HTMLImageElement
 }
 
 /**
  * Resolves to null when there is no base artwork, which tells the caller to
- * fall back to the placeholder. The pattern layer is optional on its own — a
- * base with no matching pattern art still renders as a plain coloured cat.
+ * fall back to the placeholder. The pattern and features layers are optional on
+ * their own — a base with no matching pattern art still renders as a plain
+ * coloured cat.
  */
 export async function loadArtLayers(cat: CatArtInput): Promise<ArtLayers | null> {
-  const base = await loadLayer(`base-${baseVariant(cat.coatLength)}`)
+  const candidates = baseCandidates(cat)
+  const base = await loadFirst(candidates)
   if (!base) return null
 
   const wantsPattern = cat.pattern && cat.pattern !== 'Solid'
   const pattern = wantsPattern ? await loadLayer(`pattern-${cat.pattern!.toLowerCase()}`) : null
 
-  return { base, pattern: pattern ?? undefined }
+  // Features follow whichever base won, so the eyes line up with the face that
+  // actually loaded rather than one that was only the second choice.
+  const features = await loadFirst(candidates.map(n => n.replace(/^base-/, 'features-')))
+
+  return { base, pattern: pattern ?? undefined, features: features ?? undefined }
 }
 
 /**
@@ -117,9 +185,12 @@ function tintLayer(img: HTMLImageElement, color: string, cacheKey: string): HTML
  */
 export function drawArtLayers(ctx: CanvasRenderingContext2D, layers: ArtLayers, cat: CatArtInput) {
   const tones = tonesFor(cat.color, cat.pattern, cat.coatLength)
-  const variant = baseVariant(cat.coatLength)
 
-  const body = tintLayer(layers.base, tones.base, `base-${variant}:${tones.base}`)
+  // Keyed on the image that actually loaded, not on a name derived from the
+  // cat. Two cats can share a coat length and still resolve to different faces,
+  // and keying on the coat length alone would hand the second one the first
+  // one's tinted canvas — the wrong face in the right colour.
+  const body = tintLayer(layers.base, tones.base, `${layers.base.src}:${tones.base}`)
   ctx.drawImage(body, 0, 0, AVATAR_VIEWBOX, AVATAR_VIEWBOX)
 
   if (layers.pattern) {
@@ -128,5 +199,13 @@ export function drawArtLayers(ctx: CanvasRenderingContext2D, layers: ArtLayers, 
     // a tuxedo's bib comes out white instead of near-invisible dark grey.
     const markings = tintLayer(layers.pattern, tones.marking, `pattern-${cat.pattern}:${tones.marking}`)
     ctx.drawImage(markings, 0, 0, AVATAR_VIEWBOX, AVATAR_VIEWBOX)
+  }
+
+  if (layers.features) {
+    // Drawn last and deliberately untinted. Multiply only ever darkens, so
+    // anything left in the tinted layers takes the coat colour with it — a
+    // white eye on a black cat comes out black, which is exactly wrong. Eyes,
+    // nose and inner ears keep their own colours by staying out of the tint.
+    ctx.drawImage(layers.features, 0, 0, AVATAR_VIEWBOX, AVATAR_VIEWBOX)
   }
 }

@@ -1,13 +1,18 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Cat } from '@/types/cat'
 import { AVATAR_VIEWBOX, drawPlaceholderSlot } from '@/lib/avatar/placeholder'
 import { drawArtLayers, loadArtLayers } from '@/lib/avatar/artLayers'
+import { effectiveAppearance } from '@/lib/breedDefaults'
+import { coatLabel } from '@/lib/utils'
 
 interface Props {
-  /** Only the fields that affect the drawing, so any cat-shaped object works. */
-  cat: Pick<Cat, 'name' | 'color' | 'pattern' | 'coatLength'>
+  /**
+   * Only the fields that affect the drawing, so any cat-shaped object works.
+   * `breed` is included because it supplies the fallbacks for the other three.
+   */
+  cat: Pick<Cat, 'name' | 'breed' | 'color' | 'pattern' | 'coatLength' | 'energyLevel'>
   /** Rendered width and height in CSS pixels. The drawing scales to fit. */
   size?: number
   className?: string
@@ -60,12 +65,19 @@ function setupCanvas(canvas: HTMLCanvasElement, size: number): CanvasRenderingCo
  */
 export default function CatAvatar({ cat, size = 96, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [artLoaded, setArtLoaded] = useState(false)
 
+  // Breed fills in whatever the owner left blank — a Russian Blue with no
+  // colour recorded still draws grey. Resolved here rather than in the effect so
+  // the dependency list below sees the values actually used.
+  //
   // Pulled out so the effect can depend on the three values that actually
   // change the drawing. Depending on `cat` itself would redraw on every parent
   // render, because callers build cat objects inline and object identity
   // changes each time even when the contents are the same.
-  const { color, pattern, coatLength } = cat
+  const { color, pattern, coatLength } = effectiveAppearance(cat)
+  const breed = cat.breed
+  const energyLevel = cat.energyLevel
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -77,29 +89,36 @@ export default function CatAvatar({ cat, size = 96, className }: Props) {
     // upgrade to hand-drawn art if any is installed. With no art present this
     // first draw is the final one.
     drawPlaceholderSlot(ctx)
+    setArtLoaded(false)
 
     let cancelled = false
-    loadArtLayers({ color, pattern, coatLength }).then(layers => {
+    loadArtLayers({ breed, color, pattern, coatLength, energyLevel }).then(layers => {
       // Guards a race: if the cat or size changed while the images were
       // loading, this effect has already been cleaned up and painting now
       // would put stale art on a canvas that has moved on.
       if (cancelled || !layers) return
       const artCtx = setupCanvas(canvas, size)
-      if (artCtx) drawArtLayers(artCtx, layers, { color, pattern, coatLength })
+      if (artCtx) drawArtLayers(artCtx, layers, { breed, color, pattern, coatLength, energyLevel })
+      setArtLoaded(true)
     })
 
     return () => { cancelled = true }
-  }, [color, pattern, coatLength, size])
+  }, [breed, color, pattern, coatLength, energyLevel, size])
 
-  // A canvas is invisible to screen readers, so it needs describing. It says
-  // "no photo" rather than describing the coat because, with no art installed,
-  // the coat isn't what's on screen — an empty slot is. Claiming otherwise would
-  // mislead anyone using a screen reader. Worth revisiting once real art lands.
+  // A canvas is invisible to screen readers, so it needs describing — and the
+  // description has to match whichever of the two things actually rendered.
+  // With art installed that is a drawing of the cat, so it gets described. With
+  // none, an empty slot is on screen and claiming a coat would be a lie.
+  const coat = coatLabel({ color, pattern })
+  const label = artLoaded
+    ? `${cat.name} — drawing of a ${coat ? `${coat.toLowerCase()} ` : ''}cat`
+    : `${cat.name} — no photo`
+
   return (
     <canvas
       ref={canvasRef}
       role="img"
-      aria-label={`${cat.name} — no photo`}
+      aria-label={label}
       className={className}
     />
   )
