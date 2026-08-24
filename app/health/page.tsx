@@ -9,7 +9,7 @@ import Reveal from '@/components/motion/Reveal'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { loadCats } from '@/store/catsSlice'
 import { loadScheduleEvents } from '@/store/scheduleSlice'
-import { loadHealthRecords, persistHealthRecord } from '@/store/healthSlice'
+import { loadHealthRecords, persistHealthRecord, removeHealthRecord } from '@/store/healthSlice'
 import { selectCatsByNewest, selectHealthRecords, selectScheduleEvents } from '@/store/selectors'
 import { weightSeries, weightTrend } from '@/lib/healthAnalysis'
 import { catWeightLbs } from '@/lib/utils'
@@ -47,6 +47,8 @@ export default function HealthPage() {
 
   const [chosenId, setChosenId] = useState<string | null>(null)
   const [logging, setLogging] = useState(false)
+  /** Id of the reading being edited, or null when logging a new one. */
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   useEffect(() => {
     dispatch(loadCats())
@@ -85,9 +87,25 @@ export default function HealthPage() {
     return Math.max(0, started - meds.filter(e => e.medicationStatus === 'Stopped').length)
   }, [events, cat])
 
+  const catRecords = useMemo(
+    () => (cat ? allRecords.filter(r => r.catId === cat.id) : []),
+    [allRecords, cat],
+  )
+  const editingRecord = catRecords.find(r => r.id === editingId)
+
+  function closeForm() {
+    setLogging(false)
+    setEditingId(null)
+  }
+
   function handleSave(record: HealthRecord) {
     dispatch(persistHealthRecord(record))
-    setLogging(false)
+    closeForm()
+  }
+
+  function handleDelete(id: string) {
+    dispatch(removeHealthRecord(id))
+    closeForm()
   }
 
   if (cats.length === 0) {
@@ -152,7 +170,7 @@ export default function HealthPage() {
               <h2 className="font-display text-xl text-brand-brown mb-4">Weight over time</h2>
 
               {series.length > 0 ? (
-                <WeightChart series={series} />
+                <WeightChart series={series} onSelect={setEditingId} />
               ) : (
                 <div className="text-center py-10">
                   <p className="text-brand-brown/60 mb-1">No weight readings yet for {cat.name}.</p>
@@ -223,10 +241,44 @@ export default function HealthPage() {
               }
             />
           </div>
+
+          {series.length > 0 && (
+            <div className={`${CARD} mt-6`}>
+              <h2 className="font-display text-xl text-brand-brown mb-1">Readings</h2>
+              <p className="text-sm text-brand-brown/55 mb-4">
+                Newest first. Click any row — or any point on the chart — to correct it.
+              </p>
+              <ul className="divide-y divide-brand-tan/30">
+                {[...series].reverse().map(point => (
+                  <li key={point.id}>
+                    <button
+                      onClick={() => setEditingId(point.id)}
+                      className="w-full flex items-baseline justify-between gap-4 py-2.5 text-left hover:bg-brand-tan/10 rounded-xl px-2 -mx-2 transition-colors"
+                    >
+                      <span className="font-medium text-brand-brown">{point.lbs.toFixed(1)} lbs</span>
+                      <span className="text-sm text-brand-brown/55 flex-1 truncate">
+                        {catRecords.find(r => r.id === point.id)?.notes ?? ''}
+                      </span>
+                      <span className="text-sm text-brand-brown/70 whitespace-nowrap">{point.date}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       )}
 
-      {logging && cat && <WeightLogForm cat={cat} onSave={handleSave} onClose={() => setLogging(false)} />}
+      {(logging || editingRecord) && cat && (
+        <WeightLogForm
+          cat={cat}
+          record={editingRecord}
+          existingDates={catRecords.map(r => r.date)}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          onClose={closeForm}
+        />
+      )}
     </div>
   )
 }

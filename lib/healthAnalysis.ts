@@ -9,6 +9,8 @@ import { HealthRecord } from '@/types/healthRecord'
  */
 
 export interface WeightPoint {
+  /** The record this came from, so a point on the chart can be edited. */
+  id: string
   /** ISO date, YYYY-MM-DD. */
   date: string
   lbs: number
@@ -33,7 +35,7 @@ function parseDateKey(key: string): Date {
 export function weightSeries(records: HealthRecord[]): WeightPoint[] {
   return records
     .filter((r): r is HealthRecord & { weightLbs: number } => typeof r.weightLbs === 'number')
-    .map(r => ({ date: r.date, lbs: r.weightLbs }))
+    .map(r => ({ id: r.id, date: r.date, lbs: r.weightLbs }))
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 

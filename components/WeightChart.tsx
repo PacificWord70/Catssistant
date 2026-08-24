@@ -5,6 +5,8 @@ import { chartGeometry, WeightPoint } from '@/lib/healthAnalysis'
 
 interface Props {
   series: WeightPoint[]
+  /** Called with the record id when a point is clicked, to edit that reading. */
+  onSelect?: (id: string) => void
 }
 
 /* Drawn by hand rather than with a charting library: dependencies need a team
@@ -19,7 +21,7 @@ function shortDate(iso: string): string {
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-export default function WeightChart({ series }: Props) {
+export default function WeightChart({ series, onSelect }: Props) {
   const [active, setActive] = useState<number | null>(null)
   const geo = chartGeometry(series, VIEW.width, VIEW.height, PADDING)
 
@@ -78,10 +80,13 @@ export default function WeightChart({ series }: Props) {
               cy={p.y}
               r={16}
               fill="transparent"
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: onSelect ? 'pointer' : 'default' }}
               onMouseEnter={() => setActive(i)}
               onMouseLeave={() => setActive(null)}
-            />
+              onClick={() => onSelect?.(p.point.id)}
+            >
+              <title>{`${p.point.lbs.toFixed(1)} lbs on ${p.point.date}${onSelect ? ' — click to edit' : ''}`}</title>
+            </circle>
             <circle
               cx={p.x}
               cy={p.y}
