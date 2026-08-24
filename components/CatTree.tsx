@@ -30,13 +30,28 @@ const SPOTS = {
   7: { x: 712, y: 758 },
 } as const
 
-const PERCHES: { href: string; label: string; emoji: string; spot: keyof typeof SPOTS }[] = [
-  { href: '/cats', label: 'My Cats', emoji: '🐱', spot: 1 },
-  { href: '/health', label: 'Health Home', emoji: '🩺', spot: 2 },
-  { href: '/schedule', label: 'Schedule', emoji: '📅', spot: 3 },
-  { href: '/shopping', label: 'Shopping', emoji: '🛍️', spot: 4 },
-  { href: '/resources', label: 'Resources', emoji: '🔗', spot: 6 },
-  { href: '/about', label: 'About', emoji: '💬', spot: 7 },
+/* Height of one button, in ems of its own text. Nudges below are counted in
+   these rather than in artwork pixels: the buttons keep their size when the
+   drawing scales down, so their spacing should be measured against themselves,
+   not against the picture behind them. */
+const LINE = 2.27
+
+/* `lines` nudges a button off its spot — negative up, positive down. Kept
+   separate from SPOTS so those stay honest about where the artwork's perches
+   actually are, and so the spacing can be retuned without losing them. */
+const PERCHES: {
+  href: string
+  label: string
+  emoji: string
+  spot: keyof typeof SPOTS
+  lines: number
+}[] = [
+  { href: '/cats', label: 'My Cats', emoji: '🐱', spot: 1, lines: -1 },
+  { href: '/health', label: 'Health Home', emoji: '🩺', spot: 2, lines: -1 },
+  { href: '/schedule', label: 'Schedule', emoji: '📅', spot: 3, lines: 2 },
+  { href: '/shopping', label: 'Shopping', emoji: '🛍️', spot: 4, lines: -1 },
+  { href: '/resources', label: 'Resources', emoji: '🔗', spot: 6, lines: -1 },
+  { href: '/about', label: 'About', emoji: '💬', spot: 7, lines: -1 },
 ]
 
 export default function CatTree() {
@@ -81,7 +96,7 @@ export default function CatTree() {
           />
 
           <div style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
-            {PERCHES.map(({ href, label, emoji, spot }) => {
+            {PERCHES.map(({ href, label, emoji, spot, lines }) => {
               const isHovered = hovered === href
               const { x, y } = SPOTS[spot]
               return (
@@ -94,7 +109,7 @@ export default function CatTree() {
                     position:      'absolute',
                     left:          `${(x / ART.width) * 100}%`,
                     top:           `${(y / ART.height) * 100}%`,
-                    transform:     'translate(-50%, -50%)',
+                    transform:     `translate(-50%, calc(-50% + ${(lines * LINE).toFixed(2)}em))`,
                     display:       'inline-block',
                     background:    isHovered ? '#F26A1B' : '#6B4A34',
                     color:         '#FFFBF6',
