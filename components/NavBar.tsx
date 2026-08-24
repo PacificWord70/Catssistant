@@ -15,8 +15,10 @@ const MORE_LINKS = [
   { href: '/about',     label: 'About' },
 ]
 
+/* No Home link: the logo beside these already goes there, and the bar is hidden
+   on the home page anyway, so it would only ever be a second way to do the same
+   thing from somewhere else. */
 const PRIMARY_LINKS = [
-  { href: '/',          label: 'Home' },
   { href: '/cats',      label: 'My Cats' },
   { href: '/schedule',  label: 'Schedule' },
   { href: '/health',    label: 'Health' },
@@ -67,8 +69,8 @@ export default function NavBar() {
           <CatssistantLogo horizontal height={scrolled ? 28 : 34} />
         </Link>
         <div className="flex items-center gap-1">
-          {/* Hidden on narrow screens. The full row — logo, five links, Add Cat
-              and the menu button — needs about 470px of its own, so on a phone
+          {/* Hidden on narrow screens. The full row — logo, four links, Add Cat
+              and the menu button — needs about 400px of its own, so on a phone
               it ran past the edge of the viewport and took the whole page into
               a sideways scroll. Below md these links live in the menu instead. */}
           <div className="hidden md:flex items-center gap-1">
