@@ -7,9 +7,14 @@ import { useState } from 'react'
    (811x1211). Numbered to match the labelled reference, so re-assigning a
    button is a one-number change.
 
-     1  top perch          4  crescent shelf
-     2  left perch         5  low shelf
-     3  box doorway        6  hammock
+     1  top perch          5  low shelf, left
+     2  left perch         6  hammock
+     3  box doorway        7  ledge, right
+     4  crescent shelf
+
+   Spot 5 is currently unused — there are seven places to sit and six buttons.
+   The small left ledge is the one that looks least empty without a button on
+   it; an empty hammock reads as a missing link.
 
    Positions are turned into percentages below rather than being hard-coded as
    percentages, so they stay readable against the artwork they came from. */
@@ -22,6 +27,7 @@ const SPOTS = {
   4: { x: 135, y: 609 },
   5: { x: 175, y: 800 },
   6: { x: 449, y: 1018 },
+  7: { x: 712, y: 758 },
 } as const
 
 const PERCHES: { href: string; label: string; emoji: string; spot: keyof typeof SPOTS }[] = [
@@ -29,8 +35,8 @@ const PERCHES: { href: string; label: string; emoji: string; spot: keyof typeof 
   { href: '/shopping', label: 'Shopping', emoji: '🛍️', spot: 2 },
   { href: '/schedule', label: 'Schedule', emoji: '📅', spot: 3 },
   { href: '/resources', label: 'Resources', emoji: '🔗', spot: 4 },
-  { href: '/about', label: 'About', emoji: '💬', spot: 5 },
-  { href: '/breeds', label: 'Breeds', emoji: '📚', spot: 6 },
+  { href: '/health', label: 'Health Home', emoji: '🩺', spot: 6 },
+  { href: '/about', label: 'About', emoji: '💬', spot: 7 },
 ]
 
 export default function CatTree() {
