@@ -7,6 +7,7 @@ import { Cat } from '@/types/cat'
 import { useAppDispatch } from '@/store/hooks'
 import { persistCat } from '@/store/catsSlice'
 import { BREEDS } from '@/lib/breeds'
+import { breedFillIns } from '@/lib/breedDefaults'
 import { COAT_COLORS, COAT_LENGTHS, COAT_PATTERNS, ENERGY_LEVELS, PREY_DRIVES, HUNTING_LOCATIONS, KNOWN_ILLNESSES, YES_NO_UNKNOWN } from '@/lib/catAttributes'
 import BreedTag from '@/components/BreedTag'
 
@@ -188,7 +189,15 @@ export default function CatForm({ existing, prospective }: Props) {
   function addBreed(breed: string) {
     const trimmed = breed.trim()
     if (!trimmed || cat.breed.includes(trimmed)) return
-    updateField('breed', [...cat.breed, trimmed])
+
+    setCat(prev => {
+      const withBreed = { ...prev, breed: [...prev.breed, trimmed] }
+      // Fill the blanks this breed settles, so the owner can see the assumption
+      // sitting in the field and correct it before saving rather than having the
+      // app decide quietly. Anything already answered is left alone, and breeds
+      // that vary — a Persian's colour, say — fill nothing.
+      return { ...withBreed, ...breedFillIns(withBreed) }
+    })
     setBreedInput('')
   }
 

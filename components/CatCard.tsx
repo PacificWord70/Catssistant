@@ -6,12 +6,18 @@ import { Cat } from '@/types/cat'
 import { catAgeShort, coatLabel } from '@/lib/utils'
 import BreedTag from '@/components/BreedTag'
 import CatAvatar from '@/components/CatAvatar'
+import { effectiveColor, effectivePattern } from '@/lib/breedDefaults'
 
 interface Props {
   cat: Cat
 }
 
 export default function CatCard({ cat }: Props) {
+  // Colour and markings the card should name, breed fallbacks included. Both
+  // stay undefined where nothing settles them, so the caption can say nothing
+  // rather than guess.
+  const effective = { color: effectiveColor(cat), pattern: effectivePattern(cat) }
+
   const reduceMotion = useReducedMotion()
 
   return (
@@ -41,8 +47,12 @@ export default function CatCard({ cat }: Props) {
             </div>
           </div>
           <div className="flex items-center justify-between mt-2">
-            {coatLabel(cat) && (
-              <span className="text-xs text-brand-brown/60 truncate">{coatLabel(cat)}</span>
+            {/* Falls back to the breed's own colour and markings, matching the
+                avatar above rather than leaving the caption blank beside a
+                clearly grey cat. Where the breed settles nothing — a Persian can
+                be any colour — both stay quiet instead of inventing one. */}
+            {coatLabel(effective) && (
+              <span className="text-xs text-brand-brown/60 truncate">{coatLabel(effective)}</span>
             )}
             {cat.birthday && (
               <span className="text-xs text-brand-brown/60 ml-auto">{catAgeShort(cat.birthday)}</span>
