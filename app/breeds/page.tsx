@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import { BREEDS, breedSlug } from '@/lib/breeds'
 
 const TRAIT_COLORS: Record<string, string> = {
@@ -143,6 +144,12 @@ export default function BreedsPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Resources is how this page is reached from the nav, so it is the way
+          back out. A cat's breed tag also deep-links here, which is why this is
+          a link rather than a history-based back button. */}
+      <Link href="/resources" className="text-brand-slate text-sm hover:underline mb-5 inline-block">
+        ← Other resources
+      </Link>
       <div className="bg-white rounded-3xl shadow-soft p-7">
 
         <div className="text-center mb-7">
