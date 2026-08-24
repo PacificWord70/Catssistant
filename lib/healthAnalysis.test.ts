@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { HealthRecord } from '@/types/healthRecord'
-import { chartGeometry, weightSeries, weightTrend } from '@/lib/healthAnalysis'
+import { chartGeometry, multiSeriesGeometry, weightSeries, weightTrend } from '@/lib/healthAnalysis'
 
 const PADDING = { top: 10, right: 10, bottom: 20, left: 30 }
 
@@ -106,5 +106,69 @@ describe('chartGeometry', () => {
     expect(geo.ticks[3].lbs).toBeCloseTo(geo.maxLbs)
     // Higher weight means a smaller y — screen coordinates run downward.
     expect(geo.ticks[3].y).toBeLessThan(geo.ticks[0].y)
+  })
+})
+
+describe('multiSeriesGeometry', () => {
+  const named = (id: string, label: string, rs: HealthRecord[]) => ({ id, label, points: weightSeries(rs) })
+
+  it('is undefined when no cat has a reading', () => {
+    expect(multiSeriesGeometry([], 640, 260, PADDING)).toBeUndefined()
+    expect(multiSeriesGeometry([named('a', 'A', [])], 640, 260, PADDING)).toBeUndefined()
+  })
+
+  it('drops cats with no readings but keeps the rest', () => {
+    const geo = multiSeriesGeometry(
+      [named('a', 'A', [record('2026-01-01', 9)]), named('b', 'B', []), named('c', 'C', [record('2026-02-01', 12)])],
+      640, 260, PADDING,
+    )!
+    expect(geo.lines.map(l => l.id)).toEqual(['a', 'c'])
+  })
+
+  it('shares one weight domain, so a light cat sits below a heavy one', () => {
+    const geo = multiSeriesGeometry(
+      [
+        named('light', 'Light', [record('2026-01-01', 8), record('2026-02-01', 8.4)]),
+        named('heavy', 'Heavy', [record('2026-01-01', 15), record('2026-02-01', 15.4)]),
+      ],
+      640, 260, PADDING,
+    )!
+    const light = geo.lines.find(l => l.id === 'light')!
+    const heavy = geo.lines.find(l => l.id === 'heavy')!
+    // Smaller y is higher on screen: the heavy cat must be above the light one.
+    expect(heavy.points[0].y).toBeLessThan(light.points[0].y)
+    expect(geo.minLbs).toBeLessThan(8)
+    expect(geo.maxLbs).toBeGreaterThan(15.4)
+  })
+
+  it('shares one time axis, so the same date lands at the same x on every line', () => {
+    const geo = multiSeriesGeometry(
+      [
+        named('a', 'A', [record('2026-01-01', 9), record('2026-03-01', 10)]),
+        named('b', 'B', [record('2026-01-01', 12), record('2026-03-01', 13)]),
+      ],
+      640, 260, PADDING,
+    )!
+    const [a, b] = geo.lines
+    expect(a.points[0].x).toBeCloseTo(b.points[0].x)
+    expect(a.points[1].x).toBeCloseTo(b.points[1].x)
+  })
+
+  it('spans the full range across cats, not just the first one', () => {
+    const geo = multiSeriesGeometry(
+      [named('a', 'A', [record('2026-02-01', 9)]), named('b', 'B', [record('2026-01-01', 12), record('2026-06-01', 13)])],
+      640, 260, PADDING,
+    )!
+    expect(geo.from).toBe('2026-01-01')
+    expect(geo.to).toBe('2026-06-01')
+  })
+
+  it('centres a single shared date rather than dividing by a zero span', () => {
+    const geo = multiSeriesGeometry(
+      [named('a', 'A', [record('2026-01-01', 9)]), named('b', 'B', [record('2026-01-01', 12)])],
+      640, 260, PADDING,
+    )!
+    for (const line of geo.lines) expect(Number.isFinite(line.points[0].x)).toBe(true)
+    expect(geo.lines[0].points[0].x).toBeCloseTo(geo.lines[1].points[0].x)
   })
 })

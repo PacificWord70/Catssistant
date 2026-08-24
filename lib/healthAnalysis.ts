@@ -135,3 +135,88 @@ export function chartGeometry(
 
   return { points, ticks, minLbs, maxLbs }
 }
+
+export interface NamedSeries {
+  /** Cat id, or whatever the caller keys lines by. */
+  id: string
+  label: string
+  points: WeightPoint[]
+}
+
+export interface MultiSeriesGeometry {
+  lines: {
+    id: string
+    label: string
+    points: { x: number; y: number; point: WeightPoint }[]
+  }[]
+  ticks: { lbs: number; y: number }[]
+  minLbs: number
+  maxLbs: number
+  /** Date range covered, for the axis labels. */
+  from: string
+  to: string
+}
+
+/**
+ * Lays several cats out on one pair of axes.
+ *
+ * The domains are deliberately *shared* rather than computed per line. Scaling
+ * each cat to its own range would put a 9lb cat and a 15lb cat on the same
+ * visual level and make a comparison chart lie about the thing it exists to
+ * compare. Same for time: every line is placed against one date range, so a
+ * point halfway across means the same moment on every line.
+ */
+export function multiSeriesGeometry(
+  seriesList: NamedSeries[],
+  width: number,
+  height: number,
+  padding: { top: number; right: number; bottom: number; left: number },
+  tickCount = 4,
+): MultiSeriesGeometry | undefined {
+  const withPoints = seriesList.filter(s => s.points.length > 0)
+  if (withPoints.length === 0) return undefined
+
+  const allPoints = withPoints.flatMap(s => s.points)
+  const weights = allPoints.map(p => p.lbs)
+  const rawMin = Math.min(...weights)
+  const rawMax = Math.max(...weights)
+  const span = rawMax - rawMin || Math.max(rawMax * 0.1, 1)
+  const minLbs = rawMin - span * 0.15
+  const maxLbs = rawMax + span * 0.15
+
+  const plotW = width - padding.left - padding.right
+  const plotH = height - padding.top - padding.bottom
+  const yFor = (lbs: number) => padding.top + plotH - ((lbs - minLbs) / (maxLbs - minLbs)) * plotH
+
+  const dates = allPoints.map(p => p.date).sort()
+  const from = dates[0]
+  const to = dates[dates.length - 1]
+  const tMin = parseDateKey(from).getTime()
+  const tMax = parseDateKey(to).getTime()
+  const tSpan = tMax - tMin
+
+  return {
+    lines: withPoints.map(s => ({
+      id: s.id,
+      label: s.label,
+      points: s.points.map(point => ({
+        // Everything on one day, or a single reading overall, has no span to
+        // spread across. Centre rather than divide by zero.
+        x:
+          tSpan === 0
+            ? padding.left + plotW / 2
+            : padding.left + ((parseDateKey(point.date).getTime() - tMin) / tSpan) * plotW,
+        y: yFor(point.lbs),
+        point,
+      })),
+    })),
+    ticks: Array.from({ length: tickCount }, (_, i) => {
+      const lbs = minLbs + ((maxLbs - minLbs) * i) / (tickCount - 1)
+      return { lbs, y: yFor(lbs) }
+    }),
+    minLbs,
+    maxLbs,
+    from,
+    to,
+  }
+}

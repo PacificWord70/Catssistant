@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import CatAvatar from '@/components/CatAvatar'
 import WeightChart from '@/components/WeightChart'
+import WeightComparisonChart, { lineColor } from '@/components/WeightComparisonChart'
 import WeightLogForm from '@/components/WeightLogForm'
 import Reveal from '@/components/motion/Reveal'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
@@ -45,9 +46,10 @@ export default function HealthPage() {
   const events = useAppSelector(selectScheduleEvents)
   const allRecords = useAppSelector(selectHealthRecords)
 
-  const [chosenId, setChosenId] = useState<string | null>(null)
+  /** Which cats are on the chart. Null until the owner picks, so the default can
+      follow the cat list arriving without an effect writing state. */
+  const [picked, setPicked] = useState<Set<string> | null>(null)
   const [logging, setLogging] = useState(false)
-  /** Id of the reading being edited, or null when logging a new one. */
   const [editingId, setEditingId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -56,18 +58,40 @@ export default function HealthPage() {
     dispatch(loadHealthRecords())
   }, [dispatch])
 
-  /* Derived rather than synced. Defaulting the selection inside an effect means
-     a render with nothing selected followed by a second render once it is —
-     and an effect that writes state the render could have computed. Falling
-     back at read time picks the first cat immediately, and still never fights a
-     choice the owner has made. */
-  const cat = cats.find(c => c.id === chosenId) ?? cats[0]
+  const selected = picked ?? new Set(cats.length ? [cats[0].id] : [])
+  const selectedCats = cats.filter(c => selected.has(c.id))
+  const comparing = selectedCats.length > 1
+  /** The one cat in focus, when exactly one is picked. */
+  const cat = selectedCats.length === 1 ? selectedCats[0] : undefined
 
-  const series = useMemo(
-    () => (cat ? weightSeries(allRecords.filter(r => r.catId === cat.id)) : []),
-    [allRecords, cat],
+  function toggle(id: string) {
+    const next = new Set(selected)
+    // Never let the selection empty out — a chart of nothing is not a view.
+    if (next.has(id) && next.size > 1) next.delete(id)
+    else next.add(id)
+    setPicked(next)
+    setEditingId(null)
+  }
+
+  const comparisonSeries = useMemo(
+    () =>
+      selectedCats.map(c => ({
+        id: c.id,
+        label: c.name,
+        points: weightSeries(allRecords.filter(r => r.catId === c.id)),
+      })),
+    [selectedCats, allRecords],
   )
+
+  const catRecords = useMemo(() => (cat ? allRecords.filter(r => r.catId === cat.id) : []), [allRecords, cat])
+  const series = useMemo(() => weightSeries(catRecords), [catRecords])
   const trend = useMemo(() => weightTrend(series), [series])
+
+  const editingRecord = allRecords.find(r => r.id === editingId)
+  /** The cat the edited record belongs to — in compare mode that is not
+      necessarily the focused cat, since any line's point can be clicked. */
+  const editingCat = editingRecord ? cats.find(c => c.id === editingRecord.catId) : undefined
+  const formCat = editingCat ?? cat
 
   const lastVet = useMemo(() => {
     if (!cat) return undefined
@@ -86,12 +110,6 @@ export default function HealthPage() {
     const started = meds.filter(e => e.medicationStatus !== 'Stopped').length
     return Math.max(0, started - meds.filter(e => e.medicationStatus === 'Stopped').length)
   }, [events, cat])
-
-  const catRecords = useMemo(
-    () => (cat ? allRecords.filter(r => r.catId === cat.id) : []),
-    [allRecords, cat],
-  )
-  const editingRecord = catRecords.find(r => r.id === editingId)
 
   function closeForm() {
     setLogging(false)
@@ -127,6 +145,7 @@ export default function HealthPage() {
   }
 
   const profileWeight = cat ? catWeightLbs(cat) : undefined
+  const anyComparisonPoints = comparisonSeries.some(s => s.points.length > 0)
 
   return (
     <div>
@@ -142,54 +161,84 @@ export default function HealthPage() {
         )}
       </div>
 
-      {/* Cat switcher. Hidden for a single-cat household, where a picker of one
-          is just clutter. */}
       {cats.length > 1 && (
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-          {cats.map(c => (
-            <button
-              key={c.id}
-              onClick={() => setChosenId(c.id)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-2xl border whitespace-nowrap transition-colors ${
-                c.id === cat?.id
-                  ? 'border-brand-orange bg-brand-orange/10 text-brand-brown'
-                  : 'border-brand-tan/50 text-brand-brown/70 hover:bg-brand-tan/15'
-              }`}
-            >
-              <CatAvatar cat={c} size={24} />
-              <span className="text-sm font-medium">{c.name}</span>
-            </button>
-          ))}
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+          {cats.map(c => {
+            const on = selected.has(c.id)
+            return (
+              <button
+                key={c.id}
+                onClick={() => toggle(c.id)}
+                aria-pressed={on}
+                className={`flex items-center gap-2 px-3 py-2 rounded-2xl border whitespace-nowrap transition-colors ${
+                  on
+                    ? 'border-brand-orange bg-brand-orange/10 text-brand-brown'
+                    : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
+                }`}
+              >
+                <CatAvatar cat={c} size={24} />
+                <span className="text-sm font-medium">{c.name}</span>
+                {/* The colour this cat takes on the comparison chart, so the chip
+                    and the line read as the same cat. */}
+                {on && comparing && (
+                  <span
+                    className="w-3 h-1.5 rounded-full"
+                    style={{ background: lineColor(selectedCats.findIndex(s => s.id === c.id)) }}
+                    aria-hidden="true"
+                  />
+                )}
+              </button>
+            )
+          })}
+          <button
+            onClick={() => setPicked(new Set(cats.map(c => c.id)))}
+            className="px-3 py-2 rounded-2xl border border-brand-tan/50 text-sm text-brand-brown/70 hover:bg-brand-tan/15 transition-colors whitespace-nowrap"
+          >
+            All cats
+          </button>
         </div>
       )}
 
+      <Reveal>
+        <div className={`${CARD} mb-6`}>
+          <h2 className="font-display text-xl text-brand-brown mb-4">
+            {comparing ? `Weight over time — ${selectedCats.length} cats` : 'Weight over time'}
+          </h2>
+
+          {comparing ? (
+            anyComparisonPoints ? (
+              <WeightComparisonChart series={comparisonSeries} onSelect={setEditingId} />
+            ) : (
+              <p className="text-center text-brand-brown/60 py-10">
+                None of the selected cats have weight readings yet.
+              </p>
+            )
+          ) : series.length > 0 ? (
+            <WeightChart series={series} onSelect={setEditingId} />
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-brand-brown/60 mb-1">No weight readings yet for {cat?.name}.</p>
+              <p className="text-sm text-brand-brown/45 max-w-md mx-auto mb-6">
+                {profileWeight !== undefined
+                  ? `The profile says ${profileWeight.toFixed(1)} lbs, but not when that was measured — so it can't go on a timeline. Log it with a date to start the chart.`
+                  : 'Log a weight to start the chart. Two or more readings will show a trend.'}
+              </p>
+              <button
+                onClick={() => setLogging(true)}
+                className="px-5 py-2.5 rounded-2xl bg-brand-orange text-white font-medium hover:bg-brand-orange/90 transition-colors"
+              >
+                Log the first weight
+              </button>
+            </div>
+          )}
+        </div>
+      </Reveal>
+
+      {/* Stats and the reading list describe one cat, so they only appear when
+          one is in focus. Averaging them across a comparison would say nothing
+          true about any of the cats. */}
       {cat && (
         <>
-          <Reveal>
-            <div className={`${CARD} mb-6`}>
-              <h2 className="font-display text-xl text-brand-brown mb-4">Weight over time</h2>
-
-              {series.length > 0 ? (
-                <WeightChart series={series} onSelect={setEditingId} />
-              ) : (
-                <div className="text-center py-10">
-                  <p className="text-brand-brown/60 mb-1">No weight readings yet for {cat.name}.</p>
-                  <p className="text-sm text-brand-brown/45 max-w-md mx-auto mb-6">
-                    {profileWeight !== undefined
-                      ? `The profile says ${profileWeight.toFixed(1)} lbs, but not when that was measured — so it can't go on a timeline. Log it with a date to start the chart.`
-                      : 'Log a weight to start the chart. Two or more readings will show a trend.'}
-                  </p>
-                  <button
-                    onClick={() => setLogging(true)}
-                    className="px-5 py-2.5 rounded-2xl bg-brand-orange text-white font-medium hover:bg-brand-orange/90 transition-colors"
-                  >
-                    Log the first weight
-                  </button>
-                </div>
-              )}
-            </div>
-          </Reveal>
-
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Stat
               label="Current weight"
@@ -269,11 +318,11 @@ export default function HealthPage() {
         </>
       )}
 
-      {(logging || editingRecord) && cat && (
+      {(logging || editingRecord) && formCat && (
         <WeightLogForm
-          cat={cat}
+          cat={formCat}
           record={editingRecord}
-          existingDates={catRecords.map(r => r.date)}
+          existingDates={allRecords.filter(r => r.catId === formCat.id).map(r => r.date)}
           onSave={handleSave}
           onDelete={handleDelete}
           onClose={closeForm}
