@@ -42,16 +42,15 @@ const LINE = 2.27
 const PERCHES: {
   href: string
   label: string
-  emoji: string
   spot: keyof typeof SPOTS
   lines: number
 }[] = [
-  { href: '/cats', label: 'My Cats', emoji: '🐱', spot: 1, lines: -1.25 },
-  { href: '/health', label: 'Health Home', emoji: '🩺', spot: 2, lines: -1 },
-  { href: '/schedule', label: 'Schedule', emoji: '📅', spot: 3, lines: 1.5 },
-  { href: '/shopping', label: 'Shopping', emoji: '🛍️', spot: 4, lines: -1.5 },
-  { href: '/resources', label: 'Resources', emoji: '🔗', spot: 6, lines: -1 },
-  { href: '/about', label: 'About', emoji: '💬', spot: 7, lines: -0.5 },
+  { href: '/cats', label: 'My Cats', spot: 1, lines: -1.25 },
+  { href: '/health', label: 'Health Home', spot: 2, lines: -1 },
+  { href: '/schedule', label: 'Schedule', spot: 3, lines: 1.5 },
+  { href: '/shopping', label: 'Shopping', spot: 4, lines: -1.5 },
+  { href: '/resources', label: 'Resources', spot: 6, lines: -1 },
+  { href: '/about', label: 'About', spot: 7, lines: -0.5 },
 ]
 
 export default function CatTree() {
@@ -96,7 +95,7 @@ export default function CatTree() {
           />
 
           <div style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
-            {PERCHES.map(({ href, label, emoji, spot, lines }) => {
+            {PERCHES.map(({ href, label, spot, lines }) => {
               const isHovered = hovered === href
               const { x, y } = SPOTS[spot]
               return (
@@ -111,20 +110,25 @@ export default function CatTree() {
                     top:           `${(y / ART.height) * 100}%`,
                     transform:     `translate(-50%, calc(-50% + ${(lines * LINE).toFixed(2)}em))`,
                     display:       'inline-block',
-                    background:    isHovered ? '#F26A1B' : '#6B4A34',
+                    background:    isHovered ? '#D2601A' : '#4A3527',
                     color:         '#FFFBF6',
-                    fontSize:      13,
-                    fontWeight:    700,
-                    padding:       '5px 12px',
+                    fontSize:      12.5,
+                    fontWeight:    600,
+                    padding:       '7px 15px',
                     borderRadius:  999,
-                    letterSpacing: '.03em',
+                    letterSpacing: '.02em',
                     whiteSpace:    'nowrap',
-                    boxShadow:     '0 1px 4px rgba(43,38,34,0.3)',
-                    transition:    'background 0.15s ease',
+                    // A hairline in the artwork's own cream stops the pill
+                    // merging into whichever part of the drawing it sits on.
+                    border:        '1.5px solid rgba(255,251,246,0.85)',
+                    boxShadow:     isHovered
+                      ? '0 4px 12px -2px rgba(43,38,34,0.42)'
+                      : '0 2px 6px -1px rgba(43,38,34,0.3)',
+                    transition:    'background 0.18s ease, box-shadow 0.18s ease',
                     cursor:        'pointer',
                   }}
                 >
-                  {emoji} {label}
+                  {label}
                 </Link>
               )
             })}
