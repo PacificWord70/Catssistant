@@ -153,3 +153,13 @@ iOSInjectionProject/
 !public/art-assets/base-*.png
 !public/art-assets/features-*.png
 !public/art-assets/pattern-*.png
+
+# The home page cat tree, same exception and for the same reason as the avatar
+# artwork above — and it has to sit after `*.png` for the same ordering reason.
+#
+# This one is Heidi's line drawing with its enclosed regions flood-filled in
+# brand colours; her linework is untouched, pixel for pixel. It cannot be drawn
+# in code without redrawing it by hand, which loses the drawing, so it ships as
+# a file. Without this it is ignored, and a fresh clone renders a broken image
+# where the site's main navigation should be.
+!public/images/cat-tree.png
