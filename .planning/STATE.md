@@ -23,7 +23,9 @@ See: .planning/PROJECT.md (updated 2026-07-04)
 Phase: 1 of 2 (Care Event List View)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-08-24 — Built the start of the Health page: dated weight records, a weight-over-time chart and summary stats (quick task 260824-28p)
+Last activity: 2026-08-24 — Health page built out (dated weight records, multi-cat
+multi-metric charts, filters) and a broad UI refinement pass across the home page,
+schedule, nav and resources ahead of a first deploy
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -80,6 +82,12 @@ Elsewhere:
   Firebase intended for the backend when accounts and photo storage are needed.
 
 ### Blockers/Concerns
+
+- Nothing is deployed yet and there is no CI, so nothing checks a build on push.
+  `npm run build` passes locally as of 2026-08-24.
+- Two quick tasks have now landed a whole feature area (Health) that the roadmap
+  does not mention. Phase 1 is still unplanned. This should be reconciled before
+  more feature work.
 
 - Phase 2 planning must resolve DATA-03 (merge vs. overwrite vs. reject import conflict behavior) as an explicit, approved design decision before implementation begins — do not default to blind-overwrite.
 - Base64 photo storage may inflate export file size (flagged in codebase/CONCERNS.md and research/SUMMARY.md) — worth a concrete scoping decision during Phase 2 planning (e.g., exclude/separate photos from the JSON envelope).
