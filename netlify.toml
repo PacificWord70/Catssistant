@@ -1,0 +1,45 @@
+# Netlify build settings.
+#
+# Netlify detects Next.js and installs its Next.js Runtime automatically, which
+# is what turns the App Router's server-rendered routes into functions — so the
+# runtime is deliberately not pinned here. This file only fixes the parts that
+# are ours to decide.
+#
+# Node comes from .nvmrc (22). Next 16 needs >= 20.9, so that file is load
+# bearing rather than incidental; if it is ever removed, Netlify falls back to
+# its own default and the build can fail on an older Node.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Long-lived caching for the fingerprinted build output. Everything under
+# _next/static is content-hashed, so a changed file gets a new URL and this can
+# never serve a stale asset.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The hand-drawn artwork changes rarely and is requested on nearly every page.
+# A day of caching with revalidation keeps it out of the critical path without
+# stranding a new drawing behind a long TTL.
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, must-revalidate"
+
+[[headers]]
+  for = "/art-assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, must-revalidate"
+
+# The app stores everything in localStorage and talks to no backend, so it has
+# no need to be framed, and no need for the referrer to travel with the one
+# outbound request it makes (Nominatim, on an explicit opt-in).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
