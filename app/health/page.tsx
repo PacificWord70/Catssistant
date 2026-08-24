@@ -241,20 +241,33 @@ export default function HealthPage() {
       {/* What to plot. Only metrics with data for the selected cats appear —
           an empty axis invites the reader to conclude the value was zero, when
           really it was never recorded. */}
-      {available.length > 1 && (
+      {metrics.length > 1 && (
         <div className="flex items-center gap-2 mb-6 flex-wrap">
-          {available.map(m => {
+          {metrics.map(m => {
             const on = shownMetrics.some(x => x.id === m.id)
+            /* Every metric the app can chart is listed, not just the ones with
+               data. Hiding the empty ones makes the whole feature invisible on a
+               fresh account and gives no way to learn what it tracks. */
+            const hasData = available.some(x => x.id === m.id)
             return (
               <button
                 key={m.id}
-                onClick={() => toggleMetric(m.id)}
+                onClick={() => hasData && toggleMetric(m.id)}
                 aria-pressed={on}
-                title={m.note}
+                disabled={!hasData}
+                title={
+                  hasData
+                    ? m.note
+                    : m.kind === 'planned'
+                      ? `Nothing scheduled yet — add ${m.label.toLowerCase()} to the schedule and it will chart here.`
+                      : `Nothing recorded yet for the selected ${selectedCats.length === 1 ? 'cat' : 'cats'}.`
+                }
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-sm transition-colors ${
-                  on
-                    ? 'border-brand-orange bg-brand-orange/10 text-brand-brown'
-                    : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
+                  !hasData
+                    ? 'border-brand-tan/40 text-brand-brown/35 cursor-not-allowed'
+                    : on
+                      ? 'border-brand-orange bg-brand-orange/10 text-brand-brown'
+                      : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
                 }`}
               >
                 {m.label} <span className="text-brand-brown/45">{m.unit}</span>
@@ -271,6 +284,7 @@ export default function HealthPage() {
           })}
           <button
             onClick={() => setPickedMetrics(new Set(available.map(m => m.id)))}
+            disabled={available.length === 0}
             className="px-3 py-1.5 rounded-2xl border border-brand-tan/50 text-sm text-brand-brown/70 hover:bg-brand-tan/15 transition-colors"
           >
             All

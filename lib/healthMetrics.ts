@@ -103,6 +103,19 @@ export function buildMetrics(ctx: MetricContext): MetricDef[] {
       .filter(a => a.event.category === 'Feeding')
       .flatMap(a => (a.event.feedingAmounts ?? []).map(f => f.unit)),
   )
+  /* With nothing fed yet there is no unit to name, but the metric still has to
+     appear so the owner can see that food is something the app charts. It shows
+     empty and disabled until a feeding event gives it a real unit. */
+  if (foodUnits.size === 0) {
+    metrics.push({
+      id: 'food',
+      label: 'Food',
+      unit: 'per day',
+      kind: 'planned',
+      note: 'How much is meant to be served. Nothing records how much was eaten.',
+      seriesFor: () => [],
+    })
+  }
   for (const unit of foodUnits) {
     metrics.push({
       id: `food-${unit}`,
