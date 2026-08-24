@@ -1,15 +1,18 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import CatAvatar from '@/components/CatAvatar'
 import WeightChart from '@/components/WeightChart'
 import MetricChart, { lineColor } from '@/components/MetricChart'
 import WeightLogForm from '@/components/WeightLogForm'
+import ScheduleEventForm from '@/components/ScheduleEventForm'
 import Reveal from '@/components/motion/Reveal'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { persistHealthRecord, removeHealthRecord } from '@/store/healthSlice'
+import { persistScheduleEvent } from '@/store/scheduleSlice'
+import { ScheduleCategory, ScheduleEvent } from '@/types/scheduleEvent'
+import { toDateKey } from '@/lib/scheduleUtils'
 import { selectCatsByNewest, selectHealthRecords, selectScheduleEvents } from '@/store/selectors'
 import { weightSeries, weightTrend } from '@/lib/healthAnalysis'
 import { buildMetrics, metricsWithData } from '@/lib/healthMetrics'
@@ -41,7 +44,6 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 }
 
 export default function HealthPage() {
-  const router = useRouter()
   const dispatch = useAppDispatch()
   const cats = useAppSelector(selectCatsByNewest)
   const events = useAppSelector(selectScheduleEvents)
@@ -52,10 +54,17 @@ export default function HealthPage() {
   const [picked, setPicked] = useState<Set<string> | null>(null)
   const [logging, setLogging] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  /** Schedule category being added inline, so the graph is never left behind. */
+  const [addingCategory, setAddingCategory] = useState<ScheduleCategory | null>(null)
   /** Which metrics are charted. Null means "the default", which is weight only. */
   const [pickedMetrics, setPickedMetrics] = useState<Set<string> | null>(null)
 
-  const selected = picked ?? new Set(cats.length ? [cats[0].id] : [])
+  /* Memoised because the fallback builds a new Set on every render, which would
+     give the memos below a fresh dependency each time and recompute them all. */
+  const selected = useMemo(
+    () => picked ?? new Set(cats.length ? [cats[0].id] : []),
+    [picked, cats],
+  )
   const selectedCats = cats.filter(c => selected.has(c.id))
   const comparing = selectedCats.length > 1
   /** The one cat in focus, when exactly one is picked. */
@@ -161,6 +170,14 @@ export default function HealthPage() {
     closeForm()
   }
 
+  /* Saved straight into the schedule slice, so one entry lands in both places:
+     the metric it was added for starts charting, and the event shows up on the
+     schedule like any other. Nothing here is health-only. */
+  function handleEventSave(event: ScheduleEvent) {
+    dispatch(persistScheduleEvent(event))
+    setAddingCategory(null)
+  }
+
   if (cats.length === 0) {
     return (
       <div className="text-center py-24">
@@ -252,7 +269,7 @@ export default function HealthPage() {
                    category already chosen. */
                 onClick={() => {
                   if (hasData) return toggleMetric(m.id)
-                  if (m.sourceCategory) return router.push(`/schedule?add=${encodeURIComponent(m.sourceCategory)}`)
+                  if (m.sourceCategory) return setAddingCategory(m.sourceCategory)
                   setLogging(true)
                 }}
                 aria-pressed={on}
@@ -260,7 +277,7 @@ export default function HealthPage() {
                   hasData
                     ? m.note
                     : m.sourceCategory
-                      ? `Nothing scheduled yet — click to add ${m.label.toLowerCase()} to the schedule.`
+                      ? `Nothing scheduled yet — click to add ${m.label.toLowerCase()}. It goes on the schedule too.`
                       : `Nothing recorded yet for the selected ${selectedCats.length === 1 ? 'cat' : 'cats'}. Click to log one.`
                 }
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-sm transition-colors ${
@@ -464,6 +481,19 @@ export default function HealthPage() {
             ))}
           </ul>
         </div>
+      )}
+
+      {addingCategory && (
+        <ScheduleEventForm
+          cats={cats}
+          defaultCategory={addingCategory}
+          defaultDate={toDateKey(new Date())}
+          /* Starts against whichever cats are on the chart, since that is who
+             the owner was looking at when they asked to add this. */
+          defaultCatIds={selectedCats.map(c => c.id)}
+          onSave={handleEventSave}
+          onCancel={() => setAddingCategory(null)}
+        />
       )}
 
       {(logging || editingRecord) && formCat && (

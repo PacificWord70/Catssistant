@@ -1,7 +1,7 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { persistScheduleEvent, removeScheduleEvent } from '@/store/scheduleSlice'
 import { persistHealthRecord } from '@/store/healthSlice'
@@ -12,7 +12,7 @@ import {
   selectScheduleLoaded,
   selectHealthRecords,
 } from '@/store/selectors'
-import { ScheduleCategory, ScheduleEvent } from '@/types/scheduleEvent'
+import { ScheduleEvent } from '@/types/scheduleEvent'
 import { HealthRecord } from '@/types/healthRecord'
 import { buildMonthGrid, formatDateLabel, formatTimesLabel, toDateKey, CATEGORY_EMOJI, adjustedDateNote } from '@/lib/scheduleUtils'
 import ScheduleCalendar from '@/components/ScheduleCalendar'
@@ -20,21 +20,8 @@ import ScheduleEventForm from '@/components/ScheduleEventForm'
 import WeightLogForm from '@/components/WeightLogForm'
 import Reveal from '@/components/motion/Reveal'
 
-/**
- * `useSearchParams` has to sit inside a Suspense boundary, otherwise the whole
- * route opts out of static rendering at build time.
- */
 export default function SchedulePage() {
-  return (
-    <Suspense fallback={null}>
-      <ScheduleView />
-    </Suspense>
-  )
-}
-
-function ScheduleView() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const dispatch = useAppDispatch()
   const cats = useAppSelector(selectAllCats)
   const events = useAppSelector(selectScheduleEvents)
@@ -53,28 +40,13 @@ function ScheduleView() {
   const healthRecords = useAppSelector(selectHealthRecords)
   const [loggingWeight, setLoggingWeight] = useState(false)
 
-  /* The health page hands off here with a category when a metric has nothing
-     behind it yet — /schedule?add=Play. Both are read once, at first render,
-     rather than set from an effect: an effect would render the page closed and
-     then reopen it, and would fight the user the moment they hit cancel. */
-  const [handoff] = useState<ScheduleCategory | null>(
-    () => (searchParams.get('add') as ScheduleCategory | null) ?? null,
-  )
-  const [editingEvent, setEditingEvent] = useState<ScheduleEvent | 'new' | null>(() =>
-    searchParams.get('add') ? 'new' : null,
-  )
+  const [editingEvent, setEditingEvent] = useState<ScheduleEvent | 'new' | null>(null)
 
   useEffect(() => {
     if (loaded && cats.length === 0) router.replace('/onboarding')
   }, [loaded, cats.length, router])
 
   if (!loaded || cats.length === 0) return null
-
-  function closeEventForm() {
-    setEditingEvent(null)
-    // Drop the parameter, so a refresh does not reopen a form just dismissed.
-    if (handoff) router.replace('/schedule')
-  }
 
   function handleWeightSave(record: HealthRecord) {
     dispatch(persistHealthRecord(record))
@@ -84,7 +56,6 @@ function ScheduleView() {
   function handleSave(event: ScheduleEvent) {
     dispatch(persistScheduleEvent(event))
     setEditingEvent(null)
-    if (handoff) router.replace('/schedule')
   }
 
   function handleDelete(id: string) {
@@ -182,9 +153,8 @@ function ScheduleView() {
           cats={cats}
           existing={editingEvent === 'new' ? undefined : editingEvent}
           defaultDate={selectedDate}
-          defaultCategory={editingEvent === 'new' ? (handoff ?? undefined) : undefined}
           onSave={handleSave}
-          onCancel={closeEventForm}
+          onCancel={() => setEditingEvent(null)}
           onDelete={editingEvent !== 'new' ? () => handleDelete(editingEvent.id) : undefined}
         />
       )}
