@@ -139,6 +139,16 @@ iOSInjectionProject/
 .claude/commit-style.md
 .claude/settings.local.json
 
+# Browser-pane dev server config. Machine-specific: the configurations point at
+# absolute-ish paths outside this repo, so a shared copy would just fail for
+# everyone else.
+.claude/launch.json
+
+# GSD research cache. Regenerable tool output — cached web-search results, no
+# secrets, but it churns on every research run and has already been swept into a
+# commit by accident once.
+.planning/research/.cache/
+
 # Vercel
 .vercel
 
