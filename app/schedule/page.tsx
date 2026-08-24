@@ -12,13 +12,26 @@ import {
   selectScheduleLoaded,
   selectHealthRecords,
 } from '@/store/selectors'
-import { ScheduleEvent } from '@/types/scheduleEvent'
+import { ScheduleCategory, ScheduleEvent } from '@/types/scheduleEvent'
+import { SCHEDULE_CATEGORIES } from '@/lib/scheduleAttributes'
 import { HealthRecord } from '@/types/healthRecord'
 import { buildMonthGrid, formatDateLabel, formatTimesLabel, toDateKey, CATEGORY_EMOJI, adjustedDateNote } from '@/lib/scheduleUtils'
+import CatAvatar from '@/components/CatAvatar'
 import ScheduleCalendar from '@/components/ScheduleCalendar'
 import ScheduleEventForm from '@/components/ScheduleEventForm'
 import WeightLogForm from '@/components/WeightLogForm'
 import Reveal from '@/components/motion/Reveal'
+
+/* Matches the health page's filter chips, so the two read the same way. */
+const PICK_BTN =
+  'px-2.5 py-1.5 rounded-xl border border-brand-tan/50 text-xs font-medium text-brand-brown/70 hover:bg-brand-tan/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
+
+const CHIP = (on: boolean) =>
+  `flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-sm whitespace-nowrap transition-colors ${
+    on
+      ? 'border-brand-orange bg-brand-orange/10 text-brand-brown'
+      : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
+  }`
 
 export default function SchedulePage() {
   const router = useRouter()
@@ -39,6 +52,11 @@ export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()))
   const healthRecords = useAppSelector(selectHealthRecords)
   const [loggingWeight, setLoggingWeight] = useState(false)
+
+  /* Null means the default, which is everything on — the schedule is a record
+     of the whole household, so hiding any of it has to be a deliberate act. */
+  const [pickedCats, setPickedCats] = useState<Set<string> | null>(null)
+  const [pickedCategories, setPickedCategories] = useState<Set<ScheduleCategory> | null>(null)
 
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | 'new' | null>(null)
 
@@ -73,7 +91,32 @@ export default function SchedulePage() {
     setSelectedDate(toDateKey(today))
   }
 
-  const cells = buildMonthGrid(currentMonth, events)
+  const shownCats = pickedCats ?? new Set(cats.map(c => c.id))
+  const shownCategories = pickedCategories ?? new Set(SCHEDULE_CATEGORIES)
+
+  /* Filtered before the grid is built, so the calendar dots and the day list
+     below it can never disagree about what is showing. Not memoised: this sits
+     after an early return, where a hook would break the rules of hooks, and one
+     pass over the events is far cheaper than the grid built from it anyway. */
+  const visibleEvents = events.filter(
+    e => shownCategories.has(e.category) && e.catIds.some(id => shownCats.has(id)),
+  )
+
+  function toggleCat(id: string) {
+    const next = new Set(shownCats)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setPickedCats(next)
+  }
+
+  function toggleCategory(c: ScheduleCategory) {
+    const next = new Set(shownCategories)
+    if (next.has(c)) next.delete(c)
+    else next.add(c)
+    setPickedCategories(next)
+  }
+
+  const cells = buildMonthGrid(currentMonth, visibleEvents)
   const selectedCell = cells.find(c => c.dateKey === selectedDate)
   const selectedItems = selectedCell?.items ?? []
   const catNames = (ids: string[]) => ids.map(id => cats.find(c => c.id === id)?.name ?? 'Unknown cat').join(', ')
@@ -99,6 +142,31 @@ export default function SchedulePage() {
             >
               + Add Event
             </button>
+          </div>
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.05}>
+        <div className="mb-4 space-y-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <button onClick={() => setPickedCats(new Set(cats.map(c => c.id)))} disabled={shownCats.size === cats.length} className={PICK_BTN}>All</button>
+            <button onClick={() => setPickedCats(new Set())} disabled={shownCats.size === 0} className={PICK_BTN}>None</button>
+            {cats.map(c => (
+              <button key={c.id} onClick={() => toggleCat(c.id)} aria-pressed={shownCats.has(c.id)} className={CHIP(shownCats.has(c.id))}>
+                <CatAvatar cat={c} size={20} />
+                <span className="font-medium">{c.name}</span>
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => setPickedCategories(new Set(SCHEDULE_CATEGORIES))} disabled={shownCategories.size === SCHEDULE_CATEGORIES.length} className={PICK_BTN}>All</button>
+            <button onClick={() => setPickedCategories(new Set())} disabled={shownCategories.size === 0} className={PICK_BTN}>None</button>
+            {SCHEDULE_CATEGORIES.map(c => (
+              <button key={c} onClick={() => toggleCategory(c)} aria-pressed={shownCategories.has(c)} className={CHIP(shownCategories.has(c))}>
+                <span aria-hidden="true">{CATEGORY_EMOJI[c]}</span>
+                {c}
+              </button>
+            ))}
           </div>
         </div>
       </Reveal>
