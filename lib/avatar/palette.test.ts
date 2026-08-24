@@ -69,7 +69,7 @@ describe('tonesFor - fallbacks', () => {
   })
 
   it('uses a neutral tan when no colour is recorded', () => {
-    expect(tonesFor(undefined, 'Tabby').base).toBe('#C9AE93')
+    expect(tonesFor(undefined, 'Tabby').base).toBe('#DEC3A6')
   })
 
   it('keeps the shade tone when a two-colour pattern has no coat to pair with', () => {

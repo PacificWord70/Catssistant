@@ -49,8 +49,15 @@ const PALETTES: Record<CoatColor, { base: string; shade: string }> = {
   Lilac: { base: '#B9A8A8', shade: '#968484' },
 }
 
-/** Used when a cat has no colour recorded — a neutral tan. */
-const UNKNOWN = { base: '#C9AE93', shade: '#A98D71' }
+/**
+ * Used when a cat has no colour recorded.
+ *
+ * This is the tan the artwork is actually drawn in, so an undescribed cat comes
+ * out looking the way it was painted rather than tinted toward some other coat.
+ * Warmer and easier on the eye than white, which is the other obvious candidate
+ * — multiply cannot lighten, so white simply leaves the greyscale base grey.
+ */
+const UNKNOWN = { base: '#DEC3A6', shade: '#BDA68D' }
 
 /** Hairless cats show skin rather than coat colour. */
 const HAIRLESS = { base: '#E5BCA8', shade: '#C79684' }
