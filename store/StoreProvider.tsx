@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { Provider } from 'react-redux'
 import { store } from '@/store'
 import { loadCats } from '@/store/catsSlice'
+import { loadHealthRecords } from '@/store/healthSlice'
 import { loadItems } from '@/store/itemsSlice'
 import { loadScheduleEvents } from '@/store/scheduleSlice'
 
@@ -31,6 +32,7 @@ export default function StoreProvider({ children }: { children: React.ReactNode 
     store.dispatch(loadCats())
     store.dispatch(loadScheduleEvents())
     store.dispatch(loadItems())
+    store.dispatch(loadHealthRecords())
   }, [])
 
   return <Provider store={store}>{children}</Provider>

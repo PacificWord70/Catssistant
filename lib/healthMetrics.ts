@@ -1,6 +1,6 @@
 import { Cat } from '@/types/cat'
 import { HealthRecord } from '@/types/healthRecord'
-import { ScheduleEvent } from '@/types/scheduleEvent'
+import { ScheduleCategory, ScheduleEvent } from '@/types/scheduleEvent'
 import { SeriesPoint, weightSeries } from '@/lib/healthAnalysis'
 import { expandEvents } from '@/lib/scheduleUtils'
 
@@ -31,6 +31,13 @@ export interface MetricDef {
   kind: MetricKind
   /** Shown under the chart title, to say what the numbers actually are. */
   note?: string
+  /**
+   * The schedule category this is read from, for planned metrics.
+   *
+   * Lets an empty metric point at where its data would come from, so a chip with
+   * nothing behind it can offer to go and add some instead of being a dead end.
+   */
+  sourceCategory?: ScheduleCategory
   /** Points for one cat, oldest first. */
   seriesFor(catId: string): SeriesPoint[]
 }
@@ -95,6 +102,7 @@ export function buildMetrics(ctx: MetricContext): MetricDef[] {
     unit: 'min/day',
     kind: 'planned',
     note: 'Scheduled play, not time actually spent — the app has no record of what happened.',
+    sourceCategory: 'Play',
     seriesFor: playFor,
   })
 
@@ -113,6 +121,7 @@ export function buildMetrics(ctx: MetricContext): MetricDef[] {
       unit: 'per day',
       kind: 'planned',
       note: 'How much is meant to be served. Nothing records how much was eaten.',
+      sourceCategory: 'Feeding',
       seriesFor: () => [],
     })
   }
@@ -123,6 +132,7 @@ export function buildMetrics(ctx: MetricContext): MetricDef[] {
       unit: `${unit}/day`,
       kind: 'planned',
       note: 'How much is meant to be served. Nothing records how much was eaten.',
+      sourceCategory: 'Feeding',
       seriesFor: catId =>
         perDay(
           agenda
@@ -143,6 +153,7 @@ export function buildMetrics(ctx: MetricContext): MetricDef[] {
     unit: 'per month',
     kind: 'planned',
     note: 'Counted from the schedule, so it includes visits still to come.',
+    sourceCategory: 'Vet',
     seriesFor: catId =>
       perDay(
         agenda
@@ -159,6 +170,7 @@ export function buildMetrics(ctx: MetricContext): MetricDef[] {
     label: 'Grooming',
     unit: 'per month',
     kind: 'planned',
+    sourceCategory: 'Grooming',
     seriesFor: catId =>
       perDay(
         agenda

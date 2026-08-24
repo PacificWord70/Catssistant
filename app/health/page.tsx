@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import CatAvatar from '@/components/CatAvatar'
 import WeightChart from '@/components/WeightChart'
@@ -8,9 +9,7 @@ import MetricChart, { lineColor } from '@/components/MetricChart'
 import WeightLogForm from '@/components/WeightLogForm'
 import Reveal from '@/components/motion/Reveal'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { loadCats } from '@/store/catsSlice'
-import { loadScheduleEvents } from '@/store/scheduleSlice'
-import { loadHealthRecords, persistHealthRecord, removeHealthRecord } from '@/store/healthSlice'
+import { persistHealthRecord, removeHealthRecord } from '@/store/healthSlice'
 import { selectCatsByNewest, selectHealthRecords, selectScheduleEvents } from '@/store/selectors'
 import { weightSeries, weightTrend } from '@/lib/healthAnalysis'
 import { buildMetrics, metricsWithData } from '@/lib/healthMetrics'
@@ -42,6 +41,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 }
 
 export default function HealthPage() {
+  const router = useRouter()
   const dispatch = useAppDispatch()
   const cats = useAppSelector(selectCatsByNewest)
   const events = useAppSelector(selectScheduleEvents)
@@ -54,12 +54,6 @@ export default function HealthPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   /** Which metrics are charted. Null means "the default", which is weight only. */
   const [pickedMetrics, setPickedMetrics] = useState<Set<string> | null>(null)
-
-  useEffect(() => {
-    dispatch(loadCats())
-    dispatch(loadScheduleEvents())
-    dispatch(loadHealthRecords())
-  }, [dispatch])
 
   const selected = picked ?? new Set(cats.length ? [cats[0].id] : [])
   const selectedCats = cats.filter(c => selected.has(c.id))
@@ -252,25 +246,33 @@ export default function HealthPage() {
             return (
               <button
                 key={m.id}
-                onClick={() => hasData && toggleMetric(m.id)}
+                /* An empty metric is not a dead end: it offers the way to put
+                   data behind it. Weight is recorded here; everything else is
+                   read from the schedule, so it hands off there with the right
+                   category already chosen. */
+                onClick={() => {
+                  if (hasData) return toggleMetric(m.id)
+                  if (m.sourceCategory) return router.push(`/schedule?add=${encodeURIComponent(m.sourceCategory)}`)
+                  setLogging(true)
+                }}
                 aria-pressed={on}
-                disabled={!hasData}
                 title={
                   hasData
                     ? m.note
-                    : m.kind === 'planned'
-                      ? `Nothing scheduled yet — add ${m.label.toLowerCase()} to the schedule and it will chart here.`
-                      : `Nothing recorded yet for the selected ${selectedCats.length === 1 ? 'cat' : 'cats'}.`
+                    : m.sourceCategory
+                      ? `Nothing scheduled yet — click to add ${m.label.toLowerCase()} to the schedule.`
+                      : `Nothing recorded yet for the selected ${selectedCats.length === 1 ? 'cat' : 'cats'}. Click to log one.`
                 }
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-sm transition-colors ${
                   !hasData
-                    ? 'border-brand-tan/40 text-brand-brown/35 cursor-not-allowed'
+                    ? 'border-dashed border-brand-tan/60 text-brand-brown/45 hover:bg-brand-tan/15 hover:text-brand-brown/70'
                     : on
                       ? 'border-brand-orange bg-brand-orange/10 text-brand-brown'
                       : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
                 }`}
               >
                 {m.label} <span className="text-brand-brown/45">{m.unit}</span>
+                {!hasData && <span className="text-brand-brown/45">+</span>}
                 {m.kind === 'planned' && (
                   <span
                     className="text-[10px] uppercase tracking-wide text-brand-brown/45"

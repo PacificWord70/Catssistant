@@ -18,6 +18,8 @@ interface Props {
   cats: Cat[]
   existing?: ScheduleEvent
   defaultDate?: string
+  /** Category a new event starts on. Ignored when editing an existing one. */
+  defaultCategory?: ScheduleCategory
   onSave: (event: ScheduleEvent) => void
   onCancel: () => void
   onDelete?: () => void
@@ -115,9 +117,9 @@ function DurationSection({
   )
 }
 
-export default function ScheduleEventForm({ cats, existing, defaultDate, onSave, onCancel, onDelete }: Props) {
+export default function ScheduleEventForm({ cats, existing, defaultDate, defaultCategory, onSave, onCancel, onDelete }: Props) {
   const [catIds, setCatIds] = useState<string[]>(existing?.catIds ?? (cats.length === 1 ? [cats[0].id] : []))
-  const initialCategory = existing?.category ?? 'Feeding'
+  const initialCategory = existing?.category ?? defaultCategory ?? 'Feeding'
   const [category, setCategory] = useState<ScheduleCategory>(initialCategory)
   const [title, setTitle] = useState(existing?.title ?? '')
   const [date, setDate] = useState(existing?.date ?? (initialCategory === 'Vet' ? '' : (defaultDate ?? toDateKey(new Date()))))
