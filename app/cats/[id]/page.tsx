@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { catSelected } from '@/store/catsSlice'
 import { selectCatById, selectCatsLoaded } from '@/store/selectors'
-import { catAgeLabel, catHumanAge } from '@/lib/utils'
+import { catAgeLabel, catHumanAge, coatLabel } from '@/lib/utils'
+import { effectiveCoatLength, effectiveColor, effectiveEnergy, effectivePattern } from '@/lib/breedDefaults'
 import BreedTag from '@/components/BreedTag'
 import CatAvatar from '@/components/CatAvatar'
 
@@ -46,6 +47,29 @@ export default function CatProfilePage() {
 
   if (!cat) return null
 
+  // Everything known about how this cat looks and behaves, breed fallbacks
+  // included. A row only appears when there is something to say — a blank means
+  // neither the owner nor the breed settled it, and inventing a value would make
+  // a guess indistinguishable from an answer.
+  const coat = coatLabel({ color: effectiveColor(cat), pattern: effectivePattern(cat) })
+  const energy = effectiveEnergy(cat)
+  const list = (values?: string[]) => (values?.length ? values.join(', ') : undefined)
+
+  const aboutRows = [
+    { label: 'Coat', value: coat || undefined },
+    { label: 'Coat length', value: effectiveCoatLength(cat) },
+    { label: 'Energy', value: energy === 'Unknown' ? undefined : energy },
+    { label: 'Hunts', value: list(cat.huntingPreyDrive?.filter(d => d !== 'Unknown')) },
+    { label: 'Roams', value: list(cat.huntingLocation) },
+    {
+      label: 'Electronic toys',
+      value: cat.likesElectronicToys && cat.likesElectronicToys !== 'Unknown'
+        ? cat.likesElectronicToys
+        : undefined,
+    },
+    { label: 'Known illnesses', value: list(cat.knownIllnesses) },
+  ].filter((r): r is { label: string; value: string } => Boolean(r.value))
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-3xl shadow-soft overflow-hidden">
@@ -80,12 +104,28 @@ export default function CatProfilePage() {
                 ))}
               </p>
             )}
-            {cat.birthday && (
-              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm">
-                <span className="text-brand-brown font-medium">{catAgeLabel(cat.birthday)}</span>
-                <span className="text-brand-brown/60">~{catHumanAge(cat.birthday)} in cat years</span>
-              </div>
-            )}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm">
+              {cat.birthday ? (
+                <>
+                  <span className="text-brand-brown font-medium">{catAgeLabel(cat.birthday)}</span>
+                  <span className="text-brand-brown/60">~{catHumanAge(cat.birthday)} in cat years</span>
+                </>
+              ) : (
+                // Said plainly rather than left blank. A missing line reads as an
+                // oversight; "Age unknown" reads as a fact, which for a rescue or
+                // a stray it often is — so it sits alongside a way to fill it in
+                // rather than nagging as though it were a mistake.
+                <>
+                  <span className="text-brand-brown/60">Age unknown</span>
+                  <Link
+                    href={`/cats/${cat.id}/edit`}
+                    className="text-brand-slate hover:underline"
+                  >
+                    Add birthday
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Quick stats */}
@@ -103,7 +143,44 @@ export default function CatProfilePage() {
             </div>
           )}
 
-          {/* Vet */}
+          {/* About — appearance and traits.
+
+              Values fall back to the breed where the owner left a field blank,
+              matching the avatar above rather than showing a portrait of a grey
+              cat beside a page that never mentions grey. Anything the breed does
+              not settle stays hidden instead of being guessed at, so an empty row
+              here means genuinely unknown. */}
+          {aboutRows.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-xs font-semibold text-brand-brown uppercase tracking-wide mb-3">About</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {aboutRows.map(({ label, value }) => (
+                  <StatCard key={label} label={label} value={value} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Vet — or a nudge to add one.
+
+              Worth prompting for rather than hiding: a vet's number is the thing
+              an owner needs at the worst possible moment, and it is no use only
+              being in a phone that is upstairs. */}
+          {!(cat.vet && (cat.vet.name || cat.vet.phone || cat.vet.address)) && (
+            <div className="border border-dashed border-brand-tan rounded-2xl p-5 mb-6">
+              <h2 className="text-xs font-semibold text-brand-brown uppercase tracking-wide mb-2">Vet</h2>
+              <p className="text-sm text-brand-charcoal/70">
+                No vet added yet. Worth having their number here for emergencies.
+              </p>
+              <Link
+                href={`/cats/${cat.id}/edit`}
+                className="text-sm text-brand-slate hover:underline mt-2 inline-block"
+              >
+                Add vet details
+              </Link>
+            </div>
+          )}
+
           {cat.vet && (cat.vet.name || cat.vet.phone || cat.vet.address) && (
             <div className="bg-brand-tan/10 rounded-2xl p-5 mb-6">
               <h2 className="text-xs font-semibold text-brand-brown uppercase tracking-wide mb-3">Vet</h2>
