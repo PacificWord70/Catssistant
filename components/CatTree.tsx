@@ -110,21 +110,28 @@ export default function CatTree() {
                     top:           `${(y / ART.height) * 100}%`,
                     transform:     `translate(-50%, calc(-50% + ${(lines * LINE).toFixed(2)}em))`,
                     display:       'inline-block',
-                    background:    isHovered ? '#D2601A' : '#4A3527',
-                    color:         '#FFFBF6',
-                    fontSize:      12.5,
+                    /* Translucent so the drawing reads through a pill that is
+                       wider than the perch it sits on — the labels vary in
+                       length and the artwork's spots do not. Blurred behind, or
+                       the linework crossing underneath makes the text noisy.
+                       Light apricot with brown text keeps it inside the
+                       drawing's own palette; hover flips to full brand orange
+                       so the one being pointed at is unambiguous. */
+                    background:    isHovered ? '#F26A1B' : 'rgba(252,214,170,0.94)',
+                    backdropFilter: 'blur(2px)',
+                    WebkitBackdropFilter: 'blur(2px)',
+                    color:         isHovered ? '#FFFBF6' : '#4A3527',
+                    fontSize:      12,
                     fontWeight:    600,
-                    padding:       '7px 15px',
+                    padding:       '5px 11px',
                     borderRadius:  999,
                     letterSpacing: '.02em',
                     whiteSpace:    'nowrap',
-                    // A hairline in the artwork's own cream stops the pill
-                    // merging into whichever part of the drawing it sits on.
-                    border:        '1.5px solid rgba(255,251,246,0.85)',
+                    border:        isHovered ? '1px solid rgba(255,251,246,0.55)' : '1px solid rgba(107,74,52,0.28)',
                     boxShadow:     isHovered
-                      ? '0 4px 12px -2px rgba(43,38,34,0.42)'
-                      : '0 2px 6px -1px rgba(43,38,34,0.3)',
-                    transition:    'background 0.18s ease, box-shadow 0.18s ease',
+                      ? '0 4px 12px -2px rgba(43,38,34,0.35)'
+                      : '0 1px 4px -1px rgba(43,38,34,0.22)',
+                    transition:    'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease',
                     cursor:        'pointer',
                   }}
                 >
