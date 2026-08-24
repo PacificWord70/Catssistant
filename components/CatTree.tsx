@@ -114,10 +114,12 @@ export default function CatTree() {
                        wider than the perch it sits on — the labels vary in
                        length and the artwork's spots do not. Blurred behind, or
                        the linework crossing underneath makes the text noisy.
-                       Light apricot with brown text keeps it inside the
-                       drawing's own palette; hover flips to full brand orange
+                       The fill sits between the nav bar's orange and the page
+                       background, cut with a little brand-brown so it settles
+                       into the drawing rather than glowing on top of it. Brown
+                       text reads at 5:1 on it; hover flips to full brand orange
                        so the one being pointed at is unambiguous. */
-                    background:    isHovered ? '#F26A1B' : 'rgba(252,214,170,0.94)',
+                    background:    isHovered ? '#F26A1B' : 'rgba(228,154,96,0.94)',
                     backdropFilter: 'blur(2px)',
                     WebkitBackdropFilter: 'blur(2px)',
                     color:         isHovered ? '#FFFBF6' : '#4A3527',
