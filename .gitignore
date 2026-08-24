@@ -141,3 +141,15 @@ iOSInjectionProject/
 
 # Vercel
 .vercel
+
+# The avatar artwork is the exception to the no-images rule above, and has to
+# sit *after* it: gitignore takes the last matching rule, so a negation placed
+# before `*.png` would be overridden by it.
+#
+# This art has to ship with the site to render on it — ignored art means every
+# deployed cat falls back to the placeholder — and unlike generated filler it is
+# real hand-drawn work. One file per face/hair/eye combination, plus its
+# untinted features layer.
+!public/art-assets/base-*.png
+!public/art-assets/features-*.png
+!public/art-assets/pattern-*.png
