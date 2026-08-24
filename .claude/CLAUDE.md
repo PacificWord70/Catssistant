@@ -11,7 +11,7 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 ### Constraints
 
 - **Privacy**: No passive tracking, no GPS-by-default, no behavioral analytics, no data selling — non-negotiable core product value
-- **Tech stack**: Next.js 14 App Router, TypeScript, Tailwind — established, avoid casual changes
+- **Tech stack**: Next.js 16 App Router, TypeScript, Tailwind, Redux Toolkit — established, avoid casual changes
 - **Dependencies**: Do not add packages without discussing with the team first
 - **Collaboration**: 3 contributors all commit to `main` — check recent commits before editing shared files
 - **Backend/accounts**: Vendor choice (AWS vs. Firebase vs. open-source alternatives) intentionally undecided — do not commit to one without a team discussion
@@ -24,9 +24,10 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 
 ## Languages
 
-- TypeScript 5.4.5 - Full codebase, all `.tsx` and `.ts` files
+- TypeScript (`^5.4.5` declared, 5.9.3 installed) - Full codebase, all `.tsx` and `.ts` files
 - JavaScript (JSX/TSX) - React components
-- CSS - Tailwind utilities, globals.css
+- CSS - Tailwind utilities, globals.css. Only 42 lines of it: Tailwind lives in
+  `className` strings, so ~99% of hand-written code is TypeScript.
 
 ## Runtime
 
@@ -38,23 +39,36 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 
 - Next.js 16.2.10 (App Router) - Web framework, routing, server-side rendering, API routes
 - React 18.3.1 - UI library for interactive components
-- Tailwind CSS 3.4.4 - Utility-first CSS framework with custom brand color tokens
-- TypeScript 5.4.5 - Type checking
-- ESLint 8 - Code linting (uses `eslint-config-next` via Next.js)
-- PostCSS 8.4.38 - CSS processing pipeline
-- Autoprefixer 10.4.19 - Automatic vendor prefixes for CSS
+- Tailwind CSS ^3.4.4 - Utility-first CSS framework with custom brand color tokens
+- TypeScript - Type checking (`npm run typecheck`)
+- ESLint ^9 - Code linting, flat config in `eslint.config.mjs`, extends
+  `eslint-config-next` and `eslint-config-prettier`
+- Prettier ^3.9.6 - Formatting, configured in `.prettierrc.json`
+- Vitest ^4.1.11 - Test runner, config in `vitest.config.mts` (`npm test`)
+- PostCSS ^8.4.38 - CSS processing pipeline
+- Autoprefixer ^10.4.19 - Automatic vendor prefixes for CSS
 
 ## Key Dependencies
 
-- next 16.2.10 - Next.js framework with App Router
-- react 18.3.1 - React library core
-- react-dom 18.3.1 - React DOM bindings
-- @next/font - Google Fonts integration (Figtree, Tapestry)
+Six runtime dependencies, all of them load-bearing:
+
+- next ^16.2.10 - Next.js framework with App Router
+- react ^18.3.1 / react-dom ^18.3.1 - React library and DOM bindings
+- @reduxjs/toolkit ^2.12.0 + react-redux ^9.3.0 - Shared client state, see
+  `store/`. Cats, schedule and items each get a slice.
+- framer-motion ^12.42.2 - Animation, see `components/motion/`
+
+Fonts come from `next/font/google` in `app/layout.tsx` — **Figtree** (body) and
+**Fraunces** (display). Not `@next/font`, and the display face is no longer
+Tapestry.
 
 ## Configuration
 
 - No `.env` files currently in use
-- Planned: AWS integration for persistence (currently using localStorage)
+- Persistence is localStorage only. No backend, no `.env`, no API keys.
+- Backend vendor is deliberately undecided (see Constraints above). `.planning/STATE.md`
+  records Vercel as the hosting choice and Firebase as the current *intent* for a
+  backend, but neither is committed to or wired up.
 - TypeScript config: `tsconfig.json`
 - Next.js config: `next.config.mjs` (minimal, uses defaults)
 - Tailwind config: `tailwind.config.ts`
@@ -72,6 +86,11 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 - Internet access to Nominatim API (for reverse geocoding)
 
 ## Notable Absence
+
+- No backend, no database, no authentication, no `.env` files, no API keys.
+- No CI workflow.
+- Testing exists but is narrow: 6 Vitest files, 853 lines, **all** under `lib/`.
+  Logic is covered; components and pages have no tests at all.
 
 <!-- GSD:stack-end -->
 
@@ -104,7 +123,10 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 - ESLint configured via `eslint-config-next` (default Next.js config)
 - Run: `npm run lint` — uses Next.js linter rules
 - Strict TypeScript enabled (`strict: true` in `tsconfig.json`)
-- No Prettier or custom ESLint config files present — using Next.js defaults
+- Prettier is configured (`.prettierrc.json`); run `npm run format` or
+  `npm run format:check`
+- ESLint uses flat config (`eslint.config.mjs`), extending `eslint-config-next`
+  and `eslint-config-prettier` so the two do not fight over formatting
 
 ## Import Organization
 
@@ -134,8 +156,11 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 - Comments mark logical sections: country data, phone formatter, helpers, component
 - Inline comments for non-obvious logic: `// Reset phone prefix if phone is empty or only a dial code`
 - Commented render conditions for component variants: `// Removable chip — form use`, `// Inline text — profile page`, `// Pill — card use`
-- Not used in current codebase
-- TypeScript interfaces are self-documenting through clear naming
+- JSDoc `/** */` blocks are used widely — 30 of 65 source files carry them.
+  They explain *why*, not what: the two compounding scale problems in
+  `CatAvatar`, why reducers must not touch storage in `store/catsSlice.ts`, why
+  multiply-tinting forces the art to be drawn light in `lib/avatar/artLayers.ts`.
+  Match that habit; do not add comments that restate the code.
 
 ## Function Design
 
@@ -198,13 +223,16 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 | ScheduleCalendar | Month calendar view, event cells per day | `components/ScheduleCalendar.tsx` |
 | NavBar | Top navigation, links to main sections | `components/NavBar.tsx` |
 | BreedTag | Reusable breed label with optional hover tooltip | `components/BreedTag.tsx` |
+| Store | Shared client state — cats, schedule, items slices | `store/` |
 | Storage Layer | Read/write cats and schedule events to localStorage | `lib/storage.ts` |
 | Utilities | Age calculations, date formatting, schedule expansion | `lib/utils.ts`, `lib/scheduleUtils.ts` |
 
 ## Pattern Overview
 
 - **Privacy-first:** No passive tracking. All data explicitly entered by user.
-- **Client-side persistence:** localStorage stores all cat profiles and schedule events
+- **Client-side persistence:** localStorage stores all cat profiles and schedule
+  events; the Redux store in `store/` is the live in-memory copy the UI renders
+  from, kept in step through thunks that write to storage
 - **Stateful components:** Pages use `useState` to manage cat lists and schedule data, re-fetch from storage on mount
 - **No backend:** This is a PWA-like client-side app — works fully offline
 - **Router-based routing:** Next.js App Router handles page navigation
@@ -238,10 +266,18 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 
 ### Schedule Event Creation & Expansion
 
-- Each page manages its own state for cats, events, UI (which date is selected, which event is being edited)
-- No global state provider — just local `useState`
-- Data source of truth: localStorage
-- On any mutation, page re-fetches from storage to stay in sync
+- Shared domain state lives in a Redux Toolkit store (`store/`), wrapped around
+  the app by `store/StoreProvider` in `app/layout.tsx`. Three slices: `cats`,
+  `schedule`, `items`.
+- **localStorage remains the persistence layer; Redux is the live copy the UI
+  reads.** Before the store, `/cats`, `/cats/[id]` and `/schedule` each read
+  storage on mount and held a private array, so renaming a cat on one page left
+  the others stale until they remounted.
+- Reducers stay pure — storage reads and writes happen in thunks, never inside a
+  reducer, or the same action would produce different results depending on when
+  it ran and break DevTools replay.
+- Purely local UI state (which day is selected, which modal is open) is still
+  plain `useState`. Not everything belongs in the store.
 
 ## Key Abstractions
 
@@ -259,7 +295,7 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 
 - Location: `app/layout.tsx`
 - Triggers: Every page load
-- Responsibilities: Set up fonts (Figtree, Tapestry), render NavBar, CatWalker easter egg, wrap content
+- Responsibilities: Set up fonts (Figtree, Fraunces), wrap children in StoreProvider, render NavBar and the main container
 - Location: `app/page.tsx`
 - Triggers: `/` route
 - Responsibilities: Render CatTree component (home card UI)
