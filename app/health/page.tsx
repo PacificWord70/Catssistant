@@ -382,9 +382,46 @@ export default function HealthPage() {
         </Reveal>
       )}
 
-      {/* Stats and the reading list describe one cat, so they only appear when
-          one is in focus. Averaging them across a comparison would say nothing
-          true about any of the cats. */}
+      {/* With several cats up, the detailed cards below would have to average
+          across them, which says nothing true about any one. A row each keeps
+          the numbers per cat, which is the only honest way to show them. */}
+      {comparing && (
+        <div className={CARD}>
+          <ul className="divide-y divide-brand-tan/30">
+            {selectedCats.map((c, i) => {
+              const points = weightSeries(allRecords.filter(r => r.catId === c.id))
+              const t = weightTrend(points)
+              return (
+                <li key={c.id} className="flex items-baseline gap-3 py-2.5">
+                  <span
+                    className="w-4 h-1.5 rounded-full shrink-0"
+                    style={{ background: lineColor(i) }}
+                    aria-hidden="true"
+                  />
+                  <span className="font-medium text-brand-brown flex-1 truncate">{c.name}</span>
+                  <span className="text-brand-brown whitespace-nowrap">
+                    {points.length > 0 ? `${points[points.length - 1].value.toFixed(1)} lbs` : '—'}
+                  </span>
+                  <span
+                    className={`text-sm whitespace-nowrap w-24 text-right ${
+                      t && t.direction !== 'steady' ? 'text-brand-brown/70' : 'text-brand-brown/40'
+                    }`}
+                  >
+                    {t
+                      ? t.direction === 'steady'
+                        ? 'steady'
+                        : `${t.changeLbs > 0 ? '+' : ''}${t.changeLbs.toFixed(1)} lbs`
+                      : points.length === 1
+                        ? 'one reading'
+                        : 'no readings'}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+
       {cat && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
