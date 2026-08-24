@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import catsReducer from '@/store/catsSlice'
+import healthReducer from '@/store/healthSlice'
 import itemsReducer from '@/store/itemsSlice'
 import scheduleReducer from '@/store/scheduleSlice'
 
@@ -20,5 +21,6 @@ export const store = configureStore({
     cats: catsReducer,
     schedule: scheduleReducer,
     items: itemsReducer,
+    health: healthReducer,
   },
 })

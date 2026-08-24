@@ -69,3 +69,18 @@ export const selectCatalogById = createSelector([selectCatalog], catalog =>
 export const selectCurrentItems = createSelector([selectHouseholdItems], items =>
   items.filter(i => i.status === 'current'),
 )
+
+// ─── Health ───────────────────────────────────────────────────────────────────
+
+export const selectHealthRecords = (state: RootState) => state.health.records
+export const selectHealthLoaded = (state: RootState) => state.health.loaded
+
+/**
+ * Health readings for one cat.
+ *
+ * Memoised because filtering builds a new array — without it the health page
+ * would re-render on any state change anywhere in the store, including every
+ * keystroke in an unrelated form.
+ */
+export const selectHealthRecordsForCat = (catId: string) =>
+  createSelector([selectHealthRecords], records => records.filter(r => r.catId === catId))
