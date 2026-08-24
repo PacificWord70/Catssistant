@@ -143,12 +143,15 @@ export default function BreedsPage() {
   })
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="w-full max-w-[min(92vw,64rem)] mx-auto">
       {/* Resources is how this page is reached from the nav, so it is the way
           back out. A cat's breed tag also deep-links here, which is why this is
           a link rather than a history-based back button. */}
-      <Link href="/resources" className="text-brand-slate text-sm hover:underline mb-5 inline-block">
-        ← Other resources
+      <Link
+        href="/resources"
+        className="hover-lift inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-brand-tan/40 shadow-soft text-brand-brown font-medium hover:bg-brand-tan/15 transition-colors mb-8"
+      >
+        <span aria-hidden="true">&larr;</span> Other resources
       </Link>
       <div className="bg-white rounded-3xl shadow-soft p-7">
 
