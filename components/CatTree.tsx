@@ -46,12 +46,12 @@ const PERCHES: {
   spot: keyof typeof SPOTS
   lines: number
 }[] = [
-  { href: '/cats', label: 'My Cats', emoji: '🐱', spot: 1, lines: -1 },
+  { href: '/cats', label: 'My Cats', emoji: '🐱', spot: 1, lines: -1.25 },
   { href: '/health', label: 'Health Home', emoji: '🩺', spot: 2, lines: -1 },
-  { href: '/schedule', label: 'Schedule', emoji: '📅', spot: 3, lines: 2 },
-  { href: '/shopping', label: 'Shopping', emoji: '🛍️', spot: 4, lines: -1 },
+  { href: '/schedule', label: 'Schedule', emoji: '📅', spot: 3, lines: 1.5 },
+  { href: '/shopping', label: 'Shopping', emoji: '🛍️', spot: 4, lines: -1.5 },
   { href: '/resources', label: 'Resources', emoji: '🔗', spot: 6, lines: -1 },
-  { href: '/about', label: 'About', emoji: '💬', spot: 7, lines: -1 },
+  { href: '/about', label: 'About', emoji: '💬', spot: 7, lines: -0.5 },
 ]
 
 export default function CatTree() {
