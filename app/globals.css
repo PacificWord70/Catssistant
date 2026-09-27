@@ -37,7 +37,28 @@ body {
   transform: translateY(0) scale(0.98);
 }
 
+/* The cat tree's hanging toys. A couple of degrees either way is enough to read
+   as alive; any more and it pulls the eye off the labels. The second ball runs
+   on a different period so the two never fall into step. */
+@keyframes cat-tree-sway {
+  0%, 100% { transform: rotate(-1.8deg); }
+  50% { transform: rotate(1.8deg); }
+}
+
+.cat-tree-sway {
+  animation: cat-tree-sway 5.5s ease-in-out infinite;
+}
+
+.cat-tree-sway-late {
+  animation-duration: 6.8s;
+  animation-delay: -2.3s;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .cat-tree-sway {
+    animation: none;
+  }
+
   .hover-lift,
   .hover-lift:hover,
   .hover-lift:active {
