@@ -288,3 +288,100 @@ describe('formatDateLabel', () => {
     expect(formatDateLabel('2026-06-20')).toMatch(/Jun/)
   })
 })
+
+describe('expandEvents - edges', () => {
+  it('starts from the anchor when the series begins inside the range', () => {
+    const items = expandEvents([ev('2026-06-28', 'daily')], d('2026-06-01'), d('2026-06-30'))
+    expect(dates(items)).toEqual(['2026-06-28', '2026-06-29', '2026-06-30'])
+  })
+
+  it('skips a series that has not started by the end of the range', () => {
+    expect(expandEvents([ev('2026-07-01', 'daily')], d('2026-06-01'), d('2026-06-30'))).toEqual([])
+  })
+
+  it('skips a series that ended before the range', () => {
+    const items = expandEvents(
+      [ev('2026-01-01', 'weekly', { recurrenceEndDate: '2026-05-31' })],
+      d('2026-06-01'), d('2026-06-30'),
+    )
+    expect(items).toEqual([])
+  })
+
+  it('includes an occurrence falling exactly on recurrenceEndDate', () => {
+    const items = expandEvents(
+      [ev('2026-06-01', 'weekly', { recurrenceEndDate: '2026-06-15' })],
+      d('2026-06-01'), d('2026-06-30'),
+    )
+    expect(dates(items)).toEqual(['2026-06-01', '2026-06-08', '2026-06-15'])
+  })
+
+  it('stops a monthly series at recurrenceEndDate', () => {
+    const items = expandEvents(
+      [ev('2026-01-15', 'monthly', { recurrenceEndDate: '2026-03-20' })],
+      d('2026-01-01'), d('2026-12-31'),
+    )
+    expect(dates(items)).toEqual(['2026-01-15', '2026-02-15', '2026-03-15'])
+  })
+
+  it('carries a weekly series across a month boundary', () => {
+    const items = expandEvents([ev('2026-06-24', 'weekly')], d('2026-06-20'), d('2026-07-10'))
+    expect(dates(items)).toEqual(['2026-06-24', '2026-07-01', '2026-07-08'])
+  })
+
+  it('walks a daily series through 29 February in a leap year', () => {
+    const items = expandEvents([ev('2028-02-27', 'daily')], d('2028-02-27'), d('2028-03-01'))
+    expect(dates(items)).toEqual(['2028-02-27', '2028-02-28', '2028-02-29', '2028-03-01'])
+  })
+
+  it('moves a 29 February anchor to the 28th in common years, and back in leap years', () => {
+    const items = expandEvents([ev('2024-02-29', 'monthly')], d('2025-02-01'), d('2028-02-29'))
+    const febs = items.filter(i => i.date.slice(5, 7) === '02')
+    expect(dates(febs)).toEqual(['2025-02-28', '2026-02-28', '2027-02-28', '2028-02-29'])
+    expect(febs.map(i => i.adjustedFromDay)).toEqual([29, 29, 29, undefined])
+  })
+
+  it('moves the 30th only in February', () => {
+    const items = expandEvents([ev('2026-01-30', 'monthly')], d('2026-01-01'), d('2026-04-30'))
+    expect(dates(items)).toEqual(['2026-01-30', '2026-02-28', '2026-03-30', '2026-04-30'])
+  })
+
+  it('reaches the right month from an anchor years earlier', () => {
+    const items = expandEvents([ev('2020-05-31', 'monthly')], d('2026-06-01'), d('2026-06-30'))
+    expect(items).toEqual([expect.objectContaining({ date: '2026-06-30', adjustedFromDay: 31 })])
+  })
+
+  it('merges several events into one date-sorted list', () => {
+    const items = expandEvents(
+      [ev('2026-06-03', 'none'), ev('2026-06-01', 'weekly'), ev('2026-06-02', 'none')],
+      d('2026-06-01'), d('2026-06-08'),
+    )
+    expect(dates(items)).toEqual(['2026-06-01', '2026-06-02', '2026-06-03', '2026-06-08'])
+  })
+
+  it('returns nothing for no events', () => {
+    expect(expandEvents([], d('2026-06-01'), d('2026-06-30'))).toEqual([])
+  })
+})
+
+describe('buildMonthGrid - shape', () => {
+  it('keeps whole weeks for every month of a leap year', () => {
+    for (let m = 0; m < 12; m++) {
+      const grid = buildMonthGrid(new Date(2028, m, 1), [])
+      expect(grid.length % 7).toBe(0)
+      expect(grid.filter(c => c.inCurrentMonth)).toHaveLength(new Date(2028, m + 1, 0).getDate())
+    }
+  })
+
+  it('accepts any day of the month, not just the first', () => {
+    // Compares keys only: isToday reads the real clock, which is not pinned here.
+    const keys = (day: number) => buildMonthGrid(new Date(2026, 5, day), []).map(c => c.dateKey)
+    expect(keys(20)).toEqual(keys(1))
+  })
+
+  it('shows occurrences on the leading and trailing days of neighbouring months', () => {
+    // June 2026 starts on a Monday, so the grid opens on Sunday 31 May.
+    const grid = buildMonthGrid(new Date(2026, 5, 1), [ev('2026-05-31', 'none')])
+    expect(grid[0]).toMatchObject({ dateKey: '2026-05-31', inCurrentMonth: false })
+    expect(grid[0].items).toHaveLength(1)
+  })
+})
