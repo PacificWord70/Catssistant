@@ -10,9 +10,9 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('.', import.meta.url)) },
   },
   test: {
-    // These suites cover pure logic in lib/ — no DOM, so the lighter node
-    // environment is enough and starts faster.
+    // These suites cover pure logic in lib/ and the Redux slices in store/ — no
+    // DOM, so the lighter node environment is enough and starts faster.
     environment: 'node',
-    include: ['lib/**/*.test.ts'],
+    include: ['lib/**/*.test.ts', 'store/**/*.test.ts'],
   },
 })
