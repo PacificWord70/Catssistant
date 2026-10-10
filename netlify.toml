@@ -34,12 +34,46 @@
   [headers.values]
     Cache-Control = "public, max-age=86400, must-revalidate"
 
-# The app stores everything in localStorage and talks to no backend, so it has
-# no need to be framed, and no need for the referrer to travel with the one
-# outbound request it makes (Nominatim, on an explicit opt-in).
+# Security headers for every response. The app stores everything in
+# localStorage and talks to no backend, so almost everything can be locked to
+# our own origin. Netlify only — `next dev` does not read this file, which is
+# why the dev server's eval-based tooling is not tripped up by the CSP.
 [[headers]]
   for = "/*"
   [headers.values]
+    # No reason to be framed. CSP frame-ancestors below says the same thing for
+    # modern browsers; this covers older ones.
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
+
+    # Not "no-referrer": Nominatim's usage policy asks callers to identify the
+    # app by Referer or User-Agent, and a browser fetch cannot set User-Agent.
+    # Cross-origin this sends only our origin, never the path or query.
     Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # What each directive is for:
+    #  - script-src 'unsafe-inline': Next's App Router streams its RSC payload
+    #    through inline <script> tags (self.__next_f.push). Without a nonce they
+    #    can only run under 'unsafe-inline'. The nonce route — middleware that
+    #    mints a nonce per request and passes it to Next — forces every page to
+    #    render dynamically, so it is left for when there is a backend to protect.
+    #  - style-src 'unsafe-inline': framer-motion and the CatTree layout write
+    #    style attributes directly.
+    #  - img-src data: blob:: photos are stored as data: URLs, the CatTree paper
+    #    grain is a data: URL, and its region masks are blob: URLs used through
+    #    CSS mask-image (CSS image loads are governed by img-src).
+    #  - font-src 'self': next/font serves Figtree and Fraunces from our origin.
+    #  - connect-src: the one outbound request, the opt-in Nominatim lookup.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://nominatim.openstreetmap.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+
+    # Two years, the length the HSTS preload list expects. includeSubDomains
+    # assumes every subdomain of the production domain serves HTTPS.
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains"
+
+    # Geolocation stays available to our own pages for "Detect my location";
+    # everything else the app never uses is switched off outright.
+    Permissions-Policy = "geolocation=(self), camera=(), microphone=(), payment=(), usb=()"
+
+    # Keeps a page we open (or that opens us) from holding a window reference
+    # back into the app.
+    Cross-Origin-Opener-Policy = "same-origin"
