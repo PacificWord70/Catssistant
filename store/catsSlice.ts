@@ -1,6 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { Cat } from '@/types/cat'
 import { deleteCat as removeFromStorage, getCats, saveCat as writeToStorage } from '@/lib/storage'
+import { healthRecordDeleted } from '@/store/healthSlice'
+import { scheduleEventDeleted, scheduleEventSaved } from '@/store/scheduleSlice'
 // Type-only import, so it is erased at compile time and creates no runtime cycle
 // even though store/index.ts imports this file's reducer.
 import type { AppDispatch } from '@/store/types'
@@ -71,6 +73,10 @@ export default catsSlice.reducer
 // Storage writes live here because reducers have to stay pure. A thunk is just a
 // function that receives `dispatch`: it can do the side effect first, then
 // dispatch the plain action that updates state.
+//
+// The order is load-bearing: storage functions throw StorageWriteError when a
+// write did not happen, and because the dispatch comes after, a failed save
+// never reaches state. The UI catches the error and shows its message.
 
 export function loadCats() {
   return (dispatch: AppDispatch) => {
@@ -85,9 +91,18 @@ export function persistCat(cat: Cat) {
   }
 }
 
+/**
+ * Deletes a cat and mirrors the cascade storage performed, so the schedule and
+ * health slices drop the same events and readings without reloading. Applying
+ * storage's own list of changes, rather than recomputing them here, keeps the
+ * rule about shared events in one place.
+ */
 export function removeCat(id: string) {
   return (dispatch: AppDispatch) => {
-    removeFromStorage(id)
+    const { updatedEvents, deletedEventIds, deletedHealthRecordIds } = removeFromStorage(id)
     dispatch(catDeleted(id))
+    for (const event of updatedEvents) dispatch(scheduleEventSaved(event))
+    for (const eventId of deletedEventIds) dispatch(scheduleEventDeleted(eventId))
+    for (const recordId of deletedHealthRecordIds) dispatch(healthRecordDeleted(recordId))
   }
 }

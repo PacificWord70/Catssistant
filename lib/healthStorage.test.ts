@@ -5,6 +5,7 @@ import {
   getHealthRecordsForCat,
   saveHealthRecord,
 } from '@/lib/healthStorage'
+import { StorageWriteError } from '@/lib/storageSafety'
 import { HealthRecord } from '@/types/healthRecord'
 
 const HEALTH_KEY = 'catssistant_health_records'
@@ -72,11 +73,26 @@ describe('health records', () => {
     expect(getHealthRecords().map(r => r.id)).toEqual(['b'])
   })
 
-  // BUG: lib/healthStorage.ts:16 — the `as HealthRecord[]` cast hides that a
-  // stored 'null' is returned as null; getHealthRecordsForCat then throws on
-  // `.filter` and saveHealthRecord on `.findIndex`.
-  it.fails('returns an array for parseable non-array JSON', () => {
+  it('returns an array for parseable non-array JSON', () => {
+    // Used to come back as null, so the per-cat filter and the next save crashed.
     localStorage.setItem(HEALTH_KEY, 'null')
     expect(getHealthRecords()).toEqual([])
+    expect(getHealthRecordsForCat('c1')).toEqual([])
+    expect(() => saveHealthRecord(record())).toThrow(StorageWriteError)
+    expect(localStorage.getItem(`${HEALTH_KEY}__unreadable`)).toBe('null')
+  })
+
+  it('does not overwrite unreadable readings when saving a new one', () => {
+    const corrupt = '[{"id":"r1","catId":"c1",'
+    localStorage.setItem(HEALTH_KEY, corrupt)
+    expect(() => saveHealthRecord(record({ id: 'r2' }))).toThrow(StorageWriteError)
+    expect(localStorage.getItem(`${HEALTH_KEY}__unreadable`)).toBe(corrupt)
+  })
+
+  it('throws a StorageWriteError when storage is full', () => {
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError')
+    })
+    expect(() => saveHealthRecord(record())).toThrow(/enough room/)
   })
 })

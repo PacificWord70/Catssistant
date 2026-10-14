@@ -8,11 +8,15 @@ import {
   saveCat,
   saveScheduleEvent,
 } from '@/lib/storage'
+import { getHealthRecords, saveHealthRecord } from '@/lib/healthStorage'
+import { StorageWriteError } from '@/lib/storageSafety'
 import { Cat } from '@/types/cat'
+import { HealthRecord } from '@/types/healthRecord'
 import { ScheduleEvent } from '@/types/scheduleEvent'
 
 const KEY = 'catssistant_cats'
 const SCHEDULE_KEY = 'catssistant_schedule_events'
+const BACKUP = `${KEY}__unreadable`
 
 /**
  * Stands in for the browser globals the storage module needs.
@@ -182,14 +186,126 @@ describe('getCats - unusual stored values', () => {
     expect(getCats()).toEqual([])
   })
 
-  // BUG: lib/storage.ts:53 — a corrupt value reads as [] (the safe default), so
-  // the next saveCat writes [thatCat] over the top and every other cat is gone
-  // for good. Reads are safe; the read-modify-write is not. Left failing until
-  // the team decides how unreadable data should be preserved.
-  it.fails('does not overwrite unreadable stored cats when saving a new one', () => {
-    localStorage.setItem(KEY, '[{"id":"a","name":"Biscuit"},')
+  it('does not overwrite unreadable stored cats when saving a new one', () => {
+    // A corrupt value reads as [] so the page can render, but saving must not
+    // treat that [] as the truth and write [newCat] over everything.
+    const corrupt = '[{"id":"a","name":"Biscuit"},'
+    localStorage.setItem(KEY, corrupt)
+    expect(() => saveCat(cat({ id: 'b' }))).toThrow(StorageWriteError)
+    expect(localStorage.getItem(BACKUP)).toBe(corrupt)
+  })
+
+  it.each(['null', '{}', '42'])('refuses to save over parseable non-array JSON %s', raw => {
+    localStorage.setItem(KEY, raw)
+    expect(() => saveCat(cat())).toThrow(StorageWriteError)
+    expect(localStorage.getItem(BACKUP)).toBe(raw)
+  })
+})
+
+/** Makes every setItem fail the way a full browser does, until the returned function is called. */
+function fillStorage(error: unknown = new DOMException('full', 'QuotaExceededError')) {
+  const realSet = localStorage.setItem
+  localStorage.setItem = () => {
+    throw error
+  }
+  return () => {
+    localStorage.setItem = realSet
+  }
+}
+
+/** Runs `fn` and returns what it threw, so the error's fields can be checked. */
+function thrownBy(fn: () => void): StorageWriteError {
+  try {
+    fn()
+  } catch (e) {
+    expect(e).toBeInstanceOf(StorageWriteError)
+    return e as StorageWriteError
+  }
+  throw new Error('expected a StorageWriteError')
+}
+
+describe('unreadable data', () => {
+  const corrupt = '[{"id":"a","name":"Biscuit"},'
+
+  it('backs the raw value up on read, leaving the live key alone', () => {
+    localStorage.setItem(KEY, corrupt)
+    expect(getCats()).toEqual([])
+    expect(localStorage.getItem(BACKUP)).toBe(corrupt)
+    expect(localStorage.getItem(KEY)).toBe(corrupt)
+  })
+
+  it('reading twice equals reading once', () => {
+    localStorage.setItem(KEY, corrupt)
+    getCats()
+    getCats()
+    expect(localStorage.getItem(BACKUP)).toBe(corrupt)
+    expect(localStorage.getItem(`${BACKUP}_2`)).toBeNull()
+  })
+
+  it('never overwrites an earlier backup with a different value', () => {
+    localStorage.setItem(BACKUP, 'older damage')
+    localStorage.setItem(KEY, corrupt)
+    getCats()
+    expect(localStorage.getItem(BACKUP)).toBe('older damage')
+    expect(localStorage.getItem(`${BACKUP}_2`)).toBe(corrupt)
+  })
+
+  it('tells the user in plain words, then lets the retry through', () => {
+    // The refused save is how the user finds out. Once the backup is confirmed
+    // the bad value is moved aside, so trying again works from an empty list.
+    localStorage.setItem(KEY, corrupt)
+    const error = thrownBy(() => saveCat(cat({ id: 'b' })))
+    expect(error.reason).toBe('unreadable')
+    expect(error.message).toMatch(/couldn't be read/)
+    expect(localStorage.getItem(KEY)).toBeNull()
+
     saveCat(cat({ id: 'b' }))
-    expect(localStorage.getItem(KEY)).toContain('Biscuit')
+    expect(getCats().map(c => c.id)).toEqual(['b'])
+    expect(localStorage.getItem(BACKUP)).toBe(corrupt)
+  })
+
+  it('keeps refusing while the backup cannot be made', () => {
+    // With nowhere safe to put the old value, staying stuck beats losing it.
+    localStorage.setItem(KEY, corrupt)
+    const restore = fillStorage()
+    expect(() => saveCat(cat())).toThrow(StorageWriteError)
+    expect(() => saveCat(cat())).toThrow(StorageWriteError)
+    restore()
+    expect(localStorage.getItem(KEY)).toBe(corrupt)
+    expect(localStorage.getItem(BACKUP)).toBeNull()
+  })
+
+  it('refuses deletes too, since they rewrite the same list', () => {
+    localStorage.setItem(KEY, corrupt)
+    expect(() => deleteCat('a')).toThrow(StorageWriteError)
+    expect(localStorage.getItem(BACKUP)).toBe(corrupt)
+  })
+})
+
+describe('when a write fails', () => {
+  it('says there is not enough room when storage is full', () => {
+    saveCat(cat({ id: 'a' }))
+    const restore = fillStorage()
+    const error = thrownBy(() => saveCat(cat({ id: 'b', photoUrl: 'data:image/png;base64,AAAA' })))
+    restore()
+    expect(error.reason).toBe('quota')
+    expect(error.message).toMatch(/enough room/)
+    expect(getCats().map(c => c.id)).toEqual(['a'])
+  })
+
+  it('recognises the older numeric quota code too', () => {
+    const restore = fillStorage({ name: 'Error', code: 22 })
+    expect(thrownBy(() => saveCat(cat())).reason).toBe('quota')
+    restore()
+  })
+
+  it('reports any other failure without the photo advice', () => {
+    const restore = fillStorage(new Error('SecurityError'))
+    const error = thrownBy(() => saveScheduleEvent(event()))
+    restore()
+    expect(error.reason).toBe('unknown')
+    expect(error.message).toMatch(/wasn't saved/)
+    expect(error.cause).toBeInstanceOf(Error)
   })
 })
 
@@ -258,12 +374,12 @@ describe('schedule events', () => {
     expect(getScheduleEvents()).toEqual([])
   })
 
-  // BUG: lib/storage.ts:65 — unlike getCats, parseable non-array JSON is
-  // returned as-is, so 'null' comes back as null and the next
-  // saveScheduleEvent throws on `events.findIndex`.
-  it.fails.each(['null', '{}'])('returns an array for parseable non-array JSON %s', raw => {
+  it.each(['null', '{}'])('returns an array for parseable non-array JSON %s', raw => {
     localStorage.setItem(SCHEDULE_KEY, raw)
     expect(getScheduleEvents()).toEqual([])
+    // ...and the next save refuses cleanly instead of crashing on findIndex.
+    expect(() => saveScheduleEvent(event())).toThrow(StorageWriteError)
+    expect(localStorage.getItem(`${SCHEDULE_KEY}__unreadable`)).toBe(raw)
   })
 
   it('appends new events and replaces existing ones in place', () => {
@@ -290,8 +406,58 @@ describe('schedule events', () => {
 
   it('keeps cats and events under separate keys', () => {
     saveCat(cat())
-    saveScheduleEvent(event())
+    saveScheduleEvent(event({ catIds: ['cat-2'] }))
     deleteCat('cat-1')
     expect(getScheduleEvents()).toHaveLength(1)
+  })
+})
+
+// ─── Deleting a cat ───────────────────────────────────────────────────────────
+
+describe('deleteCat cascade', () => {
+  const reading = (over: Partial<HealthRecord> = {}): HealthRecord => ({
+    id: 'r1',
+    catId: 'cat-1',
+    date: '2026-06-01',
+    weightLbs: 10,
+    createdAt: '2026-06-01T00:00:00.000Z',
+    ...over,
+  })
+
+  beforeEach(() => {
+    saveCat(cat({ id: 'cat-1' }))
+    saveCat(cat({ id: 'cat-2' }))
+  })
+
+  it('drops the cat from a shared event and keeps the event for the other cat', () => {
+    saveScheduleEvent(event({ id: 'shared', catIds: ['cat-1', 'cat-2'] }))
+    const result = deleteCat('cat-1')
+    expect(getScheduleEvents()).toEqual([event({ id: 'shared', catIds: ['cat-2'] })])
+    expect(result.updatedEvents).toEqual(getScheduleEvents())
+    expect(result.deletedEventIds).toEqual([])
+  })
+
+  it('deletes an event once no cats are left on it', () => {
+    saveScheduleEvent(event({ id: 'mine', catIds: ['cat-1'] }))
+    saveScheduleEvent(event({ id: 'theirs', catIds: ['cat-2'] }))
+    const result = deleteCat('cat-1')
+    expect(getScheduleEvents().map(e => e.id)).toEqual(['theirs'])
+    expect(result.deletedEventIds).toEqual(['mine'])
+  })
+
+  it("deletes the cat's health records and only those", () => {
+    saveHealthRecord(reading({ id: 'a', catId: 'cat-1' }))
+    saveHealthRecord(reading({ id: 'b', catId: 'cat-2' }))
+    const result = deleteCat('cat-1')
+    expect(getHealthRecords().map(r => r.id)).toEqual(['b'])
+    expect(result.deletedHealthRecordIds).toEqual(['a'])
+  })
+
+  it('writes nothing at all if any collection is unreadable', () => {
+    saveScheduleEvent(event({ id: 'mine', catIds: ['cat-1'] }))
+    localStorage.setItem('catssistant_health_records', '[{')
+    expect(() => deleteCat('cat-1')).toThrow(StorageWriteError)
+    expect(getCats().map(c => c.id)).toEqual(['cat-1', 'cat-2'])
+    expect(getScheduleEvents().map(e => e.id)).toEqual(['mine'])
   })
 })

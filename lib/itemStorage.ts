@@ -1,16 +1,11 @@
 import { CatalogProduct, HouseholdItem } from '@/types/item'
+import { readList, readListForWrite, upsertById, writeList } from '@/lib/storageSafety'
 
 const CATALOG_KEY = 'catssistant_catalog_products'
 const ITEMS_KEY = 'catssistant_household_items'
 
 export function getCatalogProducts(): CatalogProduct[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(CATALOG_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
+  return readList<CatalogProduct>(CATALOG_KEY)
 }
 
 export function getCatalogProductById(id: string): CatalogProduct | undefined {
@@ -18,29 +13,16 @@ export function getCatalogProductById(id: string): CatalogProduct | undefined {
 }
 
 export function saveCatalogProduct(product: CatalogProduct): void {
-  const products = getCatalogProducts()
-  const idx = products.findIndex(p => p.id === product.id)
-  if (idx >= 0) {
-    products[idx] = product
-  } else {
-    products.push(product)
-  }
-  localStorage.setItem(CATALOG_KEY, JSON.stringify(products))
+  writeList(CATALOG_KEY, upsertById(readListForWrite<CatalogProduct>(CATALOG_KEY), product))
 }
 
 export function deleteCatalogProduct(id: string): void {
-  const products = getCatalogProducts().filter(p => p.id !== id)
-  localStorage.setItem(CATALOG_KEY, JSON.stringify(products))
+  const remaining = readListForWrite<CatalogProduct>(CATALOG_KEY).filter(p => p.id !== id)
+  writeList(CATALOG_KEY, remaining)
 }
 
 export function getHouseholdItems(): HouseholdItem[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(ITEMS_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
+  return readList<HouseholdItem>(ITEMS_KEY)
 }
 
 export function getHouseholdItemById(id: string): HouseholdItem | undefined {
@@ -48,17 +30,10 @@ export function getHouseholdItemById(id: string): HouseholdItem | undefined {
 }
 
 export function saveHouseholdItem(item: HouseholdItem): void {
-  const items = getHouseholdItems()
-  const idx = items.findIndex(i => i.id === item.id)
-  if (idx >= 0) {
-    items[idx] = item
-  } else {
-    items.push(item)
-  }
-  localStorage.setItem(ITEMS_KEY, JSON.stringify(items))
+  writeList(ITEMS_KEY, upsertById(readListForWrite<HouseholdItem>(ITEMS_KEY), item))
 }
 
 export function deleteHouseholdItem(id: string): void {
-  const items = getHouseholdItems().filter(i => i.id !== id)
-  localStorage.setItem(ITEMS_KEY, JSON.stringify(items))
+  const remaining = readListForWrite<HouseholdItem>(ITEMS_KEY).filter(i => i.id !== id)
+  writeList(ITEMS_KEY, remaining)
 }

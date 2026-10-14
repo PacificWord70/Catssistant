@@ -1,6 +1,8 @@
 import { HealthRecord } from '@/types/healthRecord'
+import { readList, readListForWrite, upsertById, writeList } from '@/lib/storageSafety'
 
-const HEALTH_KEY = 'catssistant_health_records'
+/** Exported for `deleteCat` in lib/storage.ts, which clears a cat's readings along with it. */
+export const HEALTH_KEY = 'catssistant_health_records'
 
 /**
  * Dated health measurements, one row per reading.
@@ -10,13 +12,7 @@ const HEALTH_KEY = 'catssistant_health_records'
  * weights would otherwise bloat every read of the cat list.
  */
 export function getHealthRecords(): HealthRecord[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(HEALTH_KEY)
-    return raw ? (JSON.parse(raw) as HealthRecord[]) : []
-  } catch {
-    return []
-  }
+  return readList<HealthRecord>(HEALTH_KEY)
 }
 
 export function getHealthRecordsForCat(catId: string): HealthRecord[] {
@@ -24,17 +20,10 @@ export function getHealthRecordsForCat(catId: string): HealthRecord[] {
 }
 
 export function saveHealthRecord(record: HealthRecord): void {
-  const records = getHealthRecords()
-  const idx = records.findIndex(r => r.id === record.id)
-  if (idx >= 0) {
-    records[idx] = record
-  } else {
-    records.push(record)
-  }
-  localStorage.setItem(HEALTH_KEY, JSON.stringify(records))
+  writeList(HEALTH_KEY, upsertById(readListForWrite<HealthRecord>(HEALTH_KEY), record))
 }
 
 export function deleteHealthRecord(id: string): void {
-  const records = getHealthRecords().filter(r => r.id !== id)
-  localStorage.setItem(HEALTH_KEY, JSON.stringify(records))
+  const remaining = readListForWrite<HealthRecord>(HEALTH_KEY).filter(r => r.id !== id)
+  writeList(HEALTH_KEY, remaining)
 }

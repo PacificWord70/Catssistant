@@ -9,6 +9,7 @@ import {
   saveCatalogProduct,
   saveHouseholdItem,
 } from '@/lib/itemStorage'
+import { StorageWriteError } from '@/lib/storageSafety'
 import { CatalogProduct, HouseholdItem } from '@/types/item'
 
 const CATALOG_KEY = 'catssistant_catalog_products'
@@ -88,11 +89,11 @@ describe('catalog products', () => {
     expect(getCatalogProducts().map(p => p.id)).toEqual(['b'])
   })
 
-  // BUG: lib/itemStorage.ts:10 — parseable non-array JSON is returned as-is,
-  // so a stored 'null' reaches saveCatalogProduct and throws on findIndex.
-  it.fails('returns an array for parseable non-array JSON', () => {
+  it('returns an array for parseable non-array JSON, and refuses to save over it', () => {
     localStorage.setItem(CATALOG_KEY, 'null')
     expect(getCatalogProducts()).toEqual([])
+    expect(() => saveCatalogProduct(product())).toThrow(StorageWriteError)
+    expect(localStorage.getItem(`${CATALOG_KEY}__unreadable`)).toBe('null')
   })
 })
 
@@ -136,9 +137,24 @@ describe('household items', () => {
     expect(getCatalogProducts().map(p => p.id)).toEqual(['x'])
   })
 
-  // BUG: lib/itemStorage.ts:40 — same non-array hole as the catalogue.
-  it.fails('returns an array for parseable non-array JSON', () => {
+  it('returns an array for parseable non-array JSON, and refuses to save over it', () => {
     localStorage.setItem(ITEMS_KEY, '{}')
     expect(getHouseholdItems()).toEqual([])
+    expect(() => saveHouseholdItem(item())).toThrow(StorageWriteError)
+    expect(localStorage.getItem(`${ITEMS_KEY}__unreadable`)).toBe('{}')
+  })
+
+  it('does not overwrite unreadable items when saving a new one', () => {
+    const corrupt = '[{"id":"a","productId":"p1"},'
+    localStorage.setItem(ITEMS_KEY, corrupt)
+    expect(() => saveHouseholdItem(item({ id: 'b' }))).toThrow(StorageWriteError)
+    expect(localStorage.getItem(`${ITEMS_KEY}__unreadable`)).toBe(corrupt)
+  })
+
+  it('throws a StorageWriteError when storage is full', () => {
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError')
+    })
+    expect(() => saveHouseholdItem(item())).toThrow(StorageWriteError)
   })
 })

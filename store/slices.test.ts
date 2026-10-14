@@ -34,6 +34,7 @@ import healthReducer, {
 import { getCats, getScheduleEvents } from '@/lib/storage'
 import { getCatalogProducts, getHouseholdItems } from '@/lib/itemStorage'
 import { getHealthRecords } from '@/lib/healthStorage'
+import { StorageWriteError } from '@/lib/storageSafety'
 import { Cat } from '@/types/cat'
 import { ScheduleEvent } from '@/types/scheduleEvent'
 import { CatalogProduct, HouseholdItem } from '@/types/item'
@@ -185,6 +186,49 @@ describe('thunks keep storage and state in step', () => {
     const reloaded = makeStore()
     reloaded.dispatch(loadCats())
     expect(reloaded.getState().cats).toMatchObject({ loaded: true, items: [expect.objectContaining({ id: 'b' })] })
+  })
+
+  it('cats: removing one clears its events and readings from state and storage', () => {
+    const store = makeStore()
+    store.dispatch(persistCat(cat({ id: 'a' })))
+    store.dispatch(persistCat(cat({ id: 'b' })))
+    store.dispatch(persistScheduleEvent(event({ id: 'only-a', catIds: ['a'] })))
+    store.dispatch(persistScheduleEvent(event({ id: 'shared', catIds: ['a', 'b'] })))
+    store.dispatch(persistScheduleEvent(event({ id: 'only-b', catIds: ['b'] })))
+    store.dispatch(persistHealthRecord(record({ id: 'ra', catId: 'a' })))
+    store.dispatch(persistHealthRecord(record({ id: 'rb', catId: 'b' })))
+
+    store.dispatch(removeCat('a'))
+
+    const { schedule, health } = store.getState()
+    expect(schedule.items.map(e => [e.id, e.catIds])).toEqual([
+      ['shared', ['b']],
+      ['only-b', ['b']],
+    ])
+    expect(health.records.map(r => r.id)).toEqual(['rb'])
+    // State and storage must agree exactly, not just roughly.
+    expect(getScheduleEvents()).toEqual(schedule.items)
+    expect(getHealthRecords()).toEqual(health.records)
+  })
+
+  it('cats: a failed save throws and leaves state untouched', () => {
+    const store = makeStore()
+    store.dispatch(persistCat(cat({ id: 'a' })))
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError')
+    })
+    expect(() => store.dispatch(persistCat(cat({ id: 'b' })))).toThrow(StorageWriteError)
+    expect(store.getState().cats.items.map(c => c.id)).toEqual(['a'])
+  })
+
+  it('cats: an unreadable collection blocks the delete in state as well as storage', () => {
+    const store = makeStore()
+    store.dispatch(persistCat(cat({ id: 'a' })))
+    store.dispatch(persistScheduleEvent(event({ catIds: ['a'] })))
+    localStorage.setItem('catssistant_health_records', '{')
+    expect(() => store.dispatch(removeCat('a'))).toThrow(StorageWriteError)
+    expect(store.getState().cats.items.map(c => c.id)).toEqual(['a'])
+    expect(store.getState().schedule.items).toHaveLength(1)
   })
 
   it('cats: load applies the storage migration', () => {
