@@ -33,14 +33,27 @@ export interface DayCell {
   items: AgendaItem[]
 }
 
+/**
+ * The month's days padded out to whole weeks, Sunday first.
+ *
+ * Every cell is built from a day count rather than by stepping a Date and
+ * comparing it to an end Date. Where daylight saving starts at midnight (Chile,
+ * for one), that day's `new Date(y, m, d)` lands on 01:00; a stepped cursor
+ * carries the extra hour forward and ends up "after" a midnight end date, so
+ * the grid used to stop a day short. Constructing each day from its own
+ * year/month/day keeps every cell on the right date whatever the clock does.
+ */
 export function buildMonthGrid(monthStart: Date, events: ScheduleEvent[]): DayCell[] {
-  const firstOfMonth = new Date(monthStart.getFullYear(), monthStart.getMonth(), 1)
-  const gridStart = new Date(firstOfMonth)
-  gridStart.setDate(gridStart.getDate() - gridStart.getDay())
+  const year = monthStart.getFullYear()
+  const month = monthStart.getMonth()
+  const leadingDays = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const trailingDays = 6 - new Date(year, month, daysInMonth).getDay()
+  const cellCount = leadingDays + daysInMonth + trailingDays
 
-  const lastOfMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0)
-  const gridEnd = new Date(lastOfMonth)
-  gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()))
+  const dayAt = (i: number) => new Date(year, month, 1 - leadingDays + i)
+  const gridStart = dayAt(0)
+  const gridEnd = dayAt(cellCount - 1)
 
   const itemsByDate = new Map<string, AgendaItem[]>()
   for (const { date, items } of groupByDate(expandEvents(events, gridStart, gridEnd))) {
@@ -49,17 +62,16 @@ export function buildMonthGrid(monthStart: Date, events: ScheduleEvent[]): DayCe
 
   const todayKey = toDateKey(new Date())
   const cells: DayCell[] = []
-  const cursor = new Date(gridStart)
-  while (cursor <= gridEnd) {
-    const dateKey = toDateKey(cursor)
+  for (let i = 0; i < cellCount; i++) {
+    const day = dayAt(i)
+    const dateKey = toDateKey(day)
     cells.push({
       dateKey,
-      dayNumber: cursor.getDate(),
-      inCurrentMonth: cursor.getMonth() === monthStart.getMonth(),
+      dayNumber: day.getDate(),
+      inCurrentMonth: day.getMonth() === month,
       isToday: dateKey === todayKey,
       items: itemsByDate.get(dateKey) ?? [],
     })
-    cursor.setDate(cursor.getDate() + 1)
   }
   return cells
 }

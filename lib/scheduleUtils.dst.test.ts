@@ -77,12 +77,10 @@ describe('expandEvents across a midnight DST jump', () => {
 })
 
 describe('buildMonthGrid across a midnight DST jump', () => {
-  // BUG: lib/scheduleUtils.ts:53 — the loop compares Date objects
-  // (`cursor <= gridEnd`). gridEnd sits at 00:00, but after the spring-forward
-  // day the cursor carries 01:00, so on the final Saturday it is an hour past
-  // gridEnd and the loop stops early. September 2026 in Chile renders 34 cells
-  // ending on Friday 2 October, leaving the last week one day short.
-  it.fails('still covers whole weeks', () => {
+  // The loop used to compare Date objects (`cursor <= gridEnd`). After the
+  // spring-forward day the cursor carried 01:00, so on the final Saturday it was
+  // an hour past a midnight gridEnd and September 2026 stopped at Friday 2 October.
+  it('still covers whole weeks', () => {
     const grid = buildMonthGrid(d('2026-09-01'), [])
     expect(grid.length % 7).toBe(0)
     expect(grid[grid.length - 1].dateKey).toBe('2026-10-03')
