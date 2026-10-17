@@ -10,6 +10,7 @@ import { catAgeLabel, catHumanAge, coatLabel } from '@/lib/utils'
 import { effectiveCoatLength, effectiveColor, effectiveEnergy, effectivePattern } from '@/lib/breedDefaults'
 import BreedTag from '@/components/BreedTag'
 import CatAvatar from '@/components/CatAvatar'
+import { safeImageSrc, telHref } from '@/lib/safeUrl'
 
 const FEATURE_TABS = ['Feeding', 'Health', 'Litter', 'Meds', 'Notes']
 
@@ -55,6 +56,12 @@ export default function CatProfilePage() {
   const energy = effectiveEnergy(cat)
   const list = (values?: string[]) => (values?.length ? values.join(', ') : undefined)
 
+  // Stored values go through the allowlists in lib/safeUrl before reaching an
+  // attribute. An unsafe photo falls back to the avatar; an unusable phone
+  // number is still shown, just not as a link.
+  const photoSrc = safeImageSrc(cat.photoUrl)
+  const vetTel = telHref(cat.vet?.phone)
+
   const aboutRows = [
     { label: 'Coat', value: coat || undefined },
     { label: 'Coat length', value: effectiveCoatLength(cat) },
@@ -76,8 +83,8 @@ export default function CatProfilePage() {
 
         {/* Photo hero */}
         <div className="h-64 bg-brand-tan/20 flex items-center justify-center overflow-hidden relative">
-          {cat.photoUrl ? (
-            <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
+          {photoSrc ? (
+            <img src={photoSrc} alt={cat.name} className="w-full h-full object-cover" />
           ) : (
             <CatAvatar cat={cat} size={210} />
           )}
@@ -185,11 +192,13 @@ export default function CatProfilePage() {
             <div className="bg-brand-tan/10 rounded-2xl p-5 mb-6">
               <h2 className="text-xs font-semibold text-brand-brown uppercase tracking-wide mb-3">Vet</h2>
               {cat.vet.name && <p className="font-medium text-brand-charcoal">{cat.vet.name}</p>}
-              {cat.vet.phone && (
-                <a href={`tel:${cat.vet.phone}`} className="text-sm text-brand-slate hover:underline block mt-0.5">
+              {cat.vet.phone && (vetTel ? (
+                <a href={vetTel} className="text-sm text-brand-slate hover:underline block mt-0.5">
                   {cat.vet.phone}
                 </a>
-              )}
+              ) : (
+                <p className="text-sm text-brand-charcoal/80 mt-0.5">{cat.vet.phone}</p>
+              ))}
               {cat.vet.address && <p className="text-sm text-brand-brown/60 mt-0.5">{cat.vet.address}</p>}
             </div>
           )}

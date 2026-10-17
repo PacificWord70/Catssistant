@@ -7,6 +7,7 @@ import { catAgeShort, coatLabel } from '@/lib/utils'
 import BreedTag from '@/components/BreedTag'
 import CatAvatar from '@/components/CatAvatar'
 import { effectiveColor, effectivePattern } from '@/lib/breedDefaults'
+import { safeImageSrc } from '@/lib/safeUrl'
 
 interface Props {
   cat: Cat
@@ -19,6 +20,9 @@ export default function CatCard({ cat }: Props) {
   const effective = { color: effectiveColor(cat), pattern: effectivePattern(cat) }
 
   const reduceMotion = useReducedMotion()
+  // A stored photo that fails the allowlist is treated as no photo at all, so
+  // the avatar shows instead of a broken image or a request to somewhere else.
+  const photoSrc = safeImageSrc(cat.photoUrl)
 
   return (
     <Link href={`/cats/${cat.id}`} className="block h-full">
@@ -29,8 +33,8 @@ export default function CatCard({ cat }: Props) {
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
         <div className="h-44 bg-brand-tan/20 flex items-center justify-center overflow-hidden flex-shrink-0">
-          {cat.photoUrl ? (
-            <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
+          {photoSrc ? (
+            <img src={photoSrc} alt={cat.name} className="w-full h-full object-cover" />
           ) : (
             // No photo, so fall back to the drawn avatar rather than a generic
             // emoji — it at least reflects this cat's colour and markings.
