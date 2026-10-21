@@ -1,11 +1,13 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useId, useState } from 'react'
 import CatAvatar from '@/components/CatAvatar'
+import Dialog from '@/components/Dialog'
 import { Cat } from '@/types/cat'
 import { HealthRecord } from '@/types/healthRecord'
 import { toDateKey } from '@/lib/scheduleUtils'
 import { toLbs, validateWeightEntry, WeightEntryError } from '@/lib/healthValidation'
+import { DELETE_FALLBACK_MESSAGE, errorMessage } from '@/lib/formErrors'
 
 interface Props {
   /** Cats the reading can be filed against. One entry hides the picker. */
@@ -25,6 +27,7 @@ const inputClass =
   'w-full px-4 py-2.5 rounded-2xl border focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white'
 const okBorder = 'border-brand-tan/50'
 const badBorder = 'border-red-400'
+const focusRing = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40'
 
 const LBS_PER_KG = 2.20462
 
@@ -67,6 +70,23 @@ export default function WeightLogForm({
   const [notes, setNotes] = useState(record?.notes ?? '')
   const [error, setError] = useState<WeightEntryError | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  // The first render's values are the baseline for "has anything been typed?".
+  const snapshot = JSON.stringify([catId, date, weight, notes])
+  const [initialSnapshot] = useState(snapshot)
+  const dirty = snapshot !== initialSnapshot
+
+  const uid = useId()
+  const ids = {
+    heading: `${uid}-heading`,
+    cat: `${uid}-cat`,
+    date: `${uid}-date`,
+    weight: `${uid}-weight`,
+    notes: `${uid}-notes`,
+    error: `${uid}-error`,
+    saveError: `${uid}-save-error`,
+  }
 
   /* Clear the message as soon as the owner starts fixing the thing it is about.
      Leaving a stale error under a field they have already corrected reads as the
@@ -97,27 +117,47 @@ export default function WeightLogForm({
       // existing reading would be rejected for colliding with itself.
       existingDates: existingDatesFor(cat.id).filter(d => d !== record?.date),
     })
+    setSaveError(null)
     if (problem) {
       setError(problem)
+      // Takes the owner to the field the message is about, not just the message.
+      document.getElementById(problem.field === 'date' ? ids.date : ids.weight)?.focus()
       return
     }
-    onSave({
-      id: record?.id ?? newId(),
-      catId: cat.id,
-      date,
-      weightLbs: toLbs(Number(weight), unit),
-      notes: notes.trim() || undefined,
-      createdAt: record?.createdAt ?? new Date().toISOString(),
-    })
+    // The page's handler writes to storage, which can throw — when the browser
+    // is out of room, say. The form stays open with the reading intact and the
+    // reason shown, rather than the save vanishing.
+    try {
+      onSave({
+        id: record?.id ?? newId(),
+        catId: cat.id,
+        date,
+        weightLbs: toLbs(Number(weight), unit),
+        notes: notes.trim() || undefined,
+        createdAt: record?.createdAt ?? new Date().toISOString(),
+      })
+    } catch (err) {
+      setSaveError(errorMessage(err))
+    }
   }
 
+  function confirmDelete(id: string) {
+    if (!onDelete) return
+    setSaveError(null)
+    try {
+      onDelete(id)
+    } catch (err) {
+      setConfirmingDelete(false)
+      setSaveError(errorMessage(err, DELETE_FALLBACK_MESSAGE))
+    }
+  }
+
+  const describedBy = (field: WeightEntryError['field']) =>
+    error?.field === field ? ids.error : undefined
+
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div
-        className="bg-white rounded-3xl p-7 shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
-      >
-        <h2 className="font-display text-2xl text-brand-brown mb-1">{editing ? 'Edit weight' : 'Log a weight'}</h2>
+    <Dialog labelledBy={ids.heading} onClose={onClose} dirty={dirty}>
+        <h2 id={ids.heading} className="font-display text-2xl text-brand-brown mb-1">{editing ? 'Edit weight' : 'Log a weight'}</h2>
         <p className="text-sm text-brand-brown/60 mb-6">
           {editing ? `for ${cat.name}` : cats.length === 1 ? `for ${cat.name}` : 'Pick which cat this is for.'}
         </p>
@@ -126,8 +166,8 @@ export default function WeightLogForm({
           {/* Only offered when creating. Moving an existing reading to another
               cat would rewrite two histories at once. */}
           {!editing && cats.length > 1 && (
-            <div>
-              <span className="block text-sm font-medium text-brand-brown mb-1.5">Cat</span>
+            <div role="group" aria-labelledby={ids.cat}>
+              <span id={ids.cat} className="block text-sm font-medium text-brand-brown mb-1.5">Cat</span>
               <div className="flex flex-wrap gap-2">
                 {cats.map(c => (
                   <button
@@ -135,7 +175,7 @@ export default function WeightLogForm({
                     type="button"
                     onClick={() => pickCat(c.id)}
                     aria-pressed={c.id === cat.id}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-2xl border transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-2xl border transition-colors ${focusRing} ${
                       c.id === cat.id
                         ? 'border-brand-orange bg-brand-orange/10 text-brand-brown'
                         : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
@@ -150,11 +190,11 @@ export default function WeightLogForm({
           )}
 
           <div>
-            <label htmlFor="weight-date" className="block text-sm font-medium text-brand-brown mb-1.5">
+            <label htmlFor={ids.date} className="block text-sm font-medium text-brand-brown mb-1.5">
               Date
             </label>
             <input
-              id="weight-date"
+              id={ids.date}
               type="date"
               value={date}
               max={toDateKey(new Date())}
@@ -164,16 +204,17 @@ export default function WeightLogForm({
                 clearIfAbout('date')
               }}
               aria-invalid={error?.field === 'date'}
+              aria-describedby={describedBy('date')}
               className={`${inputClass} ${error?.field === 'date' ? badBorder : okBorder}`}
             />
           </div>
 
           <div>
-            <label htmlFor="weight-value" className="block text-sm font-medium text-brand-brown mb-1.5">
+            <label htmlFor={ids.weight} className="block text-sm font-medium text-brand-brown mb-1.5">
               Weight ({unit})
             </label>
             <input
-              id="weight-value"
+              id={ids.weight}
               type="number"
               step="0.1"
               min="0"
@@ -185,17 +226,19 @@ export default function WeightLogForm({
               }}
               placeholder={unit === 'kg' ? '4.5' : '10.0'}
               aria-invalid={error?.field === 'weight'}
+              aria-describedby={describedBy('weight')}
               className={`${inputClass} ${error?.field === 'weight' ? badBorder : okBorder}`}
-              autoFocus
+              // Read by Dialog, which owns where focus starts.
+              data-autofocus
             />
           </div>
 
           <div>
-            <label htmlFor="weight-notes" className="block text-sm font-medium text-brand-brown mb-1.5">
+            <label htmlFor={ids.notes} className="block text-sm font-medium text-brand-brown mb-1.5">
               Notes <span className="text-brand-brown/45 font-normal">(optional)</span>
             </label>
             <input
-              id="weight-notes"
+              id={ids.notes}
               type="text"
               value={notes}
               onChange={e => setNotes(e.target.value)}
@@ -205,8 +248,14 @@ export default function WeightLogForm({
           </div>
 
           {error && (
-            <p role="alert" className="text-sm text-red-700">
+            <p id={ids.error} role="alert" className="text-sm text-red-700">
               {error.message}
+            </p>
+          )}
+
+          {saveError && (
+            <p id={ids.saveError} role="alert" className="text-sm text-red-700">
+              {saveError}
             </p>
           )}
 
@@ -214,13 +263,14 @@ export default function WeightLogForm({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-2xl border border-brand-tan/60 text-brand-brown hover:bg-brand-tan/15 transition-colors"
+              className={`flex-1 px-4 py-2.5 rounded-2xl border border-brand-tan/60 text-brand-brown hover:bg-brand-tan/15 transition-colors ${focusRing}`}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 rounded-2xl bg-brand-orange text-white font-medium hover:bg-brand-orange/90 transition-colors"
+              aria-describedby={saveError ? ids.saveError : undefined}
+              className={`flex-1 px-4 py-2.5 rounded-2xl bg-brand-orange text-white font-medium hover:bg-brand-orange/90 transition-colors ${focusRing} focus-visible:ring-offset-2`}
             >
               {editing ? 'Save changes' : 'Save'}
             </button>
@@ -230,18 +280,23 @@ export default function WeightLogForm({
             <div className="pt-2 border-t border-brand-tan/30 mt-2">
               {confirmingDelete ? (
                 <div className="flex items-center gap-3 pt-3">
-                  <span className="text-sm text-brand-brown/70 flex-1">Delete this reading?</span>
+                  <span role="alert" className="text-sm text-brand-brown/70 flex-1">
+                    Delete {cat.name}’s reading from {record.date}? This can’t be undone.
+                  </span>
                   <button
                     type="button"
+                    // The button that asked has just disappeared, so focus moves
+                    // to the safe answer instead of falling back to the page.
+                    autoFocus
                     onClick={() => setConfirmingDelete(false)}
-                    className="text-sm px-3 py-1.5 rounded-xl border border-brand-tan/60 text-brand-brown"
+                    className={`text-sm px-3 py-1.5 rounded-xl border border-brand-tan/60 text-brand-brown ${focusRing}`}
                   >
                     Keep
                   </button>
                   <button
                     type="button"
-                    onClick={() => onDelete(record.id)}
-                    className="text-sm px-3 py-1.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors"
+                    onClick={() => confirmDelete(record.id)}
+                    className={`text-sm px-3 py-1.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors ${focusRing}`}
                   >
                     Delete
                   </button>
@@ -250,7 +305,7 @@ export default function WeightLogForm({
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(true)}
-                  className="text-sm text-red-700 hover:underline pt-3"
+                  className={`text-sm text-red-700 hover:underline mt-3 rounded-lg ${focusRing}`}
                 >
                   Delete this reading
                 </button>
@@ -258,8 +313,7 @@ export default function WeightLogForm({
             </div>
           )}
         </form>
-      </div>
-    </div>
+    </Dialog>
   )
 }
 
