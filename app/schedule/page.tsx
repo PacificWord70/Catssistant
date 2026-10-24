@@ -15,7 +15,8 @@ import {
 import { ScheduleCategory, ScheduleEvent } from '@/types/scheduleEvent'
 import { SCHEDULE_CATEGORIES } from '@/lib/scheduleAttributes'
 import { HealthRecord } from '@/types/healthRecord'
-import { buildMonthGrid, formatDateLabel, formatTimesLabel, toDateKey, CATEGORY_EMOJI, adjustedDateNote } from '@/lib/scheduleUtils'
+import { buildMonthGrid, formatDateLabel, formatTimesLabel, CATEGORY_EMOJI, adjustedDateNote } from '@/lib/scheduleUtils'
+import { todayKey } from '@/lib/dateKeys'
 import CatAvatar from '@/components/CatAvatar'
 import ScheduleCalendar from '@/components/ScheduleCalendar'
 import ScheduleEventForm from '@/components/ScheduleEventForm'
@@ -49,7 +50,7 @@ export default function SchedulePage() {
     const d = new Date()
     return new Date(d.getFullYear(), d.getMonth(), 1)
   })
-  const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()))
+  const [selectedDate, setSelectedDate] = useState(() => todayKey())
   const healthRecords = useAppSelector(selectHealthRecords)
   const [loggingWeight, setLoggingWeight] = useState(false)
 
@@ -88,7 +89,7 @@ export default function SchedulePage() {
   function goToday() {
     const today = new Date()
     setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1))
-    setSelectedDate(toDateKey(today))
+    setSelectedDate(todayKey(today))
   }
 
   const shownCats = pickedCats ?? new Set(cats.map(c => c.id))
@@ -119,7 +120,14 @@ export default function SchedulePage() {
   const cells = buildMonthGrid(currentMonth, visibleEvents)
   const selectedCell = cells.find(c => c.dateKey === selectedDate)
   const selectedItems = selectedCell?.items ?? []
-  const catNames = (ids: string[]) => ids.map(id => cats.find(c => c.id === id)?.name ?? 'Unknown cat').join(', ')
+  /* An event can outlive a cat it was shared with. Those ids are skipped rather
+     than shown as "Unknown cat" — the event still belongs to whoever remains,
+     and if nobody does the line is simply left off. */
+  const catNames = (ids: string[]) =>
+    ids
+      .map(id => cats.find(c => c.id === id)?.name)
+      .filter(Boolean)
+      .join(', ')
 
   return (
     <div className="bg-white rounded-3xl shadow-soft p-4 sm:p-6 min-h-[calc(100vh-8rem)]">
@@ -207,10 +215,14 @@ export default function SchedulePage() {
                     onClick={() => setEditingEvent(event)}
                     className="hover-lift w-full flex items-center gap-3 px-4 py-3 bg-brand-tan/10 rounded-2xl hover:bg-brand-tan/20 transition-colors text-left"
                   >
-                    <span className="text-5xl select-none leading-none">{CATEGORY_EMOJI[event.category]}</span>
+                    <span className="text-5xl select-none leading-none" aria-hidden="true">{CATEGORY_EMOJI[event.category]}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-brand-charcoal truncate">{event.title}</p>
-                      <p className="text-xs text-brand-brown/60">{catNames(event.catIds)}</p>
+                      <p className="text-sm font-medium text-brand-charcoal truncate">
+                        {/* The emoji is the category for sighted users; this says it in words. */}
+                        <span className="sr-only">{event.category}: </span>
+                        {event.title}
+                      </p>
+                      {catNames(event.catIds) && <p className="text-xs text-brand-brown/60">{catNames(event.catIds)}</p>}
                       {note && <p className="text-xs text-brand-orange/80 mt-0.5">{note}</p>}
                     </div>
                     {(event.times.length > 0 || event.durationMinutes) && (

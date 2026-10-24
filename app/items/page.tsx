@@ -11,6 +11,7 @@ import {
 } from '@/store/selectors'
 import { CatalogProduct, HouseholdItem, ProductCategory } from '@/types/item'
 import { CATEGORY_ORDER, PRODUCT_CATEGORIES } from '@/lib/itemAttributes'
+import { formatDateKey, todayKey } from '@/lib/dateKeys'
 import ItemForm from '@/components/ItemForm'
 import Reveal from '@/components/motion/Reveal'
 
@@ -52,7 +53,8 @@ export default function ItemsPage() {
       persistHouseholdItem({
         ...item,
         status: 'past',
-        dateEnded: new Date().toISOString().slice(0, 10),
+        // Local day, not toISOString — that is the UTC day, already tomorrow in a US evening.
+        dateEnded: todayKey(),
       }),
     )
   }
@@ -90,7 +92,7 @@ export default function ItemsPage() {
       {items.length === 0 ? (
         <Reveal delay={0.1}>
           <div className="flex flex-col items-center justify-center py-28 text-center">
-            <div className="text-8xl mb-6 select-none">🧺</div>
+            <div className="text-8xl mb-6 select-none" aria-hidden="true">🧺</div>
             <h2 className="font-display text-3xl text-brand-brown mb-3">No items yet!</h2>
             <p className="text-brand-brown/60 mb-8 max-w-sm">
               Track the food, litter, meds, and gear you use for your cats in one place.
@@ -108,6 +110,7 @@ export default function ItemsPage() {
           <Reveal delay={0.1}>
             <div className="flex flex-wrap gap-3 mb-5">
               <select
+                aria-label="Filter by category"
                 value={categoryFilter}
                 onChange={e => setCategoryFilter(e.target.value as CategoryFilter)}
                 className="px-3 py-2 rounded-xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white text-sm"
@@ -117,6 +120,7 @@ export default function ItemsPage() {
               </select>
 
               <select
+                aria-label="Filter by status"
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value as StatusFilter)}
                 className="px-3 py-2 rounded-xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white text-sm"
@@ -127,6 +131,7 @@ export default function ItemsPage() {
               </select>
 
               <select
+                aria-label="Sort items"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as SortBy)}
                 className="px-3 py-2 rounded-xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white text-sm"
@@ -141,8 +146,10 @@ export default function ItemsPage() {
             {rows.length === 0 ? (
               <p className="text-brand-brown/60 text-sm py-6">No items match these filters.</p>
             ) : (
-              <div className="rounded-2xl border border-brand-tan/30 overflow-hidden">
-                <table className="w-full text-sm">
+              // Five columns do not fit a phone. Scroll the table sideways inside its
+              // rounded frame rather than clipping the Status and Actions columns.
+              <div className="rounded-2xl border border-brand-tan/30 overflow-x-auto">
+                <table className="w-full min-w-[36rem] text-sm">
                   <thead>
                     <tr className="text-left text-brand-slate border-b border-brand-tan/30">
                       <th className="px-4 py-3 font-medium">Product</th>
@@ -160,7 +167,18 @@ export default function ItemsPage() {
                         className="border-b border-brand-tan/30 last:border-0 hover:bg-brand-tan/10 transition-colors cursor-pointer"
                       >
                         <td className="px-4 py-3 text-brand-charcoal">
-                          {product.name}
+                          {/* The whole row opens the item for mouse users; this button is the
+                              same action for keyboard and screen-reader users, who cannot click a <tr>. */}
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation()
+                              setEditing(item)
+                            }}
+                            className="text-left font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded"
+                          >
+                            {product.name}
+                          </button>
                           {catNames(item.catIds) && (
                             <span className="block text-xs text-brand-brown/60">{catNames(item.catIds)}</span>
                           )}
@@ -171,7 +189,7 @@ export default function ItemsPage() {
                           {item.status === 'current'
                             ? 'Current'
                             : item.dateEnded
-                              ? new Date(item.dateEnded).toLocaleDateString()
+                              ? `Ended ${formatDateKey(item.dateEnded)}`
                               : 'Past'}
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -181,6 +199,7 @@ export default function ItemsPage() {
                               className="px-3 py-1.5 rounded-xl border border-brand-tan/50 text-xs font-medium text-brand-slate hover:bg-brand-tan/10 transition-colors"
                             >
                               Mark past
+                              <span className="sr-only"> — {product.name}</span>
                             </button>
                           )}
                         </td>

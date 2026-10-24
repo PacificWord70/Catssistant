@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { multiSeriesGeometry, NamedSeries } from '@/lib/healthAnalysis'
+import { formatDateKey } from '@/lib/dateKeys'
 
 interface Props {
   series: NamedSeries[]
@@ -46,8 +47,7 @@ export function lineColor(index: number): string {
 const MAX_DOTS = 40
 
 function shortDate(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  return formatDateKey(iso, { month: 'short', day: 'numeric' })
 }
 
 export default function MetricChart({ series, unit, onSelect }: Props) {
@@ -108,7 +108,7 @@ export default function MetricChart({ series, unit, onSelect }: Props) {
         ref={svgRef}
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
         role="img"
-        aria-label={`${geo.lines.length} ${geo.lines.length === 1 ? 'cat' : 'cats'}, ${unit}, ${geo.from} to ${geo.to}`}
+        aria-label={`${geo.lines.length} ${geo.lines.length === 1 ? 'cat' : 'cats'}, ${unit}, ${formatDateKey(geo.from, { dateStyle: 'medium' })} to ${formatDateKey(geo.to, { dateStyle: 'medium' })}`}
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
         onMouseMove={e => trackPointer(e.clientX)}
         onMouseLeave={() => setHoveredDate(null)}

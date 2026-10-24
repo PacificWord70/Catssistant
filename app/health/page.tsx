@@ -11,7 +11,8 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { persistHealthRecord, removeHealthRecord } from '@/store/healthSlice'
 import { persistScheduleEvent } from '@/store/scheduleSlice'
 import { ScheduleCategory, ScheduleEvent } from '@/types/scheduleEvent'
-import { toDateKey } from '@/lib/scheduleUtils'
+import { expandEvents } from '@/lib/scheduleUtils'
+import { daysBetween, formatDateKey, todayKey } from '@/lib/dateKeys'
 import { selectCatsByNewest, selectHealthRecords, selectScheduleEvents } from '@/store/selectors'
 import { weightSeries, weightTrend } from '@/lib/healthAnalysis'
 import { buildMetrics, metricsWithData } from '@/lib/healthMetrics'
@@ -26,15 +27,26 @@ const PICK_BTN =
 const CARD = 'bg-white rounded-3xl shadow-soft border border-brand-tan/30 p-6'
 
 function daysAgoLabel(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  const then = new Date(y, m - 1, d)
-  const today = new Date()
-  const days = Math.round((today.setHours(0, 0, 0, 0) - then.setHours(0, 0, 0, 0)) / 86_400_000)
+  const days = daysBetween(iso, todayKey())
+  if (days === null) return iso
+  // A future date has no "ago". Callers should not pass one, but a reading
+  // typed a day ahead should still say something true rather than "-1 days ago".
+  if (days < 0) return daysUntilLabel(iso)
   if (days === 0) return 'today'
   if (days === 1) return 'yesterday'
   if (days < 30) return `${days} days ago`
   if (days < 365) return `${Math.round(days / 30)} months ago`
   return `${Math.floor(days / 365)}y ago`
+}
+
+function daysUntilLabel(iso: string): string {
+  const days = daysBetween(todayKey(), iso)
+  if (days === null) return iso
+  if (days <= 0) return 'today'
+  if (days === 1) return 'tomorrow'
+  if (days < 30) return `in ${days} days`
+  if (days < 365) return `in ${Math.round(days / 30)} months`
+  return `in ${Math.floor(days / 365)}y`
 }
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -60,7 +72,7 @@ export default function HealthPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   /** Schedule category being added inline, so the graph is never left behind. */
   const [addingCategory, setAddingCategory] = useState<ScheduleCategory | null>(null)
-  /** Which metrics are charted. Null means the default, which is none of them. */
+  /** Which metrics are charted. Null until the owner picks, which means the default: weight, when there is any. */
   const [pickedMetrics, setPickedMetrics] = useState<Set<string> | null>(null)
 
   /* Every cat by default: the chart is a comparison, and starting on one of
@@ -111,10 +123,16 @@ export default function HealthPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [metrics, selectedCatIds.join(',')],
   )
-  const shownMetrics = available.filter(m => (pickedMetrics ?? new Set<string>()).has(m.id))
+  /* Weight is the one metric every owner records here, so it is charted until
+     the owner chooses otherwise. Opening on "Nothing charted yet" above a
+     page of readings read as if the readings had not saved. Derived rather
+     than written into state, so it follows the data arriving, and the first
+     click on a metric builds on what is already shown. */
+  const metricChoice = pickedMetrics ?? new Set(['weight'])
+  const shownMetrics = available.filter(m => metricChoice.has(m.id))
 
   function toggleMetric(id: string) {
-    const next = new Set(pickedMetrics ?? new Set<string>())
+    const next = new Set(metricChoice)
     if (next.has(id)) next.delete(id)
     else next.add(id)
     setPickedMetrics(next)
@@ -138,17 +156,35 @@ export default function HealthPage() {
       necessarily the focused cat, since any line's point can be clicked. */
   const editingCat = editingRecord ? cats.find(c => c.id === editingRecord.catId) : undefined
   /* In comparison mode there is no single focused cat, so a new reading starts
-     on the first selected one and the form offers the rest. */
-  const formCat = editingCat ?? cat ?? selectedCats[0]
+     on the first selected one and the form offers the rest. With nobody
+     selected, "+ Log weight" still has to do something, so it offers every cat. */
+  const formCats = selectedCats.length > 0 ? selectedCats : cats
+  const formCat = editingCat ?? cat ?? formCats[0]
 
-  const lastVet = useMemo(() => {
-    if (!cat) return undefined
-    return events
-      .filter(e => e.category === 'Vet' && e.catIds.includes(cat.id))
-      .map(e => e.date)
-      .sort()
-      .reverse()[0]
+  /* "Last" visit means one that has happened. Vet events are often booked
+     ahead, and taking the newest date regardless printed "-5 days ago". The
+     next booked one is worth showing too, so it is split out rather than
+     dropped. Recurring visits are expanded so an annual checkup counts on the
+     date it actually falls. */
+  const vetVisits = useMemo(() => {
+    if (!cat) return { last: undefined, next: undefined }
+    const from = new Date()
+    from.setFullYear(from.getFullYear() - 10)
+    const to = new Date()
+    to.setFullYear(to.getFullYear() + 2)
+    const today = todayKey()
+    const dates = expandEvents(
+      events.filter(e => e.category === 'Vet' && e.catIds.includes(cat.id)),
+      from,
+      to,
+    ).map(item => item.date)
+    return {
+      last: dates.filter(d => d <= today).pop(),
+      next: dates.find(d => d > today),
+    }
   }, [events, cat])
+  const lastVet = vetVisits.last
+  const nextVet = vetVisits.next
 
   const activeMeds = useMemo(() => {
     if (!cat) return 0
@@ -185,7 +221,7 @@ export default function HealthPage() {
   if (cats.length === 0) {
     return (
       <div className="text-center py-24">
-        <div className="text-7xl mb-6 select-none">🩺</div>
+        <div className="text-7xl mb-6 select-none" aria-hidden="true">🩺</div>
         <h1 className="font-display text-3xl text-brand-brown mb-2">Health</h1>
         <p className="text-brand-brown/60 max-w-sm mx-auto mb-8">
           Add a cat first, then you can start tracking weight and spotting trends over time.
@@ -472,7 +508,12 @@ export default function HealthPage() {
               /* Falls back to the practice on the profile. A cat can have a vet
                  on file and no visit scheduled yet, and showing only "none"
                  hides information the owner already gave us. */
-              hint={lastVet ?? (cat.vet?.name ? `${cat.vet.name} on file` : 'no vet on file')}
+              hint={[
+                lastVet ? formatDateKey(lastVet) : cat.vet?.name ? `${cat.vet.name} on file` : 'no vet on file',
+                nextVet && `next visit ${daysUntilLabel(nextVet)}`,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             />
             <Stat
               label="Known illnesses"
@@ -519,7 +560,7 @@ export default function HealthPage() {
                     {(r.weightLbs ?? 0).toFixed(1)} lbs
                   </span>
                   <span className="text-sm text-brand-brown/55 flex-1 truncate">{r.notes ?? ''}</span>
-                  <span className="text-sm text-brand-brown/70 whitespace-nowrap">{r.date}</span>
+                  <span className="text-sm text-brand-brown/70 whitespace-nowrap">{formatDateKey(r.date)}</span>
                 </button>
               </li>
             ))}
@@ -531,7 +572,7 @@ export default function HealthPage() {
         <ScheduleEventForm
           cats={cats}
           defaultCategory={addingCategory}
-          defaultDate={toDateKey(new Date())}
+          defaultDate={todayKey()}
           /* Starts against whichever cats are on the chart, since that is who
              the owner was looking at when they asked to add this. */
           defaultCatIds={selectedCats.map(c => c.id)}
@@ -544,7 +585,7 @@ export default function HealthPage() {
         <WeightLogForm
           /* Editing is pinned to the record's own cat; a new reading can be
              filed against any of the ones currently selected. */
-          cats={editingRecord ? [formCat] : selectedCats}
+          cats={editingRecord ? [formCat] : formCats}
           defaultCatId={formCat.id}
           record={editingRecord}
           existingDatesFor={id => allRecords.filter(r => r.catId === id).map(r => r.date)}
