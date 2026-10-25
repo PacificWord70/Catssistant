@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { BREEDS, breedSlug } from '@/lib/breeds'
@@ -16,6 +16,11 @@ const EXPAND_DELAY_MS = 3000
  */
 const EXPANDED_MAX_H = 220
 
+/** The expanded tooltip's width (w-72), used to keep it inside the viewport. */
+const EXPANDED_W = 288
+/** Breathing room kept between the tooltip and the edge of the screen. */
+const EDGE_GAP = 8
+
 interface Props {
   name: string
   variant?: 'pill' | 'inline'
@@ -28,6 +33,7 @@ export default function BreedTag({ name, variant = 'pill', onRemove }: Props) {
   const ref = useRef<HTMLElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const breed = BREED_MAP.get(name)
+  const tooltipId = useId()
 
   // Also cleared on unmount, not just on mouse leave. Navigating away with the
   // pointer still resting on a tag would otherwise leave a pending callback
@@ -36,8 +42,28 @@ export default function BreedTag({ name, variant = 'pill', onRemove }: Props) {
     if (timerRef.current) clearTimeout(timerRef.current)
   }, [])
 
+  // Escape dismisses an open tooltip, whether it was opened by hover or focus,
+  // so it can always be cleared without moving the pointer or focus away.
+  useEffect(() => {
+    if (!pos) return
+    function handleKey(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      // hideTooltip, inlined: it only touches refs and setters, and naming it
+      // here would make it an effect dependency that changes every render.
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = null
+      setPos(null)
+      setExpanded(false)
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [pos])
+
   function showTooltip() {
     if (!ref.current) return
+    // Hover and focus can both arrive for the same tag; a second call must not
+    // strand the first one's timer.
+    if (timerRef.current) clearTimeout(timerRef.current)
     const rect = ref.current.getBoundingClientRect()
 
     // Which side it opens on is decided once, up front, and measured against the
@@ -45,7 +71,12 @@ export default function BreedTag({ name, variant = 'pill', onRemove }: Props) {
     // time would make the tooltip jump from above the tag to below it midway
     // through a hover.
     const below = rect.top < EXPANDED_MAX_H
-    setPos({ top: below ? rect.bottom + 8 : rect.top - 8, left: rect.left, below })
+    // Clamped against the expanded width, for the same reason: a tag near the
+    // right edge would otherwise open its tooltip partly off-screen, and
+    // growing into the full description would push it further off.
+    const maxLeft = window.innerWidth - EXPANDED_W - EDGE_GAP
+    const left = Math.max(EDGE_GAP, Math.min(rect.left, maxLeft))
+    setPos({ top: below ? rect.bottom + 8 : rect.top - 8, left, below })
 
     // The clamped version reads first and the full paragraph waits for anyone
     // who lingers, rather than dropping a wall of text on every passing hover.
@@ -61,6 +92,8 @@ export default function BreedTag({ name, variant = 'pill', onRemove }: Props) {
 
   const tooltip = breed && pos && createPortal(
     <div
+      id={tooltipId}
+      role="tooltip"
       className={`fixed z-[9999] bg-white border border-brand-tan/40 rounded-2xl shadow-lg p-3 pointer-events-none transition-[width] duration-200 ${expanded ? 'w-72' : 'w-56'}`}
       style={{
         top: pos.top,
@@ -80,12 +113,24 @@ export default function BreedTag({ name, variant = 'pill', onRemove }: Props) {
       <>
         <span
           ref={ref as React.RefObject<HTMLSpanElement>}
-          onMouseEnter={showTooltip}
-          onMouseLeave={hideTooltip}
+          onMouseEnter={breed ? showTooltip : undefined}
+          onMouseLeave={breed ? hideTooltip : undefined}
           className="flex items-center gap-1 px-3 py-1 bg-brand-tan/20 text-brand-brown rounded-full text-sm cursor-default"
         >
           {name}
-          <button type="button" onClick={onRemove} className="text-brand-tan hover:text-brand-brown font-bold ml-0.5">×</button>
+          {/* The × is the chip's only focusable part, so keyboard users get the
+              description while they are on it, the way a hover would. */}
+          <button
+            type="button"
+            onClick={onRemove}
+            onFocus={breed ? showTooltip : undefined}
+            onBlur={breed ? hideTooltip : undefined}
+            aria-label={`Remove ${name}`}
+            aria-describedby={tooltip ? tooltipId : undefined}
+            className="text-brand-tan hover:text-brand-brown font-bold ml-0.5 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
         </span>
         {tooltip}
       </>
@@ -102,6 +147,9 @@ export default function BreedTag({ name, variant = 'pill', onRemove }: Props) {
               href={`/breeds#${breedSlug(name)}`}
               onMouseEnter={showTooltip}
               onMouseLeave={hideTooltip}
+              onFocus={showTooltip}
+              onBlur={hideTooltip}
+              aria-describedby={tooltip ? tooltipId : undefined}
               className="hover:underline"
             >{name}</Link>
           : <span ref={ref as React.RefObject<HTMLSpanElement>}>{name}</span>

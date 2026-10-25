@@ -1,9 +1,31 @@
 'use client'
 
 import { DayCell, CATEGORY_EMOJI } from '@/lib/scheduleUtils'
+import { parseDateKey } from '@/lib/dateKeys'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MAX_DOTS = 3
+
+/**
+ * What a screen reader hears for a day. The visible cell is a bare number, a
+ * tint and some emoji — none of which say which month it is, whether it is
+ * today, or what is on — so the label carries all of that in words.
+ */
+function dayLabel(cell: DayCell): string {
+  const date = parseDateKey(cell.dateKey)
+  const full = date
+    ? date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+    : cell.dateKey
+  const parts = [cell.isToday ? `Today, ${full}` : full]
+  const count = cell.items.length
+  if (count === 0) {
+    parts.push('nothing scheduled')
+  } else {
+    const categories = Array.from(new Set(cell.items.map(i => i.event.category)))
+    parts.push(`${count} ${count === 1 ? 'event' : 'events'}: ${categories.join(', ')}`)
+  }
+  return parts.join(', ')
+}
 
 interface Props {
   month: Date
@@ -51,6 +73,8 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
               key={cell.dateKey}
               type="button"
               onClick={() => onSelectDate(cell.dateKey)}
+              aria-label={dayLabel(cell)}
+              aria-pressed={isSelected}
               /* Height follows the viewport rather than the container's width.
                aspect-square grew the month with the screen, so a wide display
                pushed it past the fold; a plain fixed height ignores how much
@@ -70,12 +94,12 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
                 }
                 ${!cell.inCurrentMonth ? 'opacity-30' : ''}`}
             >
-              <span className={cell.isToday && !isSelected ? 'font-bold text-brand-orange' : ''}>{cell.dayNumber}</span>
+              <span aria-hidden="true" className={cell.isToday && !isSelected ? 'font-bold text-brand-orange' : ''}>{cell.dayNumber}</span>
               {/* Hidden on phones: a cell is about 45px across there, and three
                   emoji plus a "+N" cannot be read at that size — the tint says
                   "something is on" and tapping the day shows what. */}
               {cell.items.length > 0 && (
-                <span className="hidden sm:inline text-3xl leading-none tracking-tighter">
+                <span aria-hidden="true" className="hidden sm:inline text-3xl leading-none tracking-tighter">
                   {categories.map(c => CATEGORY_EMOJI[c]).join('')}
                   {extra > 0 && `+${extra}`}
                 </span>

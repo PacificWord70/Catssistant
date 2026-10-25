@@ -21,7 +21,7 @@ export default function OnboardingPage() {
       {/* The app's own cat rather than the system emoji, so the first thing a
           new owner sees is the drawing they will meet on every card. Nothing is
           specified, so it renders the default the avatars fall back to. */}
-      <div className="mb-6 select-none">
+      <div className="mb-6 select-none" aria-hidden="true">
         <CatAvatar
           cat={{ name: 'Catssistant', breed: [], color: undefined, pattern: undefined, coatLength: undefined, energyLevel: undefined }}
           size={140}
@@ -36,13 +36,13 @@ export default function OnboardingPage() {
           href="/cats/new"
           className="flex-1 px-8 py-5 bg-brand-orange text-white rounded-2xl font-semibold text-lg hover:bg-brand-orange/90 transition-colors shadow-soft"
         >
-          I have a cat! 🐾
+          I have a cat! <span aria-hidden="true">🐾</span>
         </Link>
         <Link
           href="/onboarding/getting-a-cat"
           className="flex-1 px-8 py-5 bg-white text-brand-brown border-2 border-brand-tan rounded-2xl font-semibold text-lg hover:bg-brand-tan/10 transition-colors shadow-soft"
         >
-          I&apos;m getting a cat 🔍
+          I&apos;m getting a cat <span aria-hidden="true">🔍</span>
         </Link>
       </div>
     </div>

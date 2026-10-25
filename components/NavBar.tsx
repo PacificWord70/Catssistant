@@ -29,6 +29,7 @@ export default function NavBar() {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
   const [hoveredHref, setHoveredHref] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
   const reduceMotion = useReducedMotion()
@@ -40,6 +41,22 @@ export default function NavBar() {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  /* Escape closes the menu and puts focus back on the button that opened it.
+     Without the focus return, a keyboard user who dismissed the menu was left
+     on whichever link they had tabbed to — now hidden — and focus fell back
+     to the top of the page. Only listening while open keeps it from eating
+     Escape anywhere else, such as a modal's own close. */
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleKey(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      setMenuOpen(false)
+      menuButtonRef.current?.focus()
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [menuOpen])
 
   useEffect(() => {
     function handleScroll() {
@@ -71,6 +88,7 @@ export default function NavBar() {
             its own ground rather than on a patch of the page. */}
         <Link
           href="/"
+          aria-label="Catssistant home"
           className="hover:opacity-90 transition-opacity rounded-2xl bg-[#FEEBD6] px-3 py-1.5 flex items-center"
         >
           <CatssistantLogo horizontal height={scrolled ? 28 : 34} />
@@ -85,6 +103,7 @@ export default function NavBar() {
               <Link
                 key={href}
                 href={href}
+                aria-current={pathname === href ? 'page' : undefined}
                 onMouseEnter={() => setHoveredHref(href)}
                 onMouseLeave={() => setHoveredHref(null)}
                 className="relative px-3 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -111,22 +130,27 @@ export default function NavBar() {
           {/* More menu */}
           <div ref={menuRef} className="relative ml-1">
             <button
+              ref={menuButtonRef}
+              type="button"
               onClick={() => setMenuOpen(o => !o)}
               className="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors flex flex-col gap-1 items-center justify-center"
               aria-label="More"
+              aria-expanded={menuOpen}
+              aria-controls="nav-more-menu"
             >
-              <span className="block w-4 h-0.5 bg-white rounded" />
-              <span className="block w-4 h-0.5 bg-white rounded" />
-              <span className="block w-4 h-0.5 bg-white rounded" />
+              <span className="block w-4 h-0.5 bg-white rounded" aria-hidden="true" />
+              <span className="block w-4 h-0.5 bg-white rounded" aria-hidden="true" />
+              <span className="block w-4 h-0.5 bg-white rounded" aria-hidden="true" />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-white rounded-2xl shadow-lg border border-brand-tan/40 py-1 min-w-[140px] z-50">
+              <div id="nav-more-menu" className="absolute right-0 top-full mt-1 bg-white rounded-2xl shadow-lg border border-brand-tan/40 py-1 min-w-[140px] z-50">
                 {/* Only below md, where the bar itself is not showing these. */}
                 <div className="md:hidden">
                   {PRIMARY_LINKS.map(({ href, label }) => (
                     <Link
                       key={href}
                       href={href}
+                      aria-current={pathname === href ? 'page' : undefined}
                       onClick={() => setMenuOpen(false)}
                       className={`block px-4 py-2.5 text-sm transition-colors hover:bg-brand-tan/10 ${
                         pathname === href ? 'text-brand-orange font-medium' : 'text-brand-charcoal'
@@ -141,6 +165,7 @@ export default function NavBar() {
                   <Link
                     key={href}
                     href={href}
+                    aria-current={pathname === href ? 'page' : undefined}
                     onClick={() => setMenuOpen(false)}
                     className={`block px-4 py-2.5 text-sm transition-colors hover:bg-brand-tan/10 ${
                       pathname === href ? 'text-brand-orange font-medium' : 'text-brand-charcoal'

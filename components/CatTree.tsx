@@ -389,6 +389,13 @@ export default function CatTree() {
                 key={href}
                 href={href}
                 {...hoverProps(href)}
+                /* The pill is about 30px tall, a touch small for a thumb. An
+                   invisible ::before stretches the tap target to ~42px without
+                   making the pill itself any bigger on the drawing. Focus uses
+                   an outline, not a ring: the inline boxShadow below would
+                   override a ring's box-shadow. Focus also flips the pill to
+                   its hover colours via hoverProps. */
+                className="before:absolute before:-inset-x-1 before:-inset-y-1.5 before:content-[''] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-brown"
                 style={{
                   position:      'absolute',
                   left:          pct(x, ART.width),

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
 import Link from 'next/link'
 import { BREEDS, breedSlug } from '@/lib/breeds'
 
@@ -35,6 +35,8 @@ function MultiDropdown({ label, options, active, onToggle }: {
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const panelId = useId()
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -44,11 +46,30 @@ function MultiDropdown({ label, options, active, onToggle }: {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  // Escape closes and hands focus back to the trigger, so the keyboard user is
+  // not left on an option that has just disappeared.
+  useEffect(() => {
+    if (!open) return
+    function handleKey(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      setOpen(false)
+      buttonRef.current?.focus()
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [open])
+
   const count = active.length
   return (
-    <div ref={ref} className="relative flex-1">
+    /* min-w lets the five filters wrap onto a second row on a phone instead of
+       squeezing into one line that ran off the card. */
+    <div ref={ref} className="relative flex-1 min-w-[8.5rem]">
       <button
+        ref={buttonRef}
+        type="button"
         onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        aria-controls={panelId}
         className={`w-full flex items-center justify-between gap-1.5 text-sm px-3 py-2 rounded-2xl border transition-all whitespace-nowrap ${
           count > 0
             ? 'border-brand-orange/40 bg-brand-orange/5 text-brand-brown font-medium'
@@ -59,22 +80,29 @@ function MultiDropdown({ label, options, active, onToggle }: {
         {count > 0 && (
           <span className="bg-brand-orange text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
             {count}
+            <span className="sr-only"> selected</span>
           </span>
         )}
-        <span className="text-brand-brown/60 text-xs">{open ? '▲' : '▼'}</span>
+        <span className="text-brand-brown/60 text-xs" aria-hidden="true">{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-brand-tan/40 rounded-2xl shadow-lg z-20 py-1 min-w-[160px]">
+        <div
+          id={panelId}
+          role="group"
+          aria-label={`${label} filter`}
+          className="absolute top-full left-0 mt-1 bg-white border border-brand-tan/40 rounded-2xl shadow-lg z-20 py-1 min-w-[160px]">
           {options.map(opt => {
             const on = active.includes(opt)
             return (
               <button
                 key={opt}
+                type="button"
                 onClick={() => onToggle(opt)}
+                aria-pressed={on}
                 className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm hover:bg-brand-tan/10 transition-colors"
               >
-                <span className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center text-[9px] ${on ? 'bg-brand-orange border-brand-orange text-white' : 'border-brand-tan/50'}`}>
+                <span aria-hidden="true" className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center text-[9px] ${on ? 'bg-brand-orange border-brand-orange text-white' : 'border-brand-tan/50'}`}>
                   {on && '✓'}
                 </span>
                 <span className={`${TRAIT_COLORS[opt] ?? ''} px-1.5 py-0.5 rounded-full text-xs`}>{opt}</span>
@@ -156,14 +184,15 @@ export default function BreedsPage() {
       <div className="bg-white rounded-3xl shadow-soft p-7">
 
         <div className="text-center mb-7">
-          <div className="text-5xl mb-3 select-none">📚</div>
+          <div className="text-5xl mb-3 select-none" aria-hidden="true">📚</div>
           <h1 className="font-display text-4xl text-brand-brown">Breed Catalog</h1>
           <p className="text-brand-tan mt-2 font-medium">Cat breed information</p>
         </div>
 
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs text-brand-brown/60">Sort</span>
+          <label htmlFor="breed-sort" className="text-xs text-brand-brown/60">Sort</label>
           <select
+            id="breed-sort"
             value={sort}
             onChange={e => setSort(e.target.value as SortOption)}
             className="text-xs border border-brand-tan/40 rounded-lg px-2.5 py-1.5 text-brand-charcoal/80 focus:outline-none focus:ring-2 focus:ring-brand-orange/30 bg-white"
@@ -174,19 +203,21 @@ export default function BreedsPage() {
             onClick={() => setSortAsc(a => !a)}
             className="text-xs border border-brand-tan/40 rounded-lg px-2.5 py-1.5 text-brand-charcoal/80 hover:border-brand-tan/60 transition-colors"
             title={sortAsc ? 'Ascending' : 'Descending'}
+            aria-label={sortAsc ? 'Sort order: ascending. Switch to descending' : 'Sort order: descending. Switch to ascending'}
           >
-            {sortAsc ? '↓' : '↑'}
+            <span aria-hidden="true">{sortAsc ? '↓' : '↑'}</span>
           </button>
         </div>
 
         <input
           type="search"
           placeholder="Search breeds or origin..."
+          aria-label="Search breeds or origin"
           value={query}
           onChange={e => setQuery(e.target.value)}
           className="w-full border border-brand-tan/40 rounded-2xl px-4 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-brand-orange/30"
         />
-        <div className="flex gap-2 mb-6 items-center">
+        <div className="flex flex-wrap gap-2 mb-6 items-center">
           {FILTER_DEFS.map(({ key, label, options }) => (
             <MultiDropdown
               key={key}
@@ -198,6 +229,7 @@ export default function BreedsPage() {
           ))}
           {hasFilters && (
             <button
+              type="button"
               onClick={() => setFilters({ energy: [], friendliness: [], grooming: [], vocality: [], continent: [] })}
               className="text-xs text-brand-slate hover:underline whitespace-nowrap"
             >
@@ -217,7 +249,7 @@ export default function BreedsPage() {
                   <span className="text-xs text-brand-brown/60 shrink-0">{breed.origin}</span>
                 </div>
                 <p className="text-sm text-brand-charcoal/80 leading-relaxed mb-4">{breed.description}</p>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <TraitPill label="Energy"       value={breed.traits.energy} />
                   <TraitPill label="Friendliness" value={breed.traits.friendliness} />
                   <TraitPill label="Grooming"     value={breed.traits.grooming} />
