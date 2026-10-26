@@ -14,7 +14,7 @@ export default function AboutPage() {
 
         {/* Header */}
         <div className="text-center">
-          <div className="text-5xl mb-3 select-none">🐾</div>
+          <div className="text-5xl mb-3 select-none" aria-hidden="true">🐾</div>
           <h1 className="font-display text-4xl text-brand-brown">About Catssistant</h1>
           <p className="text-brand-tan mt-2 font-medium">The best assistant for cat owners</p>
         </div>
@@ -36,17 +36,20 @@ export default function AboutPage() {
         {/* What */}
         <section>
           <h2 className="font-display text-2xl text-brand-brown mb-3">What</h2>
+          {/* Only what ships today goes in the first paragraph; everything else is
+              named as planned. This page is where people decide whether to trust
+              the app, so it must not describe features they then cannot find. */}
           <p className="text-brand-charcoal/80 leading-relaxed">
             Catssistant is a web-based cat care app built around having everything your cat needs
-            in one place. You can create profiles for each of your cats and manage them all from a central
-            dashboard. Beyond profiles, the app covers scheduling for vet appointments and health
-            events, product recommendations for food, toys, and gear customized for your cats, cat
-            breed information, and a directory of vets, emergency clinics, and boarding facilities
-            in your area.
+            in one place. You can create a profile for each of your cats and see them all together,
+            keep a schedule of feeding, medication, vet visits, litter and grooming, follow each
+            cat&apos;s weight over time on the Health page, keep track of the food and gear you use,
+            and read up on breeds.
           </p>
           <p className="text-brand-charcoal/80 leading-relaxed mt-3">
-            Coming soon: an in-app feeding tracker, health log, litter reminders, medication
-            schedule, and a mobile app.
+            Still to come: guides for first-time owners, product recommendations for food, toys, and gear suited to your cats, a
+            directory of nearby vets, emergency clinics, and boarding, accounts so your records can
+            follow you between devices, and a mobile app.
           </p>
         </section>
 
@@ -80,7 +83,7 @@ export default function AboutPage() {
                   {src ? (
                     <img src={src} alt={alt} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-3xl select-none">{species === 'cat' ? '🐱' : '🐶'}</span>
+                    <span className="text-3xl select-none" aria-hidden="true">{species === 'cat' ? '🐱' : '🐶'}</span>
                   )}
                 </div>
                 <span className="text-xs text-brand-brown/60">{name}</span>
@@ -100,27 +103,30 @@ export default function AboutPage() {
           </p>
           <p className="text-brand-charcoal/80 leading-relaxed mt-3">
             Under the hood it&apos;s a Next.js app written in TypeScript, styled with Tailwind, with
-            Redux keeping your cats in sync across every page. For now your data lives in your own
-            browser rather than on our servers — no account, nothing to sign up for — which is part
-            of why the privacy promise below is an easy one to keep.
+            Redux keeping your cats in sync across every page.
           </p>
         </section>
 
         {/* Privacy */}
         <section>
           <h2 className="font-display text-2xl text-brand-brown mb-3">Privacy</h2>
+          {/* Kept plain and checkable. Accounts with server storage are planned, so
+              nothing here may promise that data stays on the device, and every
+              claim has to stay true once they arrive. */}
           <p className="text-brand-charcoal/80 leading-relaxed">
-            Your privacy matters to us. Catssistant never tracks your location or behavior — the
-            app is powered entirely by information you choose to share in your profile. Your data
-            is yours. We will never sell it, share it, or use it for anything other than making
-            the app work for you.
+            Catssistant works from what you tell it about your cats. We don&apos;t sell your data,
+            and there are no ads, ad trackers, or analytics in the app today.
           </p>
           <p className="text-brand-charcoal/80 leading-relaxed mt-3">
-            To keep the app running, the Shopping page includes contextual ads and affiliate links
-            — meaning any ads or product recommendations are chosen based on the products or category you&apos;re
-            viewing, not your personal profile or behavior. We do not use behavioral tracking,
-            retargeting, or third-party data brokers. What you do on Catssistant stays on
-            Catssistant.
+            Location is optional. You can type your city into a cat&apos;s profile yourself. If you
+            press &ldquo;Detect my location&rdquo; instead, your browser asks for permission first,
+            then your coordinates, rounded to about 1&nbsp;km, are sent to OpenStreetMap&apos;s
+            Nominatim service to look up the city. Only the city, region, and country are saved to
+            the profile; the coordinates are not kept.
+          </p>
+          <p className="text-brand-charcoal/80 leading-relaxed mt-3">
+            The planned Shopping page will use affiliate links to help keep the app running.
+            We&apos;ll explain exactly how that works here before it launches.
           </p>
           {SHOW_SUPPORT_NOTE && (
             <p className="text-brand-charcoal/80 leading-relaxed mt-3">
