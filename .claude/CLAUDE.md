@@ -37,7 +37,7 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 
 ## Frameworks
 
-- Next.js 16.2.10 (App Router) - Web framework, routing, server-side rendering, API routes
+- Next.js 16.4.3 (App Router) - Web framework, routing, server-side rendering, API routes
 - React 18.3.1 - UI library for interactive components
 - Tailwind CSS ^3.4.4 - Utility-first CSS framework with custom brand color tokens
 - TypeScript - Type checking (`npm run typecheck`)
@@ -52,7 +52,7 @@ Catssistant is a privacy-first cat care assistant. The web app (Next.js) is the 
 
 Six runtime dependencies, all of them load-bearing:
 
-- next ^16.2.10 - Next.js framework with App Router
+- next ^16.4.3 - Next.js framework with App Router
 - react ^18.3.1 / react-dom ^18.3.1 - React library and DOM bindings
 - @reduxjs/toolkit ^2.12.0 + react-redux ^9.3.0 - Shared client state, see
   `store/`. Cats, schedule and items each get a slice.
@@ -89,8 +89,9 @@ Tapestry.
 
 - No backend, no database, no authentication, no `.env` files, no API keys.
 - No CI workflow.
-- Testing exists but is narrow: 6 Vitest files, 853 lines, **all** under `lib/`.
-  Logic is covered; components and pages have no tests at all.
+- Tests cover logic only: 20 Vitest files under `lib/` and `store/` (storage,
+  migrations, recurrence incl. DST, slices, selectors, health, photos, URL
+  guards). Components and pages have no tests — there is no DOM test tooling.
 
 <!-- GSD:stack-end -->
 
@@ -137,7 +138,8 @@ Tapestry.
 ## Error Handling
 
 - `try-catch` blocks around JSON operations — see `lib/storage.ts` for `JSON.parse` safety
-- Returns safe defaults on error: `getCats()` returns empty array `[]`, not throwing
+- Reads return safe defaults: `getCats()` returns `[]` and backs up anything unreadable (`lib/storageSafety.ts`)
+- Writes throw `StorageWriteError` with an owner-facing message; forms show it inline
 - Early returns for null/undefined checks: `if (!cat) return null`
 - Guard against SSR in browser APIs: `if (typeof window === 'undefined') return []`
 - Form validation before submission — check required fields before `saveCat()`
@@ -233,7 +235,7 @@ Tapestry.
 - **Client-side persistence:** localStorage stores all cat profiles and schedule
   events; the Redux store in `store/` is the live in-memory copy the UI renders
   from, kept in step through thunks that write to storage
-- **Stateful components:** Pages use `useState` to manage cat lists and schedule data, re-fetch from storage on mount
+- **Stateful components:** Pages read shared data from the Redux store; `useState` is only for local UI state (selected day, open modal)
 - **No backend:** This is a PWA-like client-side app — works fully offline
 - **Router-based routing:** Next.js App Router handles page navigation
 
@@ -318,7 +320,7 @@ Tapestry.
 ## Architectural Constraints
 
 - **Threading:** Single-threaded event loop (browser JavaScript)
-- **Global state:** None — each page holds its own state. Shared state would require Context API or external store (not currently used)
+- **Global state:** Redux Toolkit store in `store/` (cats, schedule, items, health slices); localStorage remains the persistence layer
 - **Circular imports:** Not observed. Imports flow one direction: Pages → Components → Lib → Types
 - **localStorage limits:** Browser limit is typically 5–10 MB. With JSON serialization, supports hundreds of cats and thousands of events
 - **No server calls:** App is fully client-side; location detection uses Nominatim API (read-only, no user-identifying data sent)

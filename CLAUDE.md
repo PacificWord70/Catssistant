@@ -118,7 +118,7 @@ Loosening any of those is a product decision, not an implementation detail.
 Catssistant/
 ├── app/
 │   ├── layout.tsx              # Root layout (StoreProvider, NavBar, fonts)
-│   ├── page.tsx                # Home — CatTree nav
+│   ├── page.tsx                # Home — headline beside the CatTree nav
 │   ├── globals.css             # Tailwind + body background + .hover-lift
 │   ├── onboarding/
 │   │   ├── page.tsx            # First-time welcome screen
@@ -131,14 +131,14 @@ Catssistant/
 │   │       └── edit/page.tsx   # Edit cat form
 │   ├── schedule/page.tsx       # Month calendar + per-day event list
 │   ├── items/page.tsx          # My Items
-│   ├── guides/page.tsx         # New-owner guide series
+│   ├── health/page.tsx         # Weight records, per-cat charts and stats
 │   ├── breeds/, about/, resources/
-│   └── health/, shopping/      # Placeholders — icon, heading, "coming soon"
+│   └── guides/, shopping/      # Placeholders — icon, heading, "coming soon"
 ├── store/                      # Redux Toolkit
-│   ├── index.ts                # configureStore — cats/schedule/items slices
+│   ├── index.ts                # configureStore — cats/schedule/items/health slices
 │   ├── StoreProvider.tsx       # Wraps the app in the root layout
-│   ├── catsSlice.ts, scheduleSlice.ts, itemsSlice.ts
-│   ├── selectors.ts, hooks.ts, types.ts
+│   ├── catsSlice.ts, scheduleSlice.ts, itemsSlice.ts, healthSlice.ts
+│   ├── selectors.ts, hooks.ts, types.ts, *.test.ts
 ├── components/
 │   ├── NavBar.tsx              # Orange top nav, sliding indicator, scroll-shrink
 │   ├── CatCard.tsx             # Grid card — avatar/photo, name, 2 breeds, coat, age
@@ -148,23 +148,33 @@ Catssistant/
 │   ├── ScheduleEventForm.tsx   # Event modal, per-category fields, multi-cat
 │   ├── ScheduleCalendar.tsx    # Month grid with per-day category dots
 │   ├── ItemForm.tsx            # Household item modal
-│   ├── CatTree.tsx             # Home page nav — buttons on Heidi's cat tree art
+│   ├── WeightLogForm.tsx       # Weight reading modal (Health, Schedule)
+│   ├── Dialog.tsx              # Shared modal — focus trap, Escape, discard confirm
+│   ├── MetricChart.tsx         # Health chart
+│   ├── CatTree.tsx             # Home page nav — callouts on Heidi's cat tree art
 │   ├── CatssistantLogo.tsx     # Logo component
-│   ├── EmptyState.tsx          # No-cats fallback
+│   ├── EmptyState.tsx          # No-cats fallback (currently unused)
 │   └── motion/                 # Reveal, Parallax, HoverLift (framer-motion)
 ├── lib/
 │   ├── storage.ts              # Cats + schedule events in localStorage, plus migrations
 │   ├── itemStorage.ts          # Household items
+│   ├── healthStorage.ts        # Health records
+│   ├── storageSafety.ts        # Shared read/write — unreadable data, quota errors
 │   ├── breeds.ts               # BREEDS array
 │   ├── catAttributes.ts        # Coat/energy/hunting/illness option lists
 │   ├── itemAttributes.ts       # Household item option lists
-│   ├── breedDefaults.ts        # effective* readers — derive at read time, store nothing
-│   ├── breedFillIns.ts         # Values written into CatForm when a breed is picked
+│   ├── breedDefaults.ts        # effective* readers, plus breedFillIns for CatForm
 │   ├── scheduleAttributes.ts   # Categories, litter types, durations
 │   ├── scheduleUtils.ts        # Recurrence expansion, month grid, date/time labels
+│   ├── scheduleValidation.ts   # Event form validation, field by field
+│   ├── dateKeys.ts             # Local YYYY-MM-DD keys — never toISOString
+│   ├── health*.ts              # Health metrics, analysis, validation
+│   ├── photo.ts                # Photo type check + downscale/re-encode
+│   ├── safeUrl.ts              # safeImageSrc, telHref — guards for stored URLs
+│   ├── catTreeArt.ts           # Pixel work on the cat tree drawing
 │   ├── utils.ts                # catHumanAge, catAgeLabel, catAgeShort,
 │   │                           #   coatLabel, catLifeStage, catWeightLbs
-│   ├── *.test.ts               # Vitest — 6 files, all of the suite lives here
+│   ├── *.test.ts               # Vitest — logic tests live beside the code
 │   └── avatar/
 │       ├── palette.ts          # Coat colour → base/shade/light tones
 │       ├── placeholder.ts      # Code-drawn cat, Canvas 2D primitives only
@@ -187,6 +197,17 @@ Catssistant/
 - Data mutations go through `lib/storage.ts` — never write localStorage directly in components
 - Tooltips that could be clipped by `overflow-hidden` parents must use `createPortal` to render into `document.body`
 - Do not add packages/dependencies without discussing with the team first
+- Storage writes throw `StorageWriteError` (`lib/storageSafety.ts`) with a
+  message written for the owner. Forms catch it and show `error.message`
+  inline; never swallow it. A read that can't be parsed is backed up and never
+  treated as empty — "couldn't read" must not become "overwrite with nothing"
+- Dates are local `YYYY-MM-DD` keys from `lib/dateKeys.ts`. Never
+  `toISOString().slice(0, 10)` (tomorrow in a US evening) or
+  `new Date('YYYY-MM-DD')` (UTC midnight, yesterday west of UTC)
+- Anything stored that lands in `src` or `href` goes through `lib/safeUrl.ts`
+- Modals use `components/Dialog.tsx`; every input has a label tied by `htmlFor`
+- User-facing copy makes no claims about where data lives ("stays on your
+  device") — accounts with server storage are coming
 
 ---
 

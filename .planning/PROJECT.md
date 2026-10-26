@@ -23,7 +23,7 @@ Reliable daily care tracking plus a trustworthy central record for each cat. Eve
 - [ ] Filterable, sortable list view of care events, alongside the existing calendar view (same event data — no new data model)
 - [ ] Data export/backup — no way currently to get data out of localStorage-only storage (flagged in CONCERNS.md as high priority)
 - [ ] Continued hardening of the Cat Owner View as the core experience before building specialized secondary views
-- [ ] Test coverage for critical paths (storage, schedule recurrence) — currently zero tests exist
+- [x] Test coverage for critical paths (storage, schedule recurrence) — 20 test files as of 2026-10-26, logic only
 
 ### Out of Scope
 

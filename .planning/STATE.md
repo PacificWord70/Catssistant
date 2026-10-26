@@ -23,9 +23,11 @@ See: .planning/PROJECT.md (updated 2026-07-04)
 Phase: 1 of 2 (Care Event List View)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-08-24 — Health page built out (dated weight records, multi-cat
-multi-metric charts, filters) and a broad UI refinement pass across the home page,
-schedule, nav and resources ahead of a first deploy
+Last activity: 2026-10-26 — Finished the fix pass from the October review:
+data-loss bugs in storage, Next 16 and date bugs, form and page accessibility,
+URL guards, CSP/HSTS and Next 16.4.3. Since late September: the home page
+redesign (headline beside the tree, warm outline, callouts; drawn cats to come)
+and tests grown from 187 to 371
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -84,7 +86,7 @@ Elsewhere:
 ### Blockers/Concerns
 
 - Nothing is deployed yet and there is no CI, so nothing checks a build on push.
-  `npm run build` passes locally as of 2026-08-24.
+  `npm run build` passes locally as of 2026-10-26 (Next 16.4.3).
 - Two quick tasks have now landed a whole feature area (Health) that the roadmap
   does not mention. Phase 1 is still unplanned. This should be reconciled before
   more feature work.
@@ -102,6 +104,8 @@ Elsewhere:
 | 260821-h76 | Breed tooltip expands to the full paragraph after three seconds of hover; breed picker keeps its list open so consecutive breeds can be added without clicking away; schedule category emojis enlarged in both the calendar cells and the per-day list. | 2026-08-21 | 157572f | [260821-h76-breed-tooltip-hover-expand-breed-selecto](./quick/260821-h76-breed-tooltip-hover-expand-breed-selecto/) |
 | 260823-v5n | Replaced the home page cat tree with Heidi's own drawing colour-filled by region (her linework untouched), with nav buttons on six numbered spots; and moved the site shell off max-w-5xl so the width follows the screen. | 2026-08-24 | c6ec467 | [260823-v5n-colored-cat-tree-svg-and-fluid-site-wid](./quick/260823-v5n-colored-cat-tree-svg-and-fluid-site-wid/) |
 | 260824-28p | Health page: made the unused HealthRecord type real (localStorage + a fourth Redux slice), added a hand-drawn SVG weight-over-time chart with time-proportional spacing, a dated weight log form, and summary stats drawn from existing schedule and profile data. 15 new tests. | 2026-08-24 | 49ba0d3 | [260824-28p-health-page-weight-over-time](./quick/260824-28p-health-page-weight-over-time/) |
+| 260927-juc | Home page design trial: cat tree outline recoloured to cocoa, paper grain, contact shadow, callout labels with hover glow, swaying toys, editorial hero beside a headline. Callouts are a stand-in until Heidi's drawn cats land. | 2026-09-30 | 6e819aa | [260927-juc-home-page-design-elevation](./quick/260927-juc-home-page-design-elevation/) |
+| 261010-lx1 | Fixes from the full review: unreadable storage is backed up and never overwritten, quota errors surface, cat delete cascades, DST-proof month grid, local date keys, Next 16 searchParams, health page fixes, shared accessible Dialog, photo downscale (strips EXIF GPS), labels throughout, URL guards, Next 16.4.3, CSP/HSTS, accurate About page. | 2026-10-26 | 84f86c3 | [261010-lx1-fix-review-bugs-accessibility-security](./quick/261010-lx1-fix-review-bugs-accessibility-security/) |
 
 ## Deferred Items
 
