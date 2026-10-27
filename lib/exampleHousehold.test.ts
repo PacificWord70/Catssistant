@@ -7,6 +7,8 @@ import {
   isExampleId,
 } from '@/lib/exampleHousehold'
 import { daysBetween, parseDateKey } from '@/lib/dateKeys'
+import { catHealthSummary, weightSeries } from '@/lib/healthAnalysis'
+import { buildMetrics } from '@/lib/healthMetrics'
 import { SCHEDULE_CATEGORIES } from '@/lib/scheduleAttributes'
 import { PRODUCT_CATEGORIES } from '@/lib/itemAttributes'
 import { catLifeStage } from '@/lib/utils'
@@ -105,7 +107,7 @@ describe('buildExampleHousehold', () => {
     expect(daysBetween('2027-03-14', recheck!.date)).toBe(5)
     // Pickle stays a kitten and Pepper a senior whenever it is opened.
     const pickle = later.cats.find(c => c.name === 'Pickle')!
-    expect(daysBetween(pickle.birthday!, '2027-03-14')).toBe(125)
+    expect(daysBetween(pickle.birthday!, '2027-03-14')).toBe(112)
     const pepper = house.cats.find(c => c.name === 'Pepper')!
     expect(daysBetween(pepper.birthday!, TODAY)).toBeGreaterThan(365 * 10)
   })
@@ -122,6 +124,156 @@ describe('buildExampleHousehold', () => {
 
   it('refuses a malformed day rather than building nonsense dates', () => {
     expect(() => buildExampleHousehold('27/10/2026')).toThrow()
+  })
+})
+
+describe('the example health stories', () => {
+  const catNamed = (name: string) => house.cats.find(c => c.name === name)!
+  const seriesFor = (name: string) =>
+    weightSeries(house.healthRecords.filter(r => r.catId === catNamed(name).id))
+  const weights = (name: string) => seriesFor(name).map(p => p.value)
+  const eventsFor = (name: string) => house.events.filter(e => e.catIds.includes(catNamed(name).id))
+  const summary = (name: string) =>
+    catHealthSummary(catNamed(name), house.healthRecords, house.events, TODAY)
+
+  it('takes Pepper’s weight history back at least eighteen months', () => {
+    expect(daysBetween(seriesFor('Pepper')[0].date, TODAY)).toBeGreaterThanOrEqual(548)
+  })
+
+  it('has Pepper lose weight before the diagnosis and regain it on treatment', () => {
+    const w = weights('Pepper')
+    const low = Math.min(...w)
+    expect(low).toBeLessThan(w[0])
+    expect(low).toBeLessThan(w[w.length - 1])
+    const lowAt = w.indexOf(low)
+    expect(lowAt).toBeGreaterThan(0)
+    expect(lowAt).toBeLessThan(w.length - 1)
+    // The tablets start on the day of the diagnosis, and carry on.
+    const meds = eventsFor('Pepper').find(e => e.category === 'Medication')!
+    const diagnosis = house.events.find(e => e.id === 'example-pepper-diagnosis')!
+    expect(meds.date).toBe(diagnosis.date)
+    expect(meds.medicationDuration).toBe('Forever')
+  })
+
+  it('has Noodle lose weight from his peak at a sensible pace', () => {
+    const series = seriesFor('Noodle')
+    const peak = series.reduce((a, b) => (b.value > a.value ? b : a))
+    const latest = series[series.length - 1]
+    expect(latest.value).toBeLessThan(peak.value)
+    const months = (daysBetween(peak.date, latest.date) as number) / 30.4
+    const perMonth = (peak.value - latest.value) / peak.value / months
+    expect(perMonth).toBeGreaterThan(0.01)
+    expect(perMonth).toBeLessThanOrEqual(0.02)
+  })
+
+  it('swaps Noodle’s dinner the day after the old one ends, for a smaller portion', () => {
+    const noodle = catNamed('Noodle').id
+    const feeds = eventsFor('Noodle').filter(e => e.category === 'Feeding')
+    const ended = feeds.find(
+      e => e.recurrenceEndDate && e.feedingAmounts!.some(a => a.unit === 'cup'),
+    )!
+    const diet = feeds.find(e => e.id === 'example-noodle-diet')!
+    expect(daysBetween(ended.recurrenceEndDate!, diet.date)).toBe(1)
+    const perDay = (e: (typeof feeds)[number]) =>
+      e.feedingAmounts!.find(a => a.catId === noodle)!.amount * e.times.length
+    expect(perDay(diet)).toBeLessThan(perDay(ended))
+  })
+
+  it('charts more planned play for Noodle once the diet starts', () => {
+    const metrics = buildMetrics({
+      cats: house.cats,
+      records: house.healthRecords,
+      events: house.events,
+      from: parseDateKey('2024-10-27')!,
+      to: parseDateKey(TODAY)!,
+    })
+    const play = metrics.find(m => m.id === 'play')!.seriesFor(catNamed('Noodle').id)
+    const diet = house.events.find(e => e.id === 'example-noodle-diet')!.date
+    const avg = (pts: { value: number }[]) => pts.reduce((s, p) => s + p.value, 0) / pts.length
+    const before = play.filter(p => p.date < diet)
+    const after = play.filter(p => p.date >= diet)
+    expect(before.length).toBeGreaterThan(0)
+    expect(avg(after)).toBeGreaterThan(avg(before))
+  })
+
+  it('moves Miso onto the urinary diet after his vet visit, and off everything else', () => {
+    const firstVet = eventsFor('Miso')
+      .filter(e => e.category === 'Vet')
+      .map(e => e.date)
+      .sort()[0]
+    const feeds = eventsFor('Miso').filter(e => e.category === 'Feeding')
+    const urinary = feeds.filter(e => e.foodBrand === 'Northpaw Veterinary')
+    expect(urinary.length).toBeGreaterThan(0)
+    for (const e of urinary) expect(e.date > firstVet).toBe(true)
+    for (const e of feeds.filter(f => !urinary.includes(f))) {
+      expect(e.recurrenceEndDate! < urinary[0].date, e.id).toBe(true)
+    }
+  })
+
+  it('grows Pickle steadily, with a plateau while she was ill', () => {
+    const w = weights('Pickle')
+    expect(w.length).toBeGreaterThanOrEqual(8)
+    const steps = w.slice(1).map((v, i) => v - w[i])
+    expect(steps.every(s => s >= 0)).toBe(true)
+    expect(steps.some(s => s <= 0.05)).toBe(true)
+    expect(steps.filter(s => s > 0.05).length).toBeGreaterThanOrEqual(steps.length - 2)
+    expect(w[w.length - 1] - w[0]).toBeGreaterThan(2)
+  })
+
+  it('pairs every Stopped medication with a Started one before it', () => {
+    const meds = house.events.filter(e => e.category === 'Medication')
+    for (const stop of meds.filter(e => e.medicationStatus === 'Stopped')) {
+      const start = meds.find(
+        e =>
+          e.medicationStatus === 'Started' &&
+          e.title === stop.title &&
+          e.catIds.join() === stop.catIds.join() &&
+          e.date < stop.date,
+      )
+      expect(start, stop.id).toBeDefined()
+    }
+  })
+
+  it('counts only the medications still being given', () => {
+    expect(summary('Pepper').activeMeds).toBe(1) // methimazole
+    expect(summary('Pickle').activeMeds).toBe(1) // monthly flea treatment
+    expect(summary('Biscuit').activeMeds).toBe(0)
+    expect(summary('Miso').activeMeds).toBe(0)
+  })
+
+  it('has a vet visit behind and ahead for Pepper and for Pickle', () => {
+    for (const name of ['Pepper', 'Pickle']) {
+      expect(summary(name).lastVet, name).toBeDefined()
+      expect(summary(name).nextVet, name).toBeDefined()
+    }
+  })
+
+  it('fills in the fields each event’s form shows', () => {
+    for (const e of house.events) {
+      if (e.recurrenceEndDate) expect(e.recurrenceEndDate >= e.date, e.id).toBe(true)
+      if (e.category === 'Feeding') {
+        expect(e.times.length, e.id).toBeGreaterThan(0)
+        expect(e.foodName, e.id).toBeTruthy()
+        for (const c of e.catIds) {
+          const amount = e.feedingAmounts?.find(a => a.catId === c)?.amount ?? 0
+          expect(amount, e.id).toBeGreaterThan(0)
+        }
+      }
+      if (e.category === 'Medication') {
+        expect(e.medicationStatus, e.id).toBeDefined()
+        if (e.medicationStatus === 'Started') {
+          expect(e.medicationDuration, e.id).toBeDefined()
+          expect(e.times.length, e.id).toBeGreaterThan(0)
+        } else {
+          expect(e.medicationDuration, e.id).toBeUndefined()
+        }
+      }
+      if (e.category === 'Vet') {
+        expect(e.vetName, e.id).toBeTruthy()
+        expect(e.vetAddress, e.id).toBeTruthy()
+        expect(e.times.length, e.id).toBeGreaterThan(0)
+      }
+    }
   })
 })
 
