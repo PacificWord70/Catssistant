@@ -5,16 +5,23 @@ import Link from 'next/link'
 import CatAvatar from '@/components/CatAvatar'
 import MetricChart, { lineColor } from '@/components/MetricChart'
 import WeightLogForm from '@/components/WeightLogForm'
+import HealthStatCard from '@/components/HealthStatCard'
 import ScheduleEventForm from '@/components/ScheduleEventForm'
 import Reveal from '@/components/motion/Reveal'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { persistHealthRecord, removeHealthRecord } from '@/store/healthSlice'
 import { persistScheduleEvent } from '@/store/scheduleSlice'
 import { ScheduleCategory, ScheduleEvent } from '@/types/scheduleEvent'
-import { expandEvents } from '@/lib/scheduleUtils'
-import { daysBetween, formatDateKey, todayKey } from '@/lib/dateKeys'
-import { selectCatsByNewest, selectHealthRecords, selectScheduleEvents } from '@/store/selectors'
-import { weightSeries, weightTrend } from '@/lib/healthAnalysis'
+import { formatDateKey, todayKey } from '@/lib/dateKeys'
+import {
+  selectCatsByNewest,
+  selectCatsLoaded,
+  selectHealthLoaded,
+  selectHealthRecords,
+  selectScheduleEvents,
+  selectScheduleLoaded,
+} from '@/store/selectors'
+import { catHealthSummary } from '@/lib/healthAnalysis'
 import { buildMetrics, metricsWithData } from '@/lib/healthMetrics'
 import { catWeightLbs } from '@/lib/utils'
 import { HealthRecord } from '@/types/healthRecord'
@@ -26,44 +33,16 @@ const PICK_BTN =
 
 const CARD = 'bg-white rounded-3xl shadow-soft border border-brand-tan/30 p-6'
 
-function daysAgoLabel(iso: string): string {
-  const days = daysBetween(iso, todayKey())
-  if (days === null) return iso
-  // A future date has no "ago". Callers should not pass one, but a reading
-  // typed a day ahead should still say something true rather than "-1 days ago".
-  if (days < 0) return daysUntilLabel(iso)
-  if (days === 0) return 'today'
-  if (days === 1) return 'yesterday'
-  if (days < 30) return `${days} days ago`
-  if (days < 365) return `${Math.round(days / 30)} months ago`
-  return `${Math.floor(days / 365)}y ago`
-}
-
-function daysUntilLabel(iso: string): string {
-  const days = daysBetween(todayKey(), iso)
-  if (days === null) return iso
-  if (days <= 0) return 'today'
-  if (days === 1) return 'tomorrow'
-  if (days < 30) return `in ${days} days`
-  if (days < 365) return `in ${Math.round(days / 30)} months`
-  return `in ${Math.floor(days / 365)}y`
-}
-
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className={CARD}>
-      <p className="text-xs uppercase tracking-wide text-brand-brown/50 mb-1">{label}</p>
-      <p className="font-display text-2xl text-brand-brown leading-tight">{value}</p>
-      {hint && <p className="text-sm text-brand-brown/55 mt-1">{hint}</p>}
-    </div>
-  )
-}
-
 export default function HealthPage() {
   const dispatch = useAppDispatch()
   const cats = useAppSelector(selectCatsByNewest)
   const events = useAppSelector(selectScheduleEvents)
   const allRecords = useAppSelector(selectHealthRecords)
+  /* Every slice the page reads, not just cats: records arriving a beat after
+     the cats would flash "No weight readings yet" over a cat that has plenty. */
+  const catsLoaded = useAppSelector(selectCatsLoaded)
+  const healthLoaded = useAppSelector(selectHealthLoaded)
+  const scheduleLoaded = useAppSelector(selectScheduleLoaded)
 
   /** Which cats are on the chart. Null until the owner picks, so the default can
       follow the cat list arriving without an effect writing state. */
@@ -82,7 +61,8 @@ export default function HealthPage() {
      Memoised because the fallback builds a new Set on every render, which would
      give the memos below a fresh dependency each time and recompute them all. */
   const selected = useMemo(() => picked ?? new Set(cats.map(c => c.id)), [picked, cats])
-  const selectedCats = cats.filter(c => selected.has(c.id))
+  // Memoised so the per-cat summaries below are not rebuilt on every render.
+  const selectedCats = useMemo(() => cats.filter(c => selected.has(c.id)), [cats, selected])
   const comparing = selectedCats.length > 1
   /** The one cat in focus, when exactly one is picked. */
   const cat = selectedCats.length === 1 ? selectedCats[0] : undefined
@@ -95,16 +75,6 @@ export default function HealthPage() {
     setEditingId(null)
   }
 
-  const comparisonSeries = useMemo(
-    () =>
-      selectedCats.map(c => ({
-        id: c.id,
-        label: c.name,
-        points: weightSeries(allRecords.filter(r => r.catId === c.id)),
-      })),
-    [selectedCats, allRecords],
-  )
-
   /* Recurring events are expanded across a window rather than for all time.
      Two years back and one month forward covers the trends worth looking at
      without expanding a daily event since the beginning of the epoch. */
@@ -116,13 +86,8 @@ export default function HealthPage() {
     return buildMetrics({ cats, records: allRecords, events, from, to })
   }, [cats, allRecords, events])
 
-  const selectedCatIds = selectedCats.map(c => c.id)
-  const available = useMemo(
-    () => metricsWithData(metrics, selectedCatIds),
-    // selectedCatIds is rebuilt each render; join it so the memo compares by value.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [metrics, selectedCatIds.join(',')],
-  )
+  const selectedCatIds = useMemo(() => selectedCats.map(c => c.id), [selectedCats])
+  const available = useMemo(() => metricsWithData(metrics, selectedCatIds), [metrics, selectedCatIds])
   /* Weight is the one metric every owner records here, so it is charted until
      the owner chooses otherwise. Opening on "Nothing charted yet" above a
      page of readings read as if the readings had not saved. Derived rather
@@ -138,9 +103,12 @@ export default function HealthPage() {
     setPickedMetrics(next)
   }
 
-  const catRecords = useMemo(() => (cat ? allRecords.filter(r => r.catId === cat.id) : []), [allRecords, cat])
-  const series = useMemo(() => weightSeries(catRecords), [catRecords])
-  const trend = useMemo(() => weightTrend(series), [series])
+  /* Worked out per cat and apart from the cards, so the layout can change —
+     a combined table is on the cards — without touching the numbers. */
+  const summaries = useMemo(() => {
+    const today = todayKey()
+    return selectedCats.map(c => catHealthSummary(c, allRecords, events, today))
+  }, [selectedCats, allRecords, events])
 
   /** Weight readings for every selected cat, newest first. */
   const readings = useMemo(
@@ -160,40 +128,6 @@ export default function HealthPage() {
      selected, "+ Log weight" still has to do something, so it offers every cat. */
   const formCats = selectedCats.length > 0 ? selectedCats : cats
   const formCat = editingCat ?? cat ?? formCats[0]
-
-  /* "Last" visit means one that has happened. Vet events are often booked
-     ahead, and taking the newest date regardless printed "-5 days ago". The
-     next booked one is worth showing too, so it is split out rather than
-     dropped. Recurring visits are expanded so an annual checkup counts on the
-     date it actually falls. */
-  const vetVisits = useMemo(() => {
-    if (!cat) return { last: undefined, next: undefined }
-    const from = new Date()
-    from.setFullYear(from.getFullYear() - 10)
-    const to = new Date()
-    to.setFullYear(to.getFullYear() + 2)
-    const today = todayKey()
-    const dates = expandEvents(
-      events.filter(e => e.category === 'Vet' && e.catIds.includes(cat.id)),
-      from,
-      to,
-    ).map(item => item.date)
-    return {
-      last: dates.filter(d => d <= today).pop(),
-      next: dates.find(d => d > today),
-    }
-  }, [events, cat])
-  const lastVet = vetVisits.last
-  const nextVet = vetVisits.next
-
-  const activeMeds = useMemo(() => {
-    if (!cat) return 0
-    // A medication event marks a Started or a Stopped moment, so the count of
-    // things currently being given is starts minus stops.
-    const meds = events.filter(e => e.category === 'Medication' && e.catIds.includes(cat.id))
-    const started = meds.filter(e => e.medicationStatus !== 'Stopped').length
-    return Math.max(0, started - meds.filter(e => e.medicationStatus === 'Stopped').length)
-  }, [events, cat])
 
   function closeForm() {
     setLogging(false)
@@ -218,6 +152,11 @@ export default function HealthPage() {
     setAddingCategory(null)
   }
 
+  /* Until storage has been read the store is empty, which looks exactly like a
+     household with no cats. Rendering nothing for that moment avoids flashing
+     the "Add a cat first" invitation at someone who has three. */
+  if (!catsLoaded || !healthLoaded || !scheduleLoaded) return null
+
   if (cats.length === 0) {
     return (
       <div className="text-center py-24">
@@ -237,7 +176,6 @@ export default function HealthPage() {
   }
 
   const profileWeight = cat ? catWeightLbs(cat) : undefined
-  const anyComparisonPoints = comparisonSeries.some(s => s.points.length > 0)
 
   return (
     <div>
@@ -427,106 +365,15 @@ export default function HealthPage() {
         </Reveal>
       )}
 
-      {/* With several cats up, the detailed cards below would have to average
-          across them, which says nothing true about any one. A row each keeps
-          the numbers per cat, which is the only honest way to show them. */}
-      {comparing && (
-        <div className={CARD}>
-          <ul className="divide-y divide-brand-tan/30">
-            {selectedCats.map((c, i) => {
-              const points = weightSeries(allRecords.filter(r => r.catId === c.id))
-              const t = weightTrend(points)
-              return (
-                <li key={c.id} className="flex items-baseline gap-3 py-2.5">
-                  <span
-                    className="w-4 h-1.5 rounded-full shrink-0"
-                    style={{ background: lineColor(i) }}
-                    aria-hidden="true"
-                  />
-                  <span className="font-medium text-brand-brown flex-1 truncate">{c.name}</span>
-                  <span className="text-brand-brown whitespace-nowrap">
-                    {points.length > 0 ? `${points[points.length - 1].value.toFixed(1)} lbs` : '—'}
-                  </span>
-                  <span
-                    className={`text-sm whitespace-nowrap w-24 text-right ${
-                      t && t.direction !== 'steady' ? 'text-brand-brown/70' : 'text-brand-brown/40'
-                    }`}
-                  >
-                    {t
-                      ? t.direction === 'steady'
-                        ? 'steady'
-                        : `${t.changeLbs > 0 ? '+' : ''}${t.changeLbs.toFixed(1)} lbs`
-                      : points.length === 1
-                        ? 'one reading'
-                        : 'no readings'}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
+      {/* A card per cat, never an average across them, which would say nothing
+          true about any one. Side by side so a household compares at a glance;
+          one cat gets the full width and lays its stats out in a row. */}
+      {selectedCats.length > 0 && (
+        <div className={comparing ? 'grid gap-4 md:grid-cols-2 xl:grid-cols-3' : undefined}>
+          {selectedCats.map((c, i) => (
+            <HealthStatCard key={c.id} cat={c} summary={summaries[i]} color={lineColor(i)} wide={!comparing} />
+          ))}
         </div>
-      )}
-
-      {cat && (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat
-              label="Current weight"
-              value={
-                series.length > 0
-                  ? `${series[series.length - 1].value.toFixed(1)} lbs`
-                  : profileWeight !== undefined
-                    ? `${profileWeight.toFixed(1)} lbs`
-                    : '—'
-              }
-              hint={
-                series.length > 0
-                  ? `logged ${daysAgoLabel(series[series.length - 1].date)}`
-                  : profileWeight !== undefined
-                    ? 'from the profile, undated'
-                    : 'not recorded'
-              }
-            />
-            <Stat
-              label="Trend"
-              value={
-                trend
-                  ? trend.direction === 'steady'
-                    ? 'Steady'
-                    : `${trend.changeLbs > 0 ? '+' : ''}${trend.changeLbs.toFixed(1)} lbs`
-                  : '—'
-              }
-              hint={
-                trend
-                  ? `${trend.percent > 0 ? '+' : ''}${trend.percent.toFixed(1)}% over ${trend.days} days`
-                  : 'needs two readings'
-              }
-            />
-            <Stat
-              label="Last vet visit"
-              value={lastVet ? daysAgoLabel(lastVet) : '—'}
-              /* Falls back to the practice on the profile. A cat can have a vet
-                 on file and no visit scheduled yet, and showing only "none"
-                 hides information the owner already gave us. */
-              hint={[
-                lastVet ? formatDateKey(lastVet) : cat.vet?.name ? `${cat.vet.name} on file` : 'no vet on file',
-                nextVet && `next visit ${daysUntilLabel(nextVet)}`,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            />
-            <Stat
-              label="Known illnesses"
-              value={cat.knownIllnesses?.length ? String(cat.knownIllnesses.length) : 'None'}
-              hint={
-                cat.knownIllnesses?.length
-                  ? cat.knownIllnesses.join(', ')
-                  : `${activeMeds} active medication${activeMeds === 1 ? '' : 's'}`
-              }
-            />
-          </div>
-
-        </>
       )}
 
       {/* Readings stay whatever the selection is; with more than one cat each

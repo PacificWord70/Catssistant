@@ -1,4 +1,9 @@
 import { HealthRecord } from '@/types/healthRecord'
+import { Cat } from '@/types/cat'
+import { ScheduleEvent } from '@/types/scheduleEvent'
+import { daysBetween, parseDateKey } from '@/lib/dateKeys'
+import { expandEvents } from '@/lib/scheduleUtils'
+import { catWeightLbs } from '@/lib/utils'
 
 /**
  * Turning health records into something a chart can draw.
@@ -21,13 +26,15 @@ export interface SeriesPoint {
 export type WeightPoint = SeriesPoint
 
 /**
- * Same local-time parsing as `scheduleUtils`. `new Date('2026-06-01')` reads a
- * bare ISO date as UTC midnight, which lands on the previous day anywhere west
- * of Greenwich and would shift every point on the axis.
+ * Local midnight of a date key, as a timestamp for the time axis. Local because
+ * a UTC parse would shift every point a day west of Greenwich.
+ *
+ * A key that is not a real day gives NaN rather than a guess: the form only
+ * saves real dates, and quietly rolling 2026-02-30 into March would plot a
+ * reading on a day it was never taken.
  */
-function parseDateKey(key: string): Date {
-  const [y, m, d] = key.split('-').map(Number)
-  return new Date(y, m - 1, d)
+function timeOf(key: string): number {
+  return parseDateKey(key)?.getTime() ?? NaN
 }
 
 /**
@@ -67,14 +74,13 @@ export function weightTrend(series: WeightPoint[], steadyBandLbs = 0.1): WeightT
   const from = series[0]
   const to = series[series.length - 1]
   const changeLbs = to.value - from.value
-  const msPerDay = 1000 * 60 * 60 * 24
   return {
     changeLbs,
     percent: from.value === 0 ? 0 : (changeLbs / from.value) * 100,
     direction: Math.abs(changeLbs) <= steadyBandLbs ? 'steady' : changeLbs > 0 ? 'up' : 'down',
     from,
     to,
-    days: Math.round((parseDateKey(to.date).getTime() - parseDateKey(from.date).getTime()) / msPerDay),
+    days: daysBetween(from.date, to.date) ?? 0,
   }
 }
 
@@ -119,7 +125,7 @@ export function chartGeometry(
   const plotH = height - padding.top - padding.bottom
   const yFor = (value: number) => padding.top + plotH - ((value - min) / (max - min)) * plotH
 
-  const times = series.map(p => parseDateKey(p.date).getTime())
+  const times = series.map(p => timeOf(p.date))
   const tMin = times[0]
   const tMax = times[times.length - 1]
   const tSpan = tMax - tMin
@@ -195,8 +201,8 @@ export function multiSeriesGeometry(
   const dates = allPoints.map(p => p.date).sort()
   const from = dates[0]
   const to = dates[dates.length - 1]
-  const tMin = parseDateKey(from).getTime()
-  const tMax = parseDateKey(to).getTime()
+  const tMin = timeOf(from)
+  const tMax = timeOf(to)
   const tSpan = tMax - tMin
 
   return {
@@ -209,7 +215,7 @@ export function multiSeriesGeometry(
         x:
           tSpan === 0
             ? padding.left + plotW / 2
-            : padding.left + ((parseDateKey(point.date).getTime() - tMin) / tSpan) * plotW,
+            : padding.left + ((timeOf(point.date) - tMin) / tSpan) * plotW,
         y: yFor(point.value),
         point,
       })),
@@ -222,5 +228,86 @@ export function multiSeriesGeometry(
     max,
     from,
     to,
+  }
+}
+
+export interface CatHealthSummary {
+  catId: string
+  /**
+   * The newest weight. Falls back to the profile weight, flagged as such,
+   * because a profile weight has no date and must not be presented as a reading.
+   */
+  weight?: { lbs: number; date?: string; source: 'reading' | 'profile' }
+  /** How many dated weight readings there are, so "no trend" can say why. */
+  readingCount: number
+  trend?: WeightTrend
+  /** The newest vet visit on or before today. */
+  lastVet?: string
+  /** The soonest vet visit after today. */
+  nextVet?: string
+  vetName?: string
+  illnesses: string[]
+  activeMeds: number
+}
+
+/**
+ * Everything the health stat card shows for one cat, worked out without any
+ * layout in mind.
+ *
+ * One cat at a time on purpose. The page shows a card per cat side by side
+ * today, but a combined table is on the cards; computing per cat keeps that
+ * switch a change to the markup alone. Averaging across cats was never an
+ * option — it says nothing true about any one of them.
+ *
+ * `today` is passed in so the past/future split is testable on any day.
+ */
+export function catHealthSummary(
+  cat: Cat,
+  records: HealthRecord[],
+  events: ScheduleEvent[],
+  today: string,
+): CatHealthSummary {
+  const series = weightSeries(records.filter(r => r.catId === cat.id))
+  const latest = series[series.length - 1]
+  const profileLbs = catWeightLbs(cat)
+
+  /* "Last" visit means one that has happened. Vet events are often booked
+     ahead, and taking the newest date regardless printed "-5 days ago". The
+     next booked one is worth showing too, so it is split out rather than
+     dropped. Recurring visits are expanded so an annual checkup counts on the
+     date it actually falls. */
+  const anchor = parseDateKey(today) ?? new Date()
+  const from = new Date(anchor)
+  from.setFullYear(from.getFullYear() - 10)
+  const to = new Date(anchor)
+  to.setFullYear(to.getFullYear() + 2)
+  const vetDates = expandEvents(
+    events.filter(e => e.category === 'Vet' && e.catIds.includes(cat.id)),
+    from,
+    to,
+  )
+    .map(item => item.date)
+    .sort()
+
+  // A medication event marks a Started or a Stopped moment, so the count of
+  // things currently being given is starts minus stops.
+  const meds = events.filter(e => e.category === 'Medication' && e.catIds.includes(cat.id))
+  const started = meds.filter(e => e.medicationStatus !== 'Stopped').length
+  const stopped = meds.length - started
+
+  return {
+    catId: cat.id,
+    weight: latest
+      ? { lbs: latest.value, date: latest.date, source: 'reading' }
+      : profileLbs !== undefined
+        ? { lbs: profileLbs, source: 'profile' }
+        : undefined,
+    readingCount: series.length,
+    trend: weightTrend(series),
+    lastVet: vetDates.filter(d => d <= today).pop(),
+    nextVet: vetDates.find(d => d > today),
+    vetName: cat.vet?.name || undefined,
+    illnesses: cat.knownIllnesses ?? [],
+    activeMeds: Math.max(0, started - stopped),
   }
 }

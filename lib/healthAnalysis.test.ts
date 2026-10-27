@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { HealthRecord } from '@/types/healthRecord'
-import { chartGeometry, multiSeriesGeometry, weightSeries, weightTrend } from '@/lib/healthAnalysis'
+import { Cat } from '@/types/cat'
+import { ScheduleEvent } from '@/types/scheduleEvent'
+import { catHealthSummary, chartGeometry, multiSeriesGeometry, weightSeries, weightTrend } from '@/lib/healthAnalysis'
 
 const PADDING = { top: 10, right: 10, bottom: 20, left: 30 }
 
@@ -170,5 +172,74 @@ describe('multiSeriesGeometry', () => {
     )!
     for (const line of geo.lines) expect(Number.isFinite(line.points[0].x)).toBe(true)
     expect(geo.lines[0].points[0].x).toBeCloseTo(geo.lines[1].points[0].x)
+  })
+})
+
+describe('catHealthSummary', () => {
+  const TODAY = '2026-06-15'
+  const cat = (over: Partial<Cat> = {}): Cat => ({ id: 'c1', name: 'Miso', breed: [], weightUnit: 'lbs', ...over }) as Cat
+  const event = (over: Partial<ScheduleEvent>): ScheduleEvent => ({
+    id: `e-${over.date}-${over.category}`,
+    catIds: ['c1'],
+    category: 'Vet',
+    title: 'x',
+    date: TODAY,
+    times: [],
+    recurrence: 'none',
+    createdAt: '2026-01-01T00:00:00Z',
+    ...over,
+  })
+
+  it('takes the newest reading and the trend across all of them', () => {
+    const s = catHealthSummary(cat(), [record('2026-01-01', 9), record('2026-03-01', 10)], [], TODAY)
+    expect(s.weight).toEqual({ lbs: 10, date: '2026-03-01', source: 'reading' })
+    expect(s.readingCount).toBe(2)
+    expect(s.trend?.direction).toBe('up')
+    expect(s.trend?.days).toBe(59)
+  })
+
+  it('falls back to the undated profile weight, converted to pounds', () => {
+    const s = catHealthSummary(cat({ weight: 5, weightUnit: 'kg' }), [], [], TODAY)
+    expect(s.weight?.source).toBe('profile')
+    expect(s.weight?.date).toBeUndefined()
+    expect(s.weight?.lbs).toBeCloseTo(11.02, 1)
+  })
+
+  it("ignores another cat's readings and events", () => {
+    const s = catHealthSummary(
+      cat(),
+      [record('2026-01-01', 12, 'c2')],
+      [event({ date: '2026-06-01', catIds: ['c2'] })],
+      TODAY,
+    )
+    expect(s.weight).toBeUndefined()
+    expect(s.lastVet).toBeUndefined()
+  })
+
+  it('splits vet visits into the last one that happened and the next one booked', () => {
+    const s = catHealthSummary(
+      cat(),
+      [],
+      [event({ date: '2026-07-01' }), event({ date: '2026-02-01' }), event({ date: '2026-05-01' })],
+      TODAY,
+    )
+    expect(s.lastVet).toBe('2026-05-01')
+    expect(s.nextVet).toBe('2026-07-01')
+  })
+
+  it('counts a visit on today as the last one, not the next', () => {
+    const s = catHealthSummary(cat(), [], [event({ date: TODAY })], TODAY)
+    expect(s.lastVet).toBe(TODAY)
+    expect(s.nextVet).toBeUndefined()
+  })
+
+  it('counts medications as starts minus stops, never below zero', () => {
+    const meds = [
+      event({ category: 'Medication', date: '2026-01-01', medicationStatus: 'Started' }),
+      event({ category: 'Medication', date: '2026-02-01', medicationStatus: 'Started' }),
+      event({ category: 'Medication', date: '2026-03-01', medicationStatus: 'Stopped' }),
+    ]
+    expect(catHealthSummary(cat(), [], meds, TODAY).activeMeds).toBe(1)
+    expect(catHealthSummary(cat(), [], meds.slice(2), TODAY).activeMeds).toBe(0)
   })
 })
