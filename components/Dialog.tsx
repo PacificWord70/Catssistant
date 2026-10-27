@@ -3,6 +3,21 @@
 import { KeyboardEvent, ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+/* Safari does not focus a button when it is clicked, so a dialog opened by mouse
+   finds focus still on <body> and would have nowhere to hand it back on close.
+   Remembering the last control pressed gives it the button that opened it. */
+let lastPressed: HTMLElement | null = null
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'pointerdown',
+    e => {
+      const target = e.target instanceof Element ? e.target : null
+      lastPressed = target?.closest<HTMLElement>('button, a[href], input, select, textarea, [tabindex]') ?? null
+    },
+    true,
+  )
+}
+
 /**
  * A question the dialog asks on top of its own content — "discard your
  * changes?", "delete this?". Rendered by Dialog so every form gets the same
@@ -67,9 +82,11 @@ export default function Dialog({ labelledBy, onClose, dirty = false, confirm, ch
   const [askingDiscard, setAskingDiscard] = useState(false)
   // Captured during the first render, before any autoFocus inside the dialog
   // moves focus away from the button that opened it.
-  const [opener] = useState<HTMLElement | null>(() =>
-    typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null),
-  )
+  const [opener] = useState<HTMLElement | null>(() => {
+    if (typeof document === 'undefined') return null
+    const active = document.activeElement as HTMLElement | null
+    return active && active !== document.body ? active : lastPressed
+  })
   // Where focus was inside the dialog before a confirm took it, so dismissing
   // the confirm puts the owner back where they were.
   const focusBeforeConfirm = useRef<HTMLElement | null>(null)
