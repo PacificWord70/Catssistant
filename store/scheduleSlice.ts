@@ -5,7 +5,8 @@ import {
   getScheduleEvents,
   saveScheduleEvent as writeToStorage,
 } from '@/lib/storage'
-import type { AppDispatch } from '@/store/types'
+import { refuseWhileExample } from '@/store/exampleSlice'
+import type { AppDispatch, RootState } from '@/store/types'
 
 /**
  * Care events for the user's cats.
@@ -62,13 +63,15 @@ export function loadScheduleEvents() {
 }
 
 export function persistScheduleEvent(event: ScheduleEvent) {
-  return (dispatch: AppDispatch) => {
+  return (dispatch: AppDispatch, getState: () => RootState) => {
+    refuseWhileExample(getState)
     dispatch(scheduleEventSaved(writeToStorage(event)))
   }
 }
 
 export function removeScheduleEvent(id: string) {
-  return (dispatch: AppDispatch) => {
+  return (dispatch: AppDispatch, getState: () => RootState) => {
+    refuseWhileExample(getState)
     removeFromStorage(id)
     dispatch(scheduleEventDeleted(id))
   }

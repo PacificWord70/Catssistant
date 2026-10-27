@@ -7,7 +7,8 @@ import {
   saveCatalogProduct as writeProductToStorage,
   saveHouseholdItem as writeItemToStorage,
 } from '@/lib/itemStorage'
-import type { AppDispatch } from '@/store/types'
+import { refuseWhileExample } from '@/store/exampleSlice'
+import type { AppDispatch, RootState } from '@/store/types'
 
 /**
  * Household items, and the product catalogue they reference.
@@ -91,14 +92,16 @@ export function loadItems() {
  * write failed.
  */
 export function persistHouseholdItem(item: HouseholdItem, product?: CatalogProduct) {
-  return (dispatch: AppDispatch) => {
+  return (dispatch: AppDispatch, getState: () => RootState) => {
+    refuseWhileExample(getState)
     if (product) dispatch(catalogProductSaved(writeProductToStorage(product)))
     dispatch(householdItemSaved(writeItemToStorage(item)))
   }
 }
 
 export function removeHouseholdItem(id: string) {
-  return (dispatch: AppDispatch) => {
+  return (dispatch: AppDispatch, getState: () => RootState) => {
+    refuseWhileExample(getState)
     removeItemFromStorage(id)
     dispatch(householdItemDeleted(id))
   }

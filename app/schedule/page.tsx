@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState, useSyncExternalStore } from 'react'
+import { Suspense, useState, useSyncExternalStore } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { persistScheduleEvent, removeScheduleEvent } from '@/store/scheduleSlice'
@@ -112,11 +112,9 @@ function SchedulePageContent() {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
   }
 
-  useEffect(() => {
-    if (loaded && cats.length === 0) router.replace('/onboarding')
-  }, [loaded, cats.length, router])
-
-  if (!hydrated || !loaded || cats.length === 0) return null
+  // No redirect for a household without cats: the example household fills
+  // the store then, so the schedule always has someone to show.
+  if (!hydrated || !loaded) return null
 
   function handleWeightSave(record: HealthRecord) {
     dispatch(persistHealthRecord(record))

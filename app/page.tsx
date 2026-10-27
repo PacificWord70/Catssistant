@@ -1,4 +1,5 @@
 import CatTree from '@/components/CatTree'
+import ExampleActions from '@/components/ExampleActions'
 import Reveal from '@/components/motion/Reveal'
 import Parallax from '@/components/motion/Parallax'
 
@@ -24,6 +25,7 @@ export default function Home() {
           Profiles, care schedules and health records for every cat in your home, all in one
           place.
         </p>
+        <ExampleActions />
       </Reveal>
 
       <Reveal delay={0.1}>

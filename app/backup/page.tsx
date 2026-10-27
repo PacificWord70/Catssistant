@@ -3,11 +3,9 @@
 import { ChangeEvent, useId, useState } from 'react'
 import Dialog from '@/components/Dialog'
 import Reveal from '@/components/motion/Reveal'
-import { useAppDispatch } from '@/store/hooks'
-import { loadCats } from '@/store/catsSlice'
-import { loadHealthRecords } from '@/store/healthSlice'
-import { loadItems } from '@/store/itemsSlice'
-import { loadScheduleEvents } from '@/store/scheduleSlice'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { loadHousehold } from '@/store/catsSlice'
+import { selectIsExample } from '@/store/selectors'
 import {
   backupFileName,
   buildBackup,
@@ -70,6 +68,7 @@ function importErrorMessage(err: unknown): string {
 
 export default function BackupPage() {
   const dispatch = useAppDispatch()
+  const isExample = useAppSelector(selectIsExample)
   const uid = useId()
   const ids = {
     file: `${uid}-file`,
@@ -150,11 +149,9 @@ export default function BackupPage() {
       const plan = planMerge(device, pending.imported)
       writeAllCollections(plan.next, device)
       // Every slice reloads from storage, so each page shows the merged data
-      // without the owner having to refresh.
-      dispatch(loadCats())
-      dispatch(loadScheduleEvents())
-      dispatch(loadItems())
-      dispatch(loadHealthRecords())
+      // without the owner having to refresh. If the backup brought cats with
+      // it, that also ends the example household; if not, the example stays.
+      dispatch(loadHousehold())
       setImportStatus(describeResult(plan))
     } catch (err) {
       setImportError(importErrorMessage(err))
@@ -184,6 +181,14 @@ export default function BackupPage() {
               One file with your cats (photos included), their schedule, health readings and
               household items. Keep it somewhere you’ll be able to find it again.
             </p>
+            {/* The file is built from storage, which the example never touches,
+                so this is a description of what happens, not a filter. */}
+            {isExample && (
+              <p className="text-sm text-brand-brown/80 bg-brand-cream border border-brand-tan/50 rounded-2xl px-4 py-3 mb-4">
+                The example household isn’t part of backups. A backup holds only the cats and
+                records you’ve added yourself.
+              </p>
+            )}
             <button type="button" onClick={handleExport} className={PRIMARY_BTN}>
               Download backup
             </button>

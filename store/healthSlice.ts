@@ -7,7 +7,8 @@ import {
 } from '@/lib/healthStorage'
 // Type-only import, so it is erased at compile time and creates no runtime cycle
 // even though store/index.ts imports this file's reducer.
-import type { AppDispatch } from '@/store/types'
+import { refuseWhileExample } from '@/store/exampleSlice'
+import type { AppDispatch, RootState } from '@/store/types'
 
 /**
  * Dated health measurements for every cat.
@@ -66,13 +67,15 @@ export function loadHealthRecords() {
 }
 
 export function persistHealthRecord(record: HealthRecord) {
-  return (dispatch: AppDispatch) => {
+  return (dispatch: AppDispatch, getState: () => RootState) => {
+    refuseWhileExample(getState)
     dispatch(healthRecordSaved(writeToStorage(record)))
   }
 }
 
 export function removeHealthRecord(id: string) {
-  return (dispatch: AppDispatch) => {
+  return (dispatch: AppDispatch, getState: () => RootState) => {
+    refuseWhileExample(getState)
     removeFromStorage(id)
     dispatch(healthRecordDeleted(id))
   }

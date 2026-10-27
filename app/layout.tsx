@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Figtree, Fraunces } from 'next/font/google'
 import './globals.css'
 import NavBar from '@/components/NavBar'
+import ExampleBanner from '@/components/ExampleBanner'
 import StoreProvider from '@/store/StoreProvider'
 
 const figtree = Figtree({
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               stay, because a form stretched across a monitor is worse, not
               better. Keep this in step with the NavBar's container. */}
           <main className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 py-8">
+            <ExampleBanner />
             {children}
           </main>
         </StoreProvider>

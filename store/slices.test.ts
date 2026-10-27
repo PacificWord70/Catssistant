@@ -31,6 +31,7 @@ import healthReducer, {
   persistHealthRecord,
   removeHealthRecord,
 } from '@/store/healthSlice'
+import exampleReducer from '@/store/exampleSlice'
 import { getCats, getScheduleEvents } from '@/lib/storage'
 import { getCatalogProducts, getHouseholdItems } from '@/lib/itemStorage'
 import { getHealthRecords } from '@/lib/healthStorage'
@@ -46,7 +47,13 @@ import { HealthRecord } from '@/types/healthRecord'
  */
 const makeStore = () =>
   configureStore({
-    reducer: { cats: catsReducer, schedule: scheduleReducer, items: itemsReducer, health: healthReducer },
+    reducer: {
+      cats: catsReducer,
+      schedule: scheduleReducer,
+      items: itemsReducer,
+      health: healthReducer,
+      example: exampleReducer,
+    },
   })
 
 /** The thunks write through lib/ storage, which needs `window` to exist as well. */

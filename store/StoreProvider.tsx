@@ -3,10 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { Provider } from 'react-redux'
 import { store } from '@/store'
-import { loadCats } from '@/store/catsSlice'
-import { loadHealthRecords } from '@/store/healthSlice'
-import { loadItems } from '@/store/itemsSlice'
-import { loadScheduleEvents } from '@/store/scheduleSlice'
+import { loadHousehold } from '@/store/catsSlice'
 
 /**
  * Makes the store available to every component below it.
@@ -29,10 +26,9 @@ export default function StoreProvider({ children }: { children: React.ReactNode 
     loadedRef.current = true
     // localStorage isn't available during server rendering, so the reads have to
     // happen in an effect — after the component has mounted in the browser.
-    store.dispatch(loadCats())
-    store.dispatch(loadScheduleEvents())
-    store.dispatch(loadItems())
-    store.dispatch(loadHealthRecords())
+    // One thunk for every slice, because whether storage holds any cats decides
+    // whether the slices get the owner's records or the example household.
+    store.dispatch(loadHousehold())
   }, [])
 
   return <Provider store={store}>{children}</Provider>

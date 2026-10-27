@@ -14,6 +14,14 @@ export const selectCatsLoaded = (state: RootState) => state.cats.loaded
 export const selectSelectedCatId = (state: RootState) => state.cats.selectedCatId
 
 /**
+ * True while the store holds the example household rather than the owner's
+ * own records — see lib/exampleHousehold.ts. Anything asking "does this person
+ * have cats?" wants `!isExample`, not `cats.length > 0`: the example is never
+ * empty.
+ */
+export const selectIsExample = (state: RootState) => state.example.active
+
+/**
  * The currently selected cat, or undefined.
  *
  * Built with createSelector because it *derives* a value rather than reading one

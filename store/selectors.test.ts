@@ -29,6 +29,7 @@ function state(over: {
     schedule: { items: over.events ?? [], loaded: true },
     items: { items: over.items ?? [], catalog: over.catalog ?? [], loaded: true },
     health: { records: over.records ?? [], loaded: true },
+    example: { active: false },
   }
 }
 

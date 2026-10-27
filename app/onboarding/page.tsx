@@ -4,17 +4,19 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAppSelector } from '@/store/hooks'
-import { selectAllCats, selectCatsLoaded } from '@/store/selectors'
+import { selectCatsLoaded, selectIsExample } from '@/store/selectors'
 import CatAvatar from '@/components/CatAvatar'
 
 export default function OnboardingPage() {
   const router = useRouter()
   const loaded = useAppSelector(selectCatsLoaded)
-  const cats = useAppSelector(selectAllCats)
+  const isExample = useAppSelector(selectIsExample)
 
+  // Only real cats count. The example household always has cats in the store,
+  // and this page is where "Add your first cat" leads from it.
   useEffect(() => {
-    if (loaded && cats.length > 0) router.replace('/')
-  }, [loaded, cats.length, router])
+    if (loaded && !isExample) router.replace('/')
+  }, [loaded, isExample, router])
 
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
