@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { multiSeriesGeometry, NamedSeries } from '@/lib/healthAnalysis'
 import { formatDateKey, parseDateKey } from '@/lib/dateKeys'
-import { ChartMarker, MARKER_KINDS, MarkerKind } from '@/lib/chartMarkers'
+import { ChartMarker, MARKER_KINDS } from '@/lib/chartMarkers'
 
 interface Props {
   series: NamedSeries[]
@@ -31,13 +31,6 @@ interface Props {
   markers?: ChartMarker[]
 }
 
-/* Each kind of marker in its own brand tone, so a vet visit and a diet change on
-   neighbouring days can be told apart before reading the icon. */
-const MARKER_COLOR: Record<MarkerKind, string> = {
-  vet: '#5F8AA8',
-  diet: '#F26A1B',
-  medication: '#6B4A34',
-}
 
 const VIEW = { width: 640, height: 280 }
 const PADDING = { top: 16, right: 16, bottom: 34, left: 46 }
@@ -71,6 +64,18 @@ const MAX_DOTS = 40
    which reads as a single day. */
 function shortDate(iso: string, withYear = false): string {
   return formatDateKey(iso, withYear ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' })
+}
+
+/** The line's height at `x`, between its readings; undefined outside them. */
+function yOnLine(points: { x: number; y: number }[], x: number): number | undefined {
+  if (points.length === 0) return undefined
+  if (points.length === 1) return Math.abs(points[0].x - x) < 1 ? points[0].y : undefined
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i]
+    const b = points[i + 1]
+    if (x >= a.x && x <= b.x) return b.x === a.x ? a.y : a.y + ((x - a.x) / (b.x - a.x)) * (b.y - a.y)
+  }
+  return undefined
 }
 
 export default function MetricChart({ series, unit, onSelect, domain, colorFor, markers = [] }: Props) {
@@ -167,39 +172,6 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
           </g>
         ))}
 
-        {/* What happened, behind the data: a dashed line on the day, with its
-            icon at the top. Several kinds on one day stack their icons. */}
-        {markerX &&
-          markers.map(m => {
-            const x = markerX(m.date)
-            if (x === undefined) return null
-            const stack = markers.filter(o => o.date === m.date).findIndex(o => o.kind === m.kind)
-            const emoji = MARKER_KINDS.find(k => k.kind === m.kind)?.emoji
-            // One cat's event takes that cat's colour, so it reads against its
-            // own line; an event shared by several cats keeps the kind's tone.
-            const stroke = m.catIds.length === 1 ? colorOf(m.catIds[0]) : MARKER_COLOR[m.kind]
-            // Pointing at a cat in the key isolates its events along with its line.
-            const faded = highlighted !== null && !m.catIds.includes(highlighted)
-            return (
-              <g key={`${m.date}-${m.kind}`} opacity={faded ? 0.12 : 1} style={{ transition: 'opacity 0.15s ease' }}>
-                <title>{`${formatDateKey(m.date, { dateStyle: 'medium' })}\n${m.lines.join('\n')}`}</title>
-                <line
-                  x1={x}
-                  y1={PADDING.top}
-                  x2={x}
-                  y2={VIEW.height - PADDING.bottom}
-                  stroke={stroke}
-                  strokeWidth={1.5}
-                  strokeDasharray="4 4"
-                  opacity={0.7}
-                />
-                <text x={x} y={PADDING.top + 4 + stack * 15} textAnchor="middle" fontSize={12}>
-                  {emoji}
-                </text>
-              </g>
-            )
-          })}
-
         {/* Guide for the hovered date, so it is clear every marker on it belongs
             to the same day even when the lines are far apart. */}
         {hovered && (
@@ -251,6 +223,42 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
             </g>
           )
         })}
+
+        {/* What happened, as a node on the cat's own line: the emoji sits on
+            the weight at the day it happened, so the event and its effect read
+            as one story. An event shared by several cats gets a node on each
+            of their lines. Days between readings take the line's in-between
+            value; days before a cat's first or after its last reading are left
+            off, since there is no line there to sit on. */}
+        {markerX &&
+          markers.flatMap(m => {
+            const x = markerX(m.date)
+            if (x === undefined) return []
+            const emoji = MARKER_KINDS.find(k => k.kind === m.kind)?.emoji
+            return m.catIds.flatMap(catId => {
+              const line = geo.lines.find(l => l.id === catId)
+              const y = line && yOnLine(line.points, x)
+              if (y === undefined) return []
+              // Several kinds on one cat's same day sit side by side, not stacked.
+              const sameSpot = markers.filter(o => o.date === m.date && o.catIds.includes(catId))
+              const offset = (sameSpot.findIndex(o => o.kind === m.kind) - (sameSpot.length - 1) / 2) * 20
+              const faded = highlighted !== null && highlighted !== catId
+              const color = colorOf(catId)
+              return [
+                <g
+                  key={`${m.date}-${m.kind}-${catId}`}
+                  opacity={faded ? 0.15 : 1}
+                  style={{ transition: 'opacity 0.15s ease' }}
+                >
+                  <title>{[formatDateKey(m.date, { dateStyle: 'medium' }), ...m.lines].join(String.fromCharCode(10))}</title>
+                  <circle cx={x + offset} cy={y} r={10} fill="#FFFBF6" stroke={color} strokeWidth={2} />
+                  <text x={x + offset} y={y + 4} textAnchor="middle" fontSize={11}>
+                    {emoji}
+                  </text>
+                </g>,
+              ]
+            })
+          })}
 
         {/* Count badge where cats sit on top of each other. Without it a shared
             value looks like a single cat, since the dots are exactly congruent. */}
