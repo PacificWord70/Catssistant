@@ -104,9 +104,13 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
                 <span className={`text-xs sm:text-sm ${cell.isToday && !isSelected ? 'font-bold text-brand-orange' : 'font-medium'}`}>
                   {cell.dayNumber}
                 </span>
+                {/* Meals always take the very corner, so the eye finds them in
+                    the same place every day; play sits just inside them. Meals
+                    show on phones too — it's the one icon there is room for. */}
                 {routine.length > 0 && (
-                  <span className="hidden sm:flex gap-px text-[11px] lg:text-[13px]">
-                    {routine.map(c => <span key={c}>{CATEGORY_EMOJI[c]}</span>)}
+                  <span className="flex gap-px text-[9px] sm:text-[11px] lg:text-[13px]">
+                    {routine.includes('Play') && <span className="hidden sm:inline">{CATEGORY_EMOJI.Play}</span>}
+                    {routine.includes('Feeding') && <span>{CATEGORY_EMOJI.Feeding}</span>}
                   </span>
                 )}
               </span>
