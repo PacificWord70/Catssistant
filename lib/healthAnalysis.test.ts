@@ -296,3 +296,24 @@ describe('multiSeriesGeometry with a fixed domain', () => {
     expect(multiSeriesGeometry(series, 640, 280, PADDING, 4, { from: '2026-10-10', to: '2026-10-27' })).toBeUndefined()
   })
 })
+
+describe('weight notes', () => {
+  it('carries a reading’s note onto its chart point', () => {
+    const series = weightSeries([
+      { ...record('2026-01-01', 9), notes: '  Weighed at the vet ' },
+      record('2026-02-01', 9.5),
+      { ...record('2026-03-01', 10), notes: '   ' },
+    ])
+    expect(series.map(p => p.note)).toEqual(['Weighed at the vet', undefined, undefined])
+    // A blank note is left off entirely, not carried as an empty string.
+    expect('note' in series[2]).toBe(false)
+  })
+
+  it('keeps the note through the multi-cat geometry', () => {
+    const geo = multiSeriesGeometry(
+      [{ id: 'a', label: 'A', points: weightSeries([{ ...record('2026-01-01', 9), notes: 'Off her food' }]) }],
+      640, 260, PADDING,
+    )!
+    expect(geo.lines[0].points[0].point.note).toBe('Off her food')
+  })
+})

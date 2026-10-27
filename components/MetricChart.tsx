@@ -94,12 +94,12 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
    * the same place, where all but the last are invisible.
    */
   const byDate = useMemo(() => {
-    const map = new Map<string, { id: string; label: string; value: number; x: number; y: number }[]>()
+    const map = new Map<string, { id: string; label: string; value: number; note?: string; x: number; y: number }[]>()
     if (!geo) return map
     for (const line of geo.lines) {
       for (const p of line.points) {
         const at = map.get(p.point.date) ?? []
-        at.push({ id: line.id, label: line.label, value: p.point.value, x: p.x, y: p.y })
+        at.push({ id: line.id, label: line.label, value: p.point.value, note: p.point.note, x: p.x, y: p.y })
         map.set(p.point.date, at)
       }
     }
@@ -123,6 +123,11 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
     }
   })()
   const hovered = hoveredDate ? byDate.get(hoveredDate) : undefined
+  /* The readout only answers a pointer, so every note is also listed for
+     screen readers below, with the cat, the day and the value it explains. */
+  const notes = geo.lines.flatMap(line =>
+    line.points.filter(p => p.point.note).map(p => ({ id: p.point.id, label: line.label, point: p.point })),
+  )
 
   /** Nearest date to the pointer, so hovering works between the markers too. */
   function trackPointer(clientX: number) {
@@ -207,17 +212,13 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
                 // nothing to read the guide against.
                 if (!showDots && !onHoveredDate) return null
                 return (
-                  <circle
-                    key={p.point.id}
-                    cx={p.x}
-                    cy={p.y}
-                    r={onHoveredDate ? 6 : 4}
-                    fill="#FFFBF6"
-                    stroke={color}
-                    strokeWidth={2.5}
-                    style={{ cursor: onSelect ? 'pointer' : 'default' }}
-                    onClick={() => onSelect?.(p.point.id)}
-                  />
+                  <g key={p.point.id} style={{ cursor: onSelect ? 'pointer' : 'default' }} onClick={() => onSelect?.(p.point.id)}>
+                    <circle cx={p.x} cy={p.y} r={onHoveredDate ? 6 : 4} fill="#FFFBF6" stroke={color} strokeWidth={2.5} />
+                    {/* A reading with a note gets a filled centre: just enough
+                        to say there is more to read on hover, without
+                        competing with the line. */}
+                    {p.point.note && <circle cx={p.x} cy={p.y} r={onHoveredDate ? 2.5 : 1.75} fill={color} />}
+                  </g>
                 )
               })}
             </g>
@@ -323,27 +324,37 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
             {[...hovered]
               .sort((a, b) => b.value - a.value)
               .map(p => (
-                <li key={p.id} className="flex items-center gap-2 text-sm whitespace-nowrap">
-                  <span
-                    className="w-3 h-1.5 rounded-full shrink-0"
-                    style={{ background: colorOf(p.id) }}
-                    aria-hidden="true"
-                  />
-                  <span className="text-brand-brown/70 flex-1">{p.label}</span>
-                  <span className="font-medium text-brand-brown">
-                    {p.value.toFixed(1)} {unit}
-                  </span>
+                <li key={p.id} className="text-sm">
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <span
+                      className="w-3 h-1.5 rounded-full shrink-0"
+                      style={{ background: colorOf(p.id) }}
+                      aria-hidden="true"
+                    />
+                    <span className="text-brand-brown/70 flex-1">{p.label}</span>
+                    <span className="font-medium text-brand-brown">
+                      {p.value.toFixed(1)} {unit}
+                    </span>
+                  </div>
+                  {/* w-max lets a note widen the box up to its cap, rather
+                      than wrapping to the width of the name and value. */}
+                  {p.note && <p className="w-max max-w-[14rem] text-xs text-brand-brown/60 pl-5 pb-0.5 leading-snug">{p.note}</p>}
                 </li>
               ))}
           </ul>
         </div>
       )}
 
-      {markers.length > 0 && (
+      {(markers.length > 0 || notes.length > 0) && (
         <ul className="sr-only">
           {markers.map(m => (
             <li key={`${m.date}-${m.kind}`}>
               {formatDateKey(m.date, { dateStyle: 'medium' })}: {m.lines.join('; ')}
+            </li>
+          ))}
+          {notes.map(n => (
+            <li key={`note-${n.id}`}>
+              {n.label}, {formatDateKey(n.point.date, { dateStyle: 'medium' })}: {n.point.value.toFixed(1)} {unit}, &ldquo;{n.point.note}&rdquo;
             </li>
           ))}
         </ul>

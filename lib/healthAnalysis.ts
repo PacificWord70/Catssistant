@@ -20,6 +20,12 @@ export interface SeriesPoint {
   date: string
   /** The measurement, in whatever unit the metric declares. */
   value: number
+  /**
+   * What the owner wrote beside a weight reading, shown when the date is
+   * hovered. Only weight carries one: a scheduled metric's point is a sum
+   * across a day's events, with no single note that belongs to it.
+   */
+  note?: string
 }
 
 /** @deprecated Use SeriesPoint. Kept so weight code reads naturally. */
@@ -73,7 +79,13 @@ export function chartRangeStart(today: string, range: ChartRange): string | unde
 export function weightSeries(records: HealthRecord[]): WeightPoint[] {
   return records
     .filter((r): r is HealthRecord & { weightLbs: number } => typeof r.weightLbs === 'number')
-    .map(r => ({ id: r.id, date: r.date, value: r.weightLbs }))
+    // A blank note is left off rather than carried as "", so a point only says
+    // it has a note when there is something to read.
+    .map(r => {
+      const point: WeightPoint = { id: r.id, date: r.date, value: r.weightLbs }
+      const note = r.notes?.trim()
+      return note ? { ...point, note } : point
+    })
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
