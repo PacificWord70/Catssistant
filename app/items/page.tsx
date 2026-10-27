@@ -12,6 +12,7 @@ import {
 import { CatalogProduct, HouseholdItem, ProductCategory } from '@/types/item'
 import { CATEGORY_ORDER, PRODUCT_CATEGORIES } from '@/lib/itemAttributes'
 import { formatDateKey, todayKey } from '@/lib/dateKeys'
+import { errorMessage } from '@/lib/formErrors'
 import ItemForm from '@/components/ItemForm'
 import Reveal from '@/components/motion/Reveal'
 
@@ -31,6 +32,8 @@ export default function ItemsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('current')
   const [sortBy, setSortBy] = useState<SortBy>('category')
   const [editing, setEditing] = useState<HouseholdItem | 'new' | null>(null)
+  /** Why the last "Mark past" didn't save. The button has no form of its own to show it in. */
+  const [markPastError, setMarkPastError] = useState<string | null>(null)
 
   if (!loaded) return null
 
@@ -49,14 +52,22 @@ export default function ItemsPage() {
 
   function handleMarkPast(e: React.MouseEvent, item: HouseholdItem) {
     e.stopPropagation()
-    dispatch(
-      persistHouseholdItem({
-        ...item,
-        status: 'past',
-        // Local day, not toISOString — that is the UTC day, already tomorrow in a US evening.
-        dateEnded: todayKey(),
-      }),
-    )
+    setMarkPastError(null)
+    // The save can be refused — storage full, or the example household — and
+    // an uncaught throw from a click handler would leave the button silently
+    // doing nothing.
+    try {
+      dispatch(
+        persistHouseholdItem({
+          ...item,
+          status: 'past',
+          // Local day, not toISOString — that is the UTC day, already tomorrow in a US evening.
+          dateEnded: todayKey(),
+        }),
+      )
+    } catch (err) {
+      setMarkPastError(errorMessage(err))
+    }
   }
 
   const rows = items
@@ -88,6 +99,12 @@ export default function ItemsPage() {
           </button>
         </div>
       </Reveal>
+
+      {markPastError && (
+        <p role="alert" className="mb-5 text-sm text-red-700">
+          {markPastError}
+        </p>
+      )}
 
       {items.length === 0 ? (
         <Reveal delay={0.1}>
