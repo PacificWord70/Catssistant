@@ -62,13 +62,9 @@ Recent decisions affecting current work:
 
 Next up, agreed with Heidi 2026-10-27:
 
-- **Example household for first-time visitors.** With no cats saved, show the
-  cat tree characters as a clearly labelled, view-only example — held in memory,
-  never stored, so it can't mix with real data or reach a backup. Home hero gets
-  "Add your first cat" and "Look around the example"; other pages a slim banner.
-  Pages stop redirecting empty visitors to onboarding; onboarding becomes where
-  "Add your first cat" leads. Saving a first real cat ends the example. Becomes
-  "not signed in" once accounts exist.
+- **Example household: done 2026-10-27.** Six cat tree characters (Biscuit,
+  Noodle, Miso, Pepper, Mochi, Pickle), in memory only, view only, ended by the
+  first real cat. The home tree's labels now sit on those cats' spots.
 - **Later: a help button on each page** showing that page with the example data
   and short notes on what it can do, for owners who have added a cat and aren't
   sure what to do next.
