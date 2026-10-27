@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { HealthRecord } from '@/types/healthRecord'
 import { Cat } from '@/types/cat'
 import { ScheduleEvent } from '@/types/scheduleEvent'
-import { catHealthSummary, chartGeometry, multiSeriesGeometry, weightSeries, weightTrend } from '@/lib/healthAnalysis'
+import {
+  catHealthSummary,
+  chartGeometry,
+  chartRangeStart,
+  multiSeriesGeometry,
+  weightSeries,
+  weightTrend,
+} from '@/lib/healthAnalysis'
 
 const PADDING = { top: 10, right: 10, bottom: 20, left: 30 }
 
@@ -241,5 +248,51 @@ describe('catHealthSummary', () => {
     ]
     expect(catHealthSummary(cat(), [], meds, TODAY).activeMeds).toBe(1)
     expect(catHealthSummary(cat(), [], meds.slice(2), TODAY).activeMeds).toBe(0)
+  })
+})
+
+describe('chartRangeStart', () => {
+  it('counts back whole months from today', () => {
+    expect(chartRangeStart('2026-10-27', '3m')).toBe('2026-07-27')
+    expect(chartRangeStart('2026-10-27', '1y')).toBe('2025-10-27')
+    expect(chartRangeStart('2026-10-27', '2y')).toBe('2024-10-27')
+  })
+
+  it('clamps to the end of a shorter month instead of spilling into the next', () => {
+    expect(chartRangeStart('2026-05-31', '3m')).toBe('2026-02-28')
+    expect(chartRangeStart('2024-02-29', '1y')).toBe('2023-02-28')
+  })
+
+  it('has no start for All, or for a date that is not real', () => {
+    expect(chartRangeStart('2026-10-27', 'all')).toBeUndefined()
+    expect(chartRangeStart('2026-02-30', '1y')).toBeUndefined()
+  })
+})
+
+describe('multiSeriesGeometry with a fixed domain', () => {
+  const series = [
+    {
+      id: 'a',
+      label: 'A',
+      points: [
+        { id: 'old', date: '2024-01-01', value: 8 },
+        { id: 'mid', date: '2026-04-01', value: 9 },
+        { id: 'new', date: '2026-10-01', value: 10 },
+      ],
+    },
+  ]
+
+  it('drops points outside the domain and spans the whole domain', () => {
+    const geo = multiSeriesGeometry(series, 640, 280, PADDING, 4, { from: '2025-10-27', to: '2026-10-27' })!
+    expect(geo.lines[0].points.map(p => p.point.id)).toEqual(['mid', 'new'])
+    expect(geo.from).toBe('2025-10-27')
+    expect(geo.to).toBe('2026-10-27')
+    // The last reading is a few weeks before the end of the domain, so it sits
+    // short of the right edge rather than on it.
+    expect(geo.lines[0].points[1].x).toBeLessThan(640 - PADDING.right)
+  })
+
+  it('returns nothing when no point falls inside the domain', () => {
+    expect(multiSeriesGeometry(series, 640, 280, PADDING, 4, { from: '2026-10-10', to: '2026-10-27' })).toBeUndefined()
   })
 })

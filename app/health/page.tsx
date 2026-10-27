@@ -21,7 +21,8 @@ import {
   selectScheduleEvents,
   selectScheduleLoaded,
 } from '@/store/selectors'
-import { catHealthSummary } from '@/lib/healthAnalysis'
+import { CHART_RANGES, ChartRange, catHealthSummary, chartRangeStart } from '@/lib/healthAnalysis'
+import SegmentedControl from '@/components/SegmentedControl'
 import { buildMetrics, metricsWithData } from '@/lib/healthMetrics'
 import { catWeightLbs } from '@/lib/utils'
 import { HealthRecord } from '@/types/healthRecord'
@@ -93,6 +94,13 @@ export default function HealthPage() {
      page of readings read as if the readings had not saved. Derived rather
      than written into state, so it follows the data arriving, and the first
      click on a metric builds on what is already shown. */
+  /* A year by default: long enough to show a trend, short enough that one
+     reading from three years ago doesn't flatten everything since. */
+  const [range, setRange] = useState<ChartRange>('1y')
+  const today = todayKey()
+  const rangeFrom = chartRangeStart(today, range)
+  const domain = rangeFrom ? { from: rangeFrom, to: today } : undefined
+
   const metricChoice = pickedMetrics ?? new Set(['weight'])
   const shownMetrics = available.filter(m => metricChoice.has(m.id))
 
@@ -299,6 +307,17 @@ export default function HealthPage() {
         </div>
       )}
 
+      {shownMetrics.length > 0 && selectedCats.length > 0 && (
+        <div className="mb-4">
+          <SegmentedControl
+            label="Time range"
+            options={CHART_RANGES.map(({ value, label }) => ({ value, label }))}
+            value={range}
+            onChange={setRange}
+          />
+        </div>
+      )}
+
       {shownMetrics.length === 0 && available.length > 0 && (
         <div className={`${CARD} mb-6 text-center py-10`}>
           <p className="text-brand-brown/60">Nothing charted yet.</p>
@@ -311,7 +330,9 @@ export default function HealthPage() {
           the cat colours. */}
       {shownMetrics.map(m => {
         const metricSeries = selectedCats.map(c => ({ id: c.id, label: c.name, points: m.seriesFor(c.id) }))
-        const hasPoints = metricSeries.some(x => x.points.length > 0)
+        const hasPoints = metricSeries.some(x =>
+          x.points.some(p => !domain || (p.date >= domain.from && p.date <= domain.to)),
+        )
         return (
           <Reveal key={m.id}>
             <div className={`${CARD} mb-6`}>
@@ -329,9 +350,12 @@ export default function HealthPage() {
                      clickable would open an editor for a record that is not
                      there. */
                   onSelect={m.id === 'weight' ? setEditingId : undefined}
+                  domain={domain}
                 />
               ) : (
-                <p className="text-center text-brand-brown/60 py-8">Nothing recorded for the selected cats.</p>
+                <p className="text-center text-brand-brown/60 py-8">
+                  {range === 'all' ? 'Nothing recorded for the selected cats.' : 'Nothing recorded in this time range.'}
+                </p>
               )}
             </div>
           </Reveal>

@@ -1,7 +1,7 @@
 import { HealthRecord } from '@/types/healthRecord'
 import { Cat } from '@/types/cat'
 import { ScheduleEvent } from '@/types/scheduleEvent'
-import { daysBetween, parseDateKey } from '@/lib/dateKeys'
+import { daysBetween, parseDateKey, toDateKey } from '@/lib/dateKeys'
 import { expandEvents } from '@/lib/scheduleUtils'
 import { catWeightLbs } from '@/lib/utils'
 
@@ -35,6 +35,33 @@ export type WeightPoint = SeriesPoint
  */
 function timeOf(key: string): number {
   return parseDateKey(key)?.getTime() ?? NaN
+}
+
+/** How far back the health charts look. */
+export type ChartRange = '3m' | '6m' | '1y' | '2y' | 'all'
+
+export const CHART_RANGES: { value: ChartRange; label: string; months?: number }[] = [
+  { value: '3m', label: '3 months', months: 3 },
+  { value: '6m', label: '6 months', months: 6 },
+  { value: '1y', label: '1 year', months: 12 },
+  { value: '2y', label: '2 years', months: 24 },
+  { value: 'all', label: 'All' },
+]
+
+/**
+ * The first day a range covers, counting back whole months from `today`, or
+ * undefined for "All". Built from local calendar fields so a range never starts
+ * a day off, and a month that is too short clamps (Mar 31 back one month is the
+ * last day of February) rather than spilling into the next month.
+ */
+export function chartRangeStart(today: string, range: ChartRange): string | undefined {
+  const months = CHART_RANGES.find(r => r.value === range)?.months
+  const date = parseDateKey(today)
+  if (!months || !date) return undefined
+  const target = new Date(date.getFullYear(), date.getMonth() - months, 1)
+  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate()
+  target.setDate(Math.min(date.getDate(), lastDay))
+  return toDateKey(target)
 }
 
 /**
@@ -182,8 +209,17 @@ export function multiSeriesGeometry(
   height: number,
   padding: { top: number; right: number; bottom: number; left: number },
   tickCount = 4,
+  /**
+   * A fixed span for the time axis. Without it the axis runs from the first
+   * reading to the last, so "1 year" with three readings in May would look like
+   * a busy month. Points outside it are dropped.
+   */
+  domain?: { from: string; to: string },
 ): MultiSeriesGeometry | undefined {
-  const withPoints = seriesList.filter(s => s.points.length > 0)
+  const inDomain = (date: string) => !domain || (date >= domain.from && date <= domain.to)
+  const withPoints = seriesList
+    .map(s => ({ ...s, points: s.points.filter(p => inDomain(p.date)) }))
+    .filter(s => s.points.length > 0)
   if (withPoints.length === 0) return undefined
 
   const allPoints = withPoints.flatMap(s => s.points)
@@ -199,8 +235,8 @@ export function multiSeriesGeometry(
   const yFor = (value: number) => padding.top + plotH - ((value - min) / (max - min)) * plotH
 
   const dates = allPoints.map(p => p.date).sort()
-  const from = dates[0]
-  const to = dates[dates.length - 1]
+  const from = domain?.from ?? dates[0]
+  const to = domain?.to ?? dates[dates.length - 1]
   const tMin = timeOf(from)
   const tMax = timeOf(to)
   const tSpan = tMax - tMin

@@ -17,6 +17,8 @@ interface Props {
    * exist.
    */
   onSelect?: (id: string) => void
+  /** Fixes the time axis to this span; see multiSeriesGeometry. */
+  domain?: { from: string; to: string }
 }
 
 const VIEW = { width: 640, height: 280 }
@@ -46,15 +48,19 @@ export function lineColor(index: number): string {
  */
 const MAX_DOTS = 40
 
-function shortDate(iso: string): string {
-  return formatDateKey(iso, { month: 'short', day: 'numeric' })
+/* The year is left off to keep labels short, but only when the whole chart
+   sits inside one year — a one-year range runs "Oct 27" to "Oct 27" otherwise,
+   which reads as a single day. */
+function shortDate(iso: string, withYear = false): string {
+  return formatDateKey(iso, withYear ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' })
 }
 
-export default function MetricChart({ series, unit, onSelect }: Props) {
+export default function MetricChart({ series, unit, onSelect, domain }: Props) {
   const [highlighted, setHighlighted] = useState<string | null>(null)
   const [hoveredDate, setHoveredDate] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const geo = multiSeriesGeometry(series, VIEW.width, VIEW.height, PADDING)
+  const geo = multiSeriesGeometry(series, VIEW.width, VIEW.height, PADDING, 4, domain)
+  const crossesYear = !!geo && geo.from.slice(0, 4) !== geo.to.slice(0, 4)
 
   /**
    * Every plotted point, grouped by the date it belongs to.
@@ -213,7 +219,7 @@ export default function MetricChart({ series, unit, onSelect }: Props) {
         )}
 
         <text x={PADDING.left} y={VIEW.height - 12} textAnchor="start" fontSize={11} fill="#6B4A34" opacity={0.65}>
-          {shortDate(geo.from)}
+          {shortDate(geo.from, crossesYear)}
         </text>
         {geo.from !== geo.to && (
           <text
@@ -224,7 +230,7 @@ export default function MetricChart({ series, unit, onSelect }: Props) {
             fill="#6B4A34"
             opacity={0.65}
           >
-            {shortDate(geo.to)}
+            {shortDate(geo.to, crossesYear)}
           </text>
         )}
       </svg>
@@ -240,7 +246,7 @@ export default function MetricChart({ series, unit, onSelect }: Props) {
             marginTop: -8,
           }}
         >
-          <p className="text-xs text-brand-brown/55 mb-1">{shortDate(hoveredDate!)}</p>
+          <p className="text-xs text-brand-brown/55 mb-1">{shortDate(hoveredDate!, crossesYear)}</p>
           <ul className="space-y-0.5">
             {[...hovered]
               .sort((a, b) => b.value - a.value)
