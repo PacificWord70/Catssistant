@@ -1,12 +1,18 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAppSelector } from '@/store/hooks'
 import { selectCatsByNewest, selectCatsLoaded } from '@/store/selectors'
 import CatCard from '@/components/CatCard'
 import Reveal from '@/components/motion/Reveal'
+
+/**
+ * Below this many cats the whole grid fits on one screen, and a search box
+ * would be clutter for the one- and two-cat households most owners are.
+ */
+const SEARCH_THRESHOLD = 4
 
 export default function CatsPage() {
   const router = useRouter()
@@ -15,6 +21,8 @@ export default function CatsPage() {
   // anywhere else in the app.
   const cats = useAppSelector(selectCatsByNewest)
   const loaded = useAppSelector(selectCatsLoaded)
+  const [query, setQuery] = useState('')
+  const searchId = useId()
 
   // Redirecting is a side effect, so it belongs in an effect rather than in the
   // render path. Waiting for `loaded` avoids bouncing to onboarding during the
@@ -24,6 +32,18 @@ export default function CatsPage() {
   }, [loaded, cats.length, router])
 
   if (!loaded || cats.length === 0) return null
+
+  const searchable = cats.length >= SEARCH_THRESHOLD
+  // Ignored once the box is hidden, so deleting down to a few cats cannot leave
+  // the grid filtered by a search the owner can no longer see or clear.
+  const needle = searchable ? query.trim().toLowerCase() : ''
+  const shown = needle
+    ? cats.filter(
+        cat =>
+          cat.name.toLowerCase().includes(needle) ||
+          cat.breed.some(b => b.toLowerCase().includes(needle)),
+      )
+    : cats
 
   return (
     <div className="bg-white rounded-3xl shadow-soft p-7 min-h-[calc(100vh-8rem)]">
@@ -38,13 +58,48 @@ export default function CatsPage() {
           </Link>
         </div>
       </Reveal>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {cats.map((cat, i) => (
-          <Reveal key={cat.id} delay={i * 0.05}>
-            <CatCard cat={cat} />
-          </Reveal>
-        ))}
-      </div>
+      {searchable && (
+        <div className="mb-6 max-w-sm">
+          <label htmlFor={searchId} className="block text-sm font-medium text-brand-brown mb-1.5">
+            Search your cats
+          </label>
+          <div className="relative">
+            <input
+              id={searchId}
+              type="search"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Name or breed"
+              className="w-full rounded-2xl border border-brand-tan/50 px-4 py-2.5 pr-20 text-sm text-brand-charcoal bg-white [&::-webkit-search-cancel-button]:appearance-none focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery('')
+                  document.getElementById(searchId)?.focus()
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl text-sm text-brand-slate hover:bg-brand-tan/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {shown.length === 0 ? (
+        <p role="status" className="text-brand-brown/70 py-10 text-center">
+          No cats match “{query.trim()}”.
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {shown.map((cat, i) => (
+            <Reveal key={cat.id} delay={i * 0.05}>
+              <CatCard cat={cat} />
+            </Reveal>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
