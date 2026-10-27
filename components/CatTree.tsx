@@ -79,36 +79,49 @@ interface Perch {
   region: Region
 }
 
+/* Each page sits where its cat will: the spot's place in the drawing is meant
+   to say something about the page, which is why Shopping is not on the
+   hammock. The cats are Heidi's drawings to come, and the same six characters
+   make up the example household (lib/exampleHousehold.ts).
+
+     Cat house     My Cats      Biscuit peeks out of the doorway — home
+     Top bed       Shopping     Noodle swats the dangling toy
+     2nd top bed   Schedule     Miso stares, because he knows when dinner is
+     Half-moon     Health Home  Pepper loafs in the bowl, which reads as a scale
+     Hammock       About        Mochi naps — the most trusting picture there is
+     Ledge         Resources    Pickle, a kitten still learning, on the smallest spot
+
+   Listed in nav order, which is also the keyboard order of the labels. */
 const PERCHES: Perch[] = [
   {
     href: '/cats', label: 'My Cats', blurb: 'A profile for every cat',
-    spot: 1, lines: -1.25, side: 'right', dot: { x: 636, y: 38 },
-    region: { seeds: [[530, 38]] },
-  },
-  {
-    href: '/health', label: 'Health Home', blurb: 'Weight and checkups',
-    spot: 2, lines: -1, side: 'left', dot: { x: 162, y: 226 },
-    region: { seeds: [[266, 226]] },
-  },
-  {
-    href: '/schedule', label: 'Schedule', blurb: 'Feeding, meds and vet visits',
     spot: 3, lines: 1.5, side: 'right', dot: { x: 668, y: 452 },
     region: { seeds: [[400, 500], [531, 470], [430, 390]] },
   },
   {
-    href: '/shopping', label: 'Shopping', blurb: 'Coming soon',
+    href: '/health', label: 'Health Home', blurb: 'Weight and checkups',
     spot: 4, lines: -1.5, side: 'left', dot: { x: 72, y: 600 },
     region: { seeds: [[135, 609]] },
   },
   {
+    href: '/schedule', label: 'Schedule', blurb: 'Feeding, meds and vet visits',
+    spot: 2, lines: -1, side: 'left', dot: { x: 162, y: 226 },
+    region: { seeds: [[266, 226]] },
+  },
+  {
+    href: '/shopping', label: 'Shopping', blurb: 'Coming soon',
+    spot: 1, lines: -1.25, side: 'right', dot: { x: 636, y: 38 },
+    region: { seeds: [[530, 38]] },
+  },
+  {
     href: '/resources', label: 'Resources', blurb: 'Guides and breed notes',
-    spot: 6, lines: -1, side: 'left', dot: { x: 420, y: 1040 },
-    region: { seeds: [[449, 1040]] },
+    spot: 7, lines: -0.5, side: 'right', dot: { x: 744, y: 767 },
+    region: { rect: { x: 664, y: 758, w: 112, h: 20 } },
   },
   {
     href: '/about', label: 'About', blurb: 'Who makes Catssistant',
-    spot: 7, lines: -0.5, side: 'right', dot: { x: 744, y: 767 },
-    region: { rect: { x: 664, y: 758, w: 112, h: 20 } },
+    spot: 6, lines: -1, side: 'left', dot: { x: 420, y: 1040 },
+    region: { seeds: [[449, 1040]] },
   },
 ]
 
