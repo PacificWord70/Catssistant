@@ -24,7 +24,7 @@ import {
 import { CHART_RANGES, ChartRange, catHealthSummary, chartRangeStart } from '@/lib/healthAnalysis'
 import SegmentedControl from '@/components/SegmentedControl'
 import { buildMetrics, metricsWithData } from '@/lib/healthMetrics'
-import { catWeightLbs } from '@/lib/utils'
+import { catLifeStage, catWeightLbs } from '@/lib/utils'
 import { HealthRecord } from '@/types/healthRecord'
 
 /* All/None sit at the head of both filter rows and have to look identical, so
@@ -330,27 +330,57 @@ export default function HealthPage() {
           the cat colours. */}
       {shownMetrics.map(m => {
         const metricSeries = selectedCats.map(c => ({ id: c.id, label: c.name, points: m.seriesFor(c.id) }))
-        const hasPoints = metricSeries.some(x =>
-          x.points.some(p => !domain || (p.date >= domain.from && p.date <= domain.to)),
-        )
-        return (
-          <Reveal key={m.id}>
+        /* Kittens get their own weight chart. A 2 lb kitten and a 13 lb adult
+           on one scale flatten every adult's change into a line, and a kitten's
+           climb is a different story anyway — growth, not a trend to watch. The
+           chart only appears when a selected cat is under a year old. */
+        const isKitten = (id: string) => catLifeStage(selectedCats.find(c => c.id === id)?.birthday) === 'Kitten'
+        const groups =
+          m.id === 'weight'
+            ? [
+                { key: 'adults', title: undefined as string | undefined, series: metricSeries.filter(x => !isKitten(x.id)) },
+                { key: 'kittens', title: 'Kittens', series: metricSeries.filter(x => isKitten(x.id)) },
+              ].filter(g => g.series.length > 0)
+            : [{ key: 'all', title: undefined as string | undefined, series: metricSeries }]
+        const split = groups.length > 1
+        const colorFor = (id: string) => lineColor(selectedCats.findIndex(c => c.id === id))
+        /* A kitten's whole life is shorter than a year, so a year-wide axis
+           squeezes all of it against the right edge. Its chart starts at the
+           first weigh-in instead, unless the range itself starts later. */
+        const kittenDomain = (series: typeof metricSeries) => {
+          const first = series.flatMap(x => x.points.map(p => p.date)).sort()[0]
+          return domain && first && first < domain.from ? domain : undefined
+        }
+        const inRange = (series: typeof metricSeries) =>
+          series.some(x => x.points.some(p => !domain || (p.date >= domain.from && p.date <= domain.to)))
+
+        return groups.map(group => (
+          <Reveal key={`${m.id}-${group.key}`}>
             <div className={`${CARD} mb-6`}>
               <h2 className="font-display text-xl text-brand-brown">
-                {m.label} <span className="text-base text-brand-brown/50">({m.unit})</span>
+                {split && group.title ? `${m.label}: ${group.title}` : m.label}{' '}
+                <span className="text-base text-brand-brown/50">({m.unit})</span>
               </h2>
-              {m.note && <p className="text-sm text-brand-brown/55 mb-4">{m.note}</p>}
-              {!m.note && <div className="mb-4" />}
-              {hasPoints ? (
+              {split && group.key === 'kittens' ? (
+                <p className="text-sm text-brand-brown/55 mb-4">
+                  Cats under a year old, on their own chart so their growth doesn&apos;t flatten everyone else&apos;s line.
+                </p>
+              ) : m.note ? (
+                <p className="text-sm text-brand-brown/55 mb-4">{m.note}</p>
+              ) : (
+                <div className="mb-4" />
+              )}
+              {inRange(group.series) ? (
                 <MetricChart
-                  series={metricSeries}
+                  series={group.series}
                   unit={m.unit}
                   /* Only weight points map to a stored record. Scheduled metrics
                      are aggregated per day with synthetic ids, so making them
                      clickable would open an editor for a record that is not
                      there. */
                   onSelect={m.id === 'weight' ? setEditingId : undefined}
-                  domain={domain}
+                  domain={group.key === 'kittens' ? kittenDomain(group.series) : domain}
+                  colorFor={colorFor}
                 />
               ) : (
                 <p className="text-center text-brand-brown/60 py-8">
@@ -359,7 +389,7 @@ export default function HealthPage() {
               )}
             </div>
           </Reveal>
-        )
+        ))
       })}
 
       {/* Weight drops out of `available` when none of the selected cats have a

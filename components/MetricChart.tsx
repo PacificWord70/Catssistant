@@ -19,6 +19,13 @@ interface Props {
   onSelect?: (id: string) => void
   /** Fixes the time axis to this span; see multiSeriesGeometry. */
   domain?: { from: string; to: string }
+  /**
+   * Colour for a series. By default it follows the series' position, which is
+   * wrong when a chart holds only some of the selected cats — the kitten chart
+   * would repaint its cats in the first colours — so the caller can pass each
+   * cat's own.
+   */
+  colorFor?: (id: string) => string
 }
 
 const VIEW = { width: 640, height: 280 }
@@ -55,7 +62,7 @@ function shortDate(iso: string, withYear = false): string {
   return formatDateKey(iso, withYear ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' })
 }
 
-export default function MetricChart({ series, unit, onSelect, domain }: Props) {
+export default function MetricChart({ series, unit, onSelect, domain, colorFor }: Props) {
   const [highlighted, setHighlighted] = useState<string | null>(null)
   const [hoveredDate, setHoveredDate] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -85,7 +92,7 @@ export default function MetricChart({ series, unit, onSelect, domain }: Props) {
 
   if (!geo) return null
 
-  const colorOf = (id: string) => lineColor(series.findIndex(s => s.id === id))
+  const colorOf = colorFor ?? ((id: string) => lineColor(series.findIndex(s => s.id === id)))
   const hovered = hoveredDate ? byDate.get(hoveredDate) : undefined
 
   /** Nearest date to the pointer, so hovering works between the markers too. */
