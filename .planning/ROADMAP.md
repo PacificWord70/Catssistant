@@ -77,6 +77,6 @@ planned phase work.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Care Event List View | n/a | Delivered as quick task 261027-ij6 | 2026-10-27 |
-| 2. Data Export & Import | n/a | Delivered as quick task 261027-ij6 | 2026-10-27 |
+| 1. Care Event List View | n/a | Delivered as quick task 261027-ij6 | 2026-10-26 |
+| 2. Data Export & Import | n/a | Delivered as quick task 261027-ij6 | 2026-10-26 |
 | 3. Health Tracking | n/a | Delivered out of order | 2026-08-24 |
