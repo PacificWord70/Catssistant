@@ -249,10 +249,13 @@ function SchedulePageContent() {
           onOpen={setEditingEvent}
         />
       ) : (
-        /* Calendar and the chosen day side by side once there is room, so
-           picking a day does not mean scrolling down to see what is on it. The
-           calendar's width is capped so its square days stay a sensible size. */
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,38rem)_minmax(18rem,1fr)] lg:items-start">
+        /* Side by side when the screen is wider than it is tall, so picking a
+           day doesn't mean scrolling down to see what's on it; stacked when it
+           is taller, where the calendar wants the full width. Shape rather than
+           a width breakpoint, because a tall monitor and a short laptop of the
+           same width want opposite layouts. `md` keeps a phone turned sideways
+           stacked: it is wide but has no room for two columns. */
+        <div className="grid gap-6 md:landscape:grid-cols-[minmax(0,38rem)_minmax(16rem,1fr)] md:landscape:items-start">
           <Reveal delay={0.1}>
             <ScheduleCalendar
               month={currentMonth}
@@ -268,7 +271,7 @@ function SchedulePageContent() {
           <Reveal delay={0.15}>
             <section
               aria-labelledby="selected-day-heading"
-              className="pt-6 border-t border-brand-tan/30 lg:pt-0 lg:border-t-0 lg:border-l lg:pl-6 lg:sticky lg:top-24"
+              className="pt-6 border-t border-brand-tan/30 md:landscape:pt-0 md:landscape:border-t-0 md:landscape:border-l md:landscape:pl-6 md:landscape:sticky md:landscape:top-24"
             >
               <h2 id="selected-day-heading" className="font-display text-xl text-brand-brown mb-1">
                 {formatDateLabel(selectedDate)}

@@ -67,8 +67,12 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
         {cells.map(cell => {
           const isSelected = cell.dateKey === selectedDate
           const categories = Array.from(new Set(cell.items.map(i => i.event.category)))
-          const shown = categories.slice(0, MAX_DOTS)
-          const extra = categories.length - shown.length
+          /* Feeding happens most days, so it gets a corner of its own instead of
+             taking one of the three slots and crowding out what's unusual. */
+          const hasFeeding = categories.includes('Feeding')
+          const others = categories.filter(c => c !== 'Feeding')
+          const shown = others.slice(0, MAX_DOTS)
+          const extra = others.length - shown.length
           return (
             <button
               key={cell.dateKey}
@@ -93,10 +97,13 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
                 ${cell.isToday && !isSelected ? 'ring-1 ring-brand-orange/50' : ''}
                 ${!cell.inCurrentMonth ? 'opacity-35' : ''}`}
             >
-              <span aria-hidden="true" className={`text-xs sm:text-sm leading-none ${cell.isToday && !isSelected ? 'font-bold text-brand-orange' : 'font-medium'}`}>
-                {cell.dayNumber}
+              <span aria-hidden="true" className="flex items-start justify-between leading-none">
+                <span className={`text-xs sm:text-sm ${cell.isToday && !isSelected ? 'font-bold text-brand-orange' : 'font-medium'}`}>
+                  {cell.dayNumber}
+                </span>
+                {hasFeeding && <span className="hidden sm:inline text-[11px] lg:text-[13px]">{CATEGORY_EMOJI.Feeding}</span>}
               </span>
-              {cell.items.length > 0 && (
+              {shown.length > 0 && (
                 <span aria-hidden="true" className="mt-auto flex items-center justify-center gap-0.5 leading-none">
                   {/* Dots on phones, where a day is about 40px across and emoji
                       cannot be told apart; small emoji once there is room. */}
