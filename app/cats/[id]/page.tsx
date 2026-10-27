@@ -84,7 +84,15 @@ export default function CatProfilePage() {
         {/* Photo hero */}
         <div className="h-64 bg-brand-tan/20 flex items-center justify-center overflow-hidden relative">
           {photoSrc ? (
-            <img src={photoSrc} alt={cat.name} className="w-full h-full object-cover" />
+            // Eager: the hero is the first thing on screen, and lazy-loading it
+            // would only delay the one photo the owner came here to see.
+            <img
+              src={photoSrc}
+              alt={cat.name}
+              loading="eager"
+              decoding="async"
+              className="w-full h-full object-cover"
+            />
           ) : (
             <CatAvatar cat={cat} size={210} />
           )}

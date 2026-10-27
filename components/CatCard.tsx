@@ -34,7 +34,15 @@ export default function CatCard({ cat }: Props) {
       >
         <div className="h-44 bg-brand-tan/20 flex items-center justify-center overflow-hidden flex-shrink-0">
           {photoSrc ? (
-            <img src={photoSrc} alt={cat.name} className="w-full h-full object-cover" />
+            // Lazy, because a long grid would otherwise fetch and decode every
+            // photo up front, including the ones far below the fold.
+            <img
+              src={photoSrc}
+              alt={cat.name}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover"
+            />
           ) : (
             // No photo, so fall back to the drawn avatar rather than a generic
             // emoji — it at least reflects this cat's colour and markings.
