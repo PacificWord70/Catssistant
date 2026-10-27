@@ -109,4 +109,95 @@ describe('chartMarkers', () => {
     expect(markers[0].catIds).toEqual(['a'])
     expect(markers[0].lines).toEqual(['Pepper: Senior breakfast (Senior pate)'])
   })
+
+  it('treats a later play start as an activity change, but not the first one', () => {
+    const markers = chartMarkers(
+      [
+        ev({ category: 'Play', title: 'Wand', date: '2025-06-01', recurrence: 'weekly', recurrenceEndDate: '2026-03-31',
+             playActivityType: 'Toy', playDetail: 'Feather wand', durationMinutes: 15, times: ['17:00'] }),
+        ev({ category: 'Play', title: 'Play sessions', date: '2026-04-01', recurrence: 'daily',
+             playActivityType: 'Toy', playDetail: 'Wand, then crinkle mice', durationMinutes: 15, times: ['08:30', '17:45'] }),
+      ],
+      NAMES,
+      ['a'],
+      '2025-01-01',
+      '2026-12-31',
+    )
+    expect(markers).toEqual([
+      { date: '2026-04-01', kind: 'activity', catIds: ['a'], lines: ['Pepper: Play sessions (Wand, then crinkle mice)'] },
+    ])
+  })
+
+  it('falls back to the activity type when a play event has no detail', () => {
+    const markers = chartMarkers(
+      [
+        ev({ category: 'Play', title: 'Wand', date: '2026-01-01', recurrence: 'weekly', playActivityType: 'Toy' }),
+        ev({ category: 'Play', title: 'Harness walk', date: '2026-02-01', recurrence: 'weekly', playActivityType: 'Walk' }),
+      ],
+      NAMES,
+      ['a'],
+      '2026-01-01',
+      '2026-12-31',
+    )
+    expect(markers.map(m => m.lines[0])).toEqual(['Pepper: Harness walk (Walk)'])
+  })
+
+  it('does not flag a cat whose play only carried on when a shared session was split', () => {
+    const shared = { playActivityType: 'Toy' as const, playDetail: 'Feather wand', durationMinutes: 15, times: ['17:00'] }
+    const markers = chartMarkers(
+      [
+        ev({ category: 'Play', title: 'Wand', date: '2025-01-01', recurrence: 'daily', catIds: ['a', 'b'],
+             recurrenceEndDate: '2026-03-31', ...shared }),
+        // Noodle carries on exactly as before; Pepper's sessions get longer.
+        ev({ category: 'Play', title: 'Wand', date: '2026-04-01', recurrence: 'daily', catIds: ['b'], ...shared }),
+        ev({ category: 'Play', title: 'Longer wand', date: '2026-04-01', recurrence: 'daily', catIds: ['a'],
+             ...shared, durationMinutes: 25 }),
+      ],
+      NAMES,
+      ['a', 'b'],
+      '2025-01-01',
+      '2026-12-31',
+    )
+    expect(markers).toHaveLength(1)
+    expect(markers[0].catIds).toEqual(['a'])
+    expect(markers[0].lines).toEqual(['Pepper: Longer wand (Feather wand)'])
+  })
+
+  it('counts a change in how many sessions a day as an activity change', () => {
+    const base = { category: 'Play' as const, recurrence: 'daily' as const, playActivityType: 'Toy' as const, durationMinutes: 15 }
+    const markers = chartMarkers(
+      [
+        ev({ ...base, title: 'Wand', date: '2026-01-01', recurrenceEndDate: '2026-03-31', times: ['17:00'] }),
+        ev({ ...base, title: 'Wand twice', date: '2026-04-01', times: ['08:00', '17:00'] }),
+      ],
+      NAMES,
+      ['a'],
+      '2026-01-01',
+      '2026-12-31',
+    )
+    expect(markers.map(m => [m.date, m.kind])).toEqual([['2026-04-01', 'activity']])
+  })
+
+  it('marks one-off Other events as life events, and skips recurring chores', () => {
+    const markers = chartMarkers(
+      [
+        ev({ category: 'Other', title: 'Came home', date: '2026-03-01' }),
+        ev({ category: 'Other', title: 'Wash the beds', date: '2026-01-05', recurrence: 'monthly' }),
+        ev({ category: 'Other', title: 'Boarding cattery', date: '2026-05-01', catIds: ['b'] }),
+      ],
+      NAMES,
+      ['a', 'b'],
+      '2026-01-01',
+      '2026-12-31',
+    )
+    expect(markers).toEqual([
+      { date: '2026-03-01', kind: 'life', catIds: ['a'], lines: ['Pepper: Came home'] },
+      { date: '2026-05-01', kind: 'life', catIds: ['b'], lines: ['Noodle: Boarding cattery'] },
+    ])
+  })
+
+  it('keeps a life event to the cat it belongs to', () => {
+    const events = [ev({ category: 'Other', title: 'Boarding cattery', date: '2026-05-01', catIds: ['b'] })]
+    expect(chartMarkers(events, NAMES, ['a'], '2026-01-01', '2026-12-31')).toEqual([])
+  })
 })

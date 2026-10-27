@@ -7,7 +7,7 @@ import { expandEvents } from '@/lib/scheduleUtils'
  * line can be read against what caused it: the vet visit, the new food, the
  * medicine starting.
  */
-export type MarkerKind = 'vet' | 'diet' | 'medication'
+export type MarkerKind = 'vet' | 'diet' | 'medication' | 'activity' | 'life'
 
 export interface ChartMarker {
   date: string
@@ -22,6 +22,8 @@ export const MARKER_KINDS: { kind: MarkerKind; label: string; emoji: string }[] 
   { kind: 'vet', label: 'Vet visits', emoji: '🩺' },
   { kind: 'diet', label: 'Diet changes', emoji: '🍽️' },
   { kind: 'medication', label: 'Medication', emoji: '💊' },
+  { kind: 'activity', label: 'Activity changes', emoji: '🧶' },
+  { kind: 'life', label: 'Life events', emoji: '📌' },
 ]
 
 /**
@@ -33,6 +35,12 @@ export const MARKER_KINDS: { kind: MarkerKind; label: string; emoji: string }[] 
  *   The very first feeding event is just when records began, not a change.
  * - Medication: the day a medicine was started or stopped. The daily doses in
  *   between would be a line on every day and say nothing.
+ * - Activity: a play event starting after the cat's first one, read the same
+ *   way as a feeding change — more play, or a different kind, can move a
+ *   weight line as surely as the food can.
+ * - Life: a one-off "Other" event, such as coming home or a stay at a
+ *   boarding cattery. A recurring one is a chore (washing the beds every
+ *   month), and a node on every month would bury the moments that matter.
  *
  * Markers of the same kind on the same day are merged, so two cats seen at one
  * visit draw one line, not two on top of each other.
@@ -61,26 +69,29 @@ export function chartMarkers(
     }
   }
 
-  // The first day each cat has any feeding recorded; starts after it are changes.
-  const firstFeeding = new Map<string, string>()
-  for (const e of events) {
-    if (e.category !== 'Feeding') continue
-    for (const id of e.catIds) {
-      const seen = firstFeeding.get(id)
-      if (!seen || e.date < seen) firstFeeding.set(id, e.date)
-    }
-  }
+  // The first day each cat has any feeding, or any play, recorded; starts
+  // after it are changes.
+  const firstFeeding = firstDates(events, 'Feeding')
+  const firstPlay = firstDates(events, 'Play')
   for (const e of events) {
     if (e.category === 'Feeding') {
       const changed = forCats(e).filter(
-        id => e.date > (firstFeeding.get(id) ?? e.date) && !continuesSameMeal(events, e, id),
+        id => e.date > (firstFeeding.get(id) ?? e.date) && !carriesOn(events, e, id, mealOf),
       )
       const food = [e.foodBrand, e.foodName].filter(Boolean).join(' ')
       add(e.date, 'diet', changed, food ? `${e.title} (${food})` : e.title)
+    } else if (e.category === 'Play') {
+      const changed = forCats(e).filter(
+        id => e.date > (firstPlay.get(id) ?? e.date) && !carriesOn(events, e, id, playOf),
+      )
+      const detail = e.playDetail || e.playActivityType
+      add(e.date, 'activity', changed, detail ? `${e.title} (${detail})` : e.title)
     } else if (e.category === 'Care Routine' && e.routineType === 'Changed food') {
       add(e.date, 'diet', forCats(e), e.title)
     } else if (e.category === 'Medication' && e.medicationStatus) {
       add(e.date, 'medication', forCats(e), `${e.medicationStatus} ${e.title}`)
+    } else if (e.category === 'Other' && e.recurrence === 'none') {
+      add(e.date, 'life', forCats(e), e.title)
     }
   }
 
@@ -98,27 +109,52 @@ export function chartMarkers(
   return [...merged.values()].sort((a, b) => a.date.localeCompare(b.date) || a.kind.localeCompare(b.kind))
 }
 
+/** The earliest date each cat appears in an event of `category`. */
+function firstDates(events: ScheduleEvent[], category: ScheduleEvent['category']): Map<string, string> {
+  const first = new Map<string, string>()
+  for (const e of events) {
+    if (e.category !== category) continue
+    for (const id of e.catIds) {
+      const seen = first.get(id)
+      if (!seen || e.date < seen) first.set(id, e.date)
+    }
+  }
+  return first
+}
+
+/** What a cat is fed by one feeding event: the food, and its own portion. */
+function mealOf(e: ScheduleEvent, catId: string): string {
+  const a = e.feedingAmounts?.find(f => f.catId === catId)
+  return `${e.foodBrand ?? ''}|${e.foodName ?? ''}|${a?.amount ?? ''}|${a?.unit ?? ''}`
+}
+
+/** What one play event asks of a cat: the activity, how long, how often. */
+function playOf(e: ScheduleEvent): string {
+  return `${e.playActivityType ?? ''}|${e.playDetail ?? ''}|${e.durationMinutes ?? ''}|${e.recurrence}|${e.times.length}`
+}
+
 /**
- * Whether a feeding event that starts today simply carries on what this cat was
- * already getting — the same food and amount from a meal that ended yesterday.
- * That happens when a shared meal is split up because one cat's food changed:
- * the others get a "new" event with nothing new in it, and flagging them as a
- * diet change would point at a cause that isn't there.
+ * Whether an event that starts today simply carries on what this cat already
+ * had — the same thing, in the same amount, from an event of the same kind
+ * that ended yesterday. That happens when a shared event is split up because
+ * one cat's part changed: the others get a "new" event with nothing new in
+ * it, and flagging them would point at a cause that isn't there.
  */
-function continuesSameMeal(events: ScheduleEvent[], next: ScheduleEvent, catId: string): boolean {
+function carriesOn(
+  events: ScheduleEvent[],
+  next: ScheduleEvent,
+  catId: string,
+  signature: (e: ScheduleEvent, catId: string) => string,
+): boolean {
   const start = parseDateKey(next.date)
   if (!start) return false
   const yesterday = toDateKey(new Date(start.getFullYear(), start.getMonth(), start.getDate() - 1))
-  const portion = (e: ScheduleEvent) => {
-    const a = e.feedingAmounts?.find(f => f.catId === catId)
-    return `${e.foodBrand ?? ''}|${e.foodName ?? ''}|${a?.amount ?? ''}|${a?.unit ?? ''}`
-  }
   return events.some(
     prev =>
-      prev.category === 'Feeding' &&
+      prev.category === next.category &&
       prev.id !== next.id &&
       prev.catIds.includes(catId) &&
       prev.recurrenceEndDate === yesterday &&
-      portion(prev) === portion(next),
+      signature(prev, catId) === signature(next, catId),
   )
 }
