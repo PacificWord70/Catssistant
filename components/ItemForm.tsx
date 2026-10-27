@@ -11,7 +11,8 @@ interface Props {
   cats: Cat[]
   products: CatalogProduct[]
   existing?: HouseholdItem
-  onSave: (item: HouseholdItem, newProduct?: CatalogProduct) => void
+  /** `product` is a new one, or the item's existing one with the owner's edits. Omitted when untouched. */
+  onSave: (item: HouseholdItem, product?: CatalogProduct) => void
   onCancel: () => void
   onDelete?: () => void
 }
@@ -25,10 +26,12 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
 
   const [productMode, setProductMode] = useState<'existing' | 'new'>(products.length === 0 ? 'new' : 'existing')
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '')
-  const [name, setName] = useState('')
-  const [brand, setBrand] = useState('')
-  const [category, setCategory] = useState<ProductCategory>('Food')
-  const [subCategory, setSubCategory] = useState('')
+  // When editing, these start as the item's product so it can be corrected in
+  // place. Products are shared, so the edit reaches every item that uses one.
+  const [name, setName] = useState(existingProduct?.name ?? '')
+  const [brand, setBrand] = useState(existingProduct?.brand ?? '')
+  const [category, setCategory] = useState<ProductCategory>(existingProduct?.category ?? 'Food')
+  const [subCategory, setSubCategory] = useState(existingProduct?.subCategory ?? '')
 
   const [status, setStatus] = useState<ItemStatus>(existing?.status ?? 'current')
   const [dateStarted, setDateStarted] = useState(existing?.dateStarted ?? '')
@@ -81,30 +84,43 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
     setSaveError(null)
 
     let productId: string
-    let newProduct: CatalogProduct | undefined
+    let product: CatalogProduct | undefined
+
+    const editingProduct = !!existing && !!existingProduct
+    const pickingExisting = !existing && productMode === 'existing' && products.length > 0
+    // This used to return silently, so Save simply did nothing.
+    if ((editingProduct || (!existing && !pickingExisting)) && !name.trim()) {
+      setNameError('Give the product a name.')
+      document.getElementById(ids.name)?.focus()
+      return
+    }
+    const productFields = {
+      name: name.trim(),
+      brand: brand.trim() || undefined,
+      category,
+      subCategory: subCategory.trim() || undefined,
+    }
 
     if (existing) {
       productId = existing.productId
-    } else if (productMode === 'existing' && products.length > 0) {
+      // Only passed on when something changed: saving bumps the product's
+      // updatedAt, which should mean the owner actually edited it.
+      if (
+        existingProduct &&
+        (productFields.name !== existingProduct.name ||
+          productFields.brand !== (existingProduct.brand || undefined) ||
+          productFields.category !== existingProduct.category ||
+          productFields.subCategory !== (existingProduct.subCategory || undefined))
+      ) {
+        product = { ...existingProduct, ...productFields }
+      }
+    } else if (pickingExisting) {
       // The select always holds one of the listed products, so this is not
       // something the owner can get wrong.
       productId = selectedProductId || products[0].id
     } else {
-      // This used to return silently, so Save simply did nothing.
-      if (!name.trim()) {
-        setNameError('Give the product a name.')
-        document.getElementById(ids.name)?.focus()
-        return
-      }
-      newProduct = {
-        id: crypto.randomUUID(),
-        name: name.trim(),
-        brand: brand.trim() || undefined,
-        category,
-        subCategory: subCategory.trim() || undefined,
-        createdAt: new Date().toISOString(),
-      }
-      productId = newProduct.id
+      product = { id: crypto.randomUUID(), ...productFields, createdAt: new Date().toISOString() }
+      productId = product.id
     }
 
     const item: HouseholdItem = {
@@ -122,7 +138,7 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
     // is out of room, say. The modal stays open with the entry intact and the
     // reason shown, rather than the save vanishing.
     try {
-      onSave(item, newProduct)
+      onSave(item, product)
     } catch (err) {
       setSaveError(errorMessage(err))
     }
@@ -156,6 +172,50 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
   const toggleClass = (on: boolean) =>
     `flex-1 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 ${on ? 'bg-white shadow-sm text-brand-brown' : 'text-brand-slate'}`
 
+  // Shared by "Add new product" and editing an item's product, so the two
+  // cannot drift apart.
+  const productInputs = (
+    <>
+      <div>
+        <label htmlFor={ids.name} className={labelClass}>
+          Name {required}
+        </label>
+        <input
+          id={ids.name}
+          type="text" required value={name}
+          onChange={e => { setName(e.target.value); if (e.target.value.trim()) setNameError(null) }}
+          aria-invalid={nameError ? true : undefined}
+          aria-describedby={nameError ? ids.nameError : undefined}
+          className={nameError ? inputClass.replace('border-brand-tan/50', 'border-red-400') : inputClass}
+        />
+        {nameError && <p id={ids.nameError} className="text-xs text-red-700 mt-1 px-1">{nameError}</p>}
+      </div>
+      <div>
+        <label htmlFor={ids.brand} className={labelClass}>Brand</label>
+        <input id={ids.brand} type="text" value={brand} onChange={e => setBrand(e.target.value)} className={inputClass} />
+      </div>
+      <div>
+        <label htmlFor={ids.category} className={labelClass}>
+          Category {required}
+        </label>
+        <select id={ids.category} required value={category} onChange={e => setCategory(e.target.value as ProductCategory)} className={inputClass}>
+          {PRODUCT_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+        </select>
+      </div>
+      <div>
+        <label htmlFor={ids.subCategory} className={labelClass}>Sub-category</label>
+        <input
+          id={ids.subCategory}
+          type="text"
+          placeholder='e.g. "Wet Food"'
+          value={subCategory}
+          onChange={e => setSubCategory(e.target.value)}
+          className={inputClass}
+        />
+      </div>
+    </>
+  )
+
   return (
     <Dialog labelledBy={ids.heading} onClose={onCancel} dirty={dirty} confirm={deleteConfirm}>
         <h2 id={ids.heading} className="font-display text-2xl text-brand-brown mb-5">{existing ? 'Edit Item' : 'Add Item'}</h2>
@@ -163,12 +223,19 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
 
           {/* ── Product ───────────────────────────────────────── */}
           {existing ? (
-            <div>
-              <span className={labelClass}>Product</span>
-              <p className="px-4 py-2.5 rounded-2xl bg-brand-tan/10 text-brand-charcoal text-sm">
-                {existingProduct ? productLabel(existingProduct) : 'Unknown product'}
-              </p>
-            </div>
+            existingProduct ? (
+              <>
+                {productInputs}
+                <p className="text-xs text-brand-brown/60 px-1">
+                  Changes to the product show on every item that uses it.
+                </p>
+              </>
+            ) : (
+              <div>
+                <span className={labelClass}>Product</span>
+                <p className="px-4 py-2.5 rounded-2xl bg-brand-tan/10 text-brand-charcoal text-sm">Unknown product</p>
+              </div>
+            )
           ) : (
             <>
               {products.length > 0 && (
@@ -210,45 +277,7 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
                   </select>
                 </div>
               ) : (
-                <>
-                  <div>
-                    <label htmlFor={ids.name} className={labelClass}>
-                      Name {required}
-                    </label>
-                    <input
-                      id={ids.name}
-                      type="text" required value={name}
-                      onChange={e => { setName(e.target.value); if (e.target.value.trim()) setNameError(null) }}
-                      aria-invalid={nameError ? true : undefined}
-                      aria-describedby={nameError ? ids.nameError : undefined}
-                      className={nameError ? inputClass.replace('border-brand-tan/50', 'border-red-400') : inputClass}
-                    />
-                    {nameError && <p id={ids.nameError} className="text-xs text-red-700 mt-1 px-1">{nameError}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor={ids.brand} className={labelClass}>Brand</label>
-                    <input id={ids.brand} type="text" value={brand} onChange={e => setBrand(e.target.value)} className={inputClass} />
-                  </div>
-                  <div>
-                    <label htmlFor={ids.category} className={labelClass}>
-                      Category {required}
-                    </label>
-                    <select id={ids.category} required value={category} onChange={e => setCategory(e.target.value as ProductCategory)} className={inputClass}>
-                      {PRODUCT_CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor={ids.subCategory} className={labelClass}>Sub-category</label>
-                    <input
-                      id={ids.subCategory}
-                      type="text"
-                      placeholder='e.g. "Wet Food"'
-                      value={subCategory}
-                      onChange={e => setSubCategory(e.target.value)}
-                      className={inputClass}
-                    />
-                  </div>
-                </>
+                productInputs
               )}
             </>
           )}
