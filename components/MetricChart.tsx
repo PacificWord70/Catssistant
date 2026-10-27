@@ -2,7 +2,8 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { multiSeriesGeometry, NamedSeries } from '@/lib/healthAnalysis'
-import { formatDateKey } from '@/lib/dateKeys'
+import { formatDateKey, parseDateKey } from '@/lib/dateKeys'
+import { ChartMarker, MARKER_KINDS, MarkerKind } from '@/lib/chartMarkers'
 
 interface Props {
   series: NamedSeries[]
@@ -26,6 +27,16 @@ interface Props {
    * cat's own.
    */
   colorFor?: (id: string) => string
+  /** Events drawn as dated lines behind the data — see lib/chartMarkers. */
+  markers?: ChartMarker[]
+}
+
+/* Each kind of marker in its own brand tone, so a vet visit and a diet change on
+   neighbouring days can be told apart before reading the icon. */
+const MARKER_COLOR: Record<MarkerKind, string> = {
+  vet: '#5F8AA8',
+  diet: '#F26A1B',
+  medication: '#6B4A34',
 }
 
 const VIEW = { width: 640, height: 280 }
@@ -62,7 +73,7 @@ function shortDate(iso: string, withYear = false): string {
   return formatDateKey(iso, withYear ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' })
 }
 
-export default function MetricChart({ series, unit, onSelect, domain, colorFor }: Props) {
+export default function MetricChart({ series, unit, onSelect, domain, colorFor, markers = [] }: Props) {
   const [highlighted, setHighlighted] = useState<string | null>(null)
   const [hoveredDate, setHoveredDate] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -93,6 +104,19 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor }
   if (!geo) return null
 
   const colorOf = colorFor ?? ((id: string) => lineColor(series.findIndex(s => s.id === id)))
+
+  /** Where a date falls on the time axis, or undefined if off the chart. */
+  const markerX = (() => {
+    const start = parseDateKey(geo.from)?.getTime()
+    const end = parseDateKey(geo.to)?.getTime()
+    if (start === undefined || end === undefined || end <= start) return undefined
+    const plotW = VIEW.width - PADDING.left - PADDING.right
+    return (date: string) => {
+      const t = parseDateKey(date)?.getTime()
+      if (t === undefined || t < start || t > end) return undefined
+      return PADDING.left + ((t - start) / (end - start)) * plotW
+    }
+  })()
   const hovered = hoveredDate ? byDate.get(hoveredDate) : undefined
 
   /** Nearest date to the pointer, so hovering works between the markers too. */
@@ -142,6 +166,39 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor }
             </text>
           </g>
         ))}
+
+        {/* What happened, behind the data: a dashed line on the day, with its
+            icon at the top. Several kinds on one day stack their icons. */}
+        {markerX &&
+          markers.map(m => {
+            const x = markerX(m.date)
+            if (x === undefined) return null
+            const stack = markers.filter(o => o.date === m.date).findIndex(o => o.kind === m.kind)
+            const emoji = MARKER_KINDS.find(k => k.kind === m.kind)?.emoji
+            // One cat's event takes that cat's colour, so it reads against its
+            // own line; an event shared by several cats keeps the kind's tone.
+            const stroke = m.catIds.length === 1 ? colorOf(m.catIds[0]) : MARKER_COLOR[m.kind]
+            // Pointing at a cat in the key isolates its events along with its line.
+            const faded = highlighted !== null && !m.catIds.includes(highlighted)
+            return (
+              <g key={`${m.date}-${m.kind}`} opacity={faded ? 0.12 : 1} style={{ transition: 'opacity 0.15s ease' }}>
+                <title>{`${formatDateKey(m.date, { dateStyle: 'medium' })}\n${m.lines.join('\n')}`}</title>
+                <line
+                  x1={x}
+                  y1={PADDING.top}
+                  x2={x}
+                  y2={VIEW.height - PADDING.bottom}
+                  stroke={stroke}
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                  opacity={0.7}
+                />
+                <text x={x} y={PADDING.top + 4 + stack * 15} textAnchor="middle" fontSize={12}>
+                  {emoji}
+                </text>
+              </g>
+            )
+          })}
 
         {/* Guide for the hovered date, so it is clear every marker on it belongs
             to the same day even when the lines are far apart. */}
@@ -272,6 +329,16 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor }
               ))}
           </ul>
         </div>
+      )}
+
+      {markers.length > 0 && (
+        <ul className="sr-only">
+          {markers.map(m => (
+            <li key={`${m.date}-${m.kind}`}>
+              {formatDateKey(m.date, { dateStyle: 'medium' })}: {m.lines.join('; ')}
+            </li>
+          ))}
+        </ul>
       )}
 
       {/* The key. Hovering one fades the others. */}

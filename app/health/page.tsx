@@ -22,6 +22,7 @@ import {
   selectScheduleLoaded,
 } from '@/store/selectors'
 import { CHART_RANGES, ChartRange, catHealthSummary, chartRangeStart } from '@/lib/healthAnalysis'
+import { MARKER_KINDS, MarkerKind, chartMarkers } from '@/lib/chartMarkers'
 import SegmentedControl from '@/components/SegmentedControl'
 import { buildMetrics, metricsWithData } from '@/lib/healthMetrics'
 import { catLifeStage, catWeightLbs } from '@/lib/utils'
@@ -97,6 +98,16 @@ export default function HealthPage() {
   /* A year by default: long enough to show a trend, short enough that one
      reading from three years ago doesn't flatten everything since. */
   const [range, setRange] = useState<ChartRange>('1y')
+  /* Vet visits and diet changes on by default: they are what explain a turn in
+     a weight line, which is the point of putting them there. */
+  const [markerKinds, setMarkerKinds] = useState<Set<MarkerKind>>(() => new Set<MarkerKind>(['vet', 'diet']))
+  function toggleMarker(kind: MarkerKind) {
+    const next = new Set(markerKinds)
+    if (next.has(kind)) next.delete(kind)
+    else next.add(kind)
+    setMarkerKinds(next)
+  }
+  const catNameMap = useMemo(() => new Map(cats.map(c => [c.id, c.name])), [cats])
   const today = todayKey()
   const rangeFrom = chartRangeStart(today, range)
   const domain = rangeFrom ? { from: rangeFrom, to: today } : undefined
@@ -308,13 +319,39 @@ export default function HealthPage() {
       )}
 
       {shownMetrics.length > 0 && selectedCats.length > 0 && (
-        <div className="mb-4">
+        <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
           <SegmentedControl
             label="Time range"
             options={CHART_RANGES.map(({ value, label }) => ({ value, label }))}
             value={range}
             onChange={setRange}
           />
+          {shownMetrics.some(m => m.id === 'weight') && (
+            <div role="group" aria-labelledby="marker-toggles-label" className="flex flex-wrap items-center gap-1.5">
+              <span id="marker-toggles-label" className="text-xs text-brand-brown/60 mr-1">
+                Show on weight chart
+              </span>
+              {MARKER_KINDS.map(k => {
+                const on = markerKinds.has(k.kind)
+                return (
+                  <button
+                    key={k.kind}
+                    type="button"
+                    onClick={() => toggleMarker(k.kind)}
+                    aria-pressed={on}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 ${
+                      on
+                        ? 'border-brand-orange bg-brand-orange/10 text-brand-brown'
+                        : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
+                    }`}
+                  >
+                    <span aria-hidden="true">{k.emoji}</span>
+                    {k.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -351,6 +388,12 @@ export default function HealthPage() {
           const first = series.flatMap(x => x.points.map(p => p.date)).sort()[0]
           return domain && first && first < domain.from ? domain : undefined
         }
+        const markersFor = (series: typeof metricSeries, span: typeof domain) => {
+          if (markerKinds.size === 0) return []
+          const from = span?.from ?? series.flatMap(x => x.points.map(p => p.date)).sort()[0]
+          if (!from) return []
+          return chartMarkers(events, catNameMap, series.map(x => x.id), from, today).filter(mk => markerKinds.has(mk.kind))
+        }
         const inRange = (series: typeof metricSeries) =>
           series.some(x => x.points.some(p => !domain || (p.date >= domain.from && p.date <= domain.to)))
 
@@ -381,6 +424,7 @@ export default function HealthPage() {
                   onSelect={m.id === 'weight' ? setEditingId : undefined}
                   domain={group.key === 'kittens' ? kittenDomain(group.series) : domain}
                   colorFor={colorFor}
+                  markers={m.id === 'weight' ? markersFor(group.series, group.key === 'kittens' ? kittenDomain(group.series) : domain) : undefined}
                 />
               ) : (
                 <p className="text-center text-brand-brown/60 py-8">
