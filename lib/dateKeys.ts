@@ -9,8 +9,8 @@
  * - `new Date('2026-10-26')` parses a bare date as UTC midnight, which west of
  *   Greenwich is still the evening before — the day displays one short.
  *
- * `lib/scheduleUtils.ts` carries its own copy of the first two helpers; new code
- * should import from here.
+ * Every date key in the app comes from here; `lib/scheduleUtils.ts` re-exports
+ * `toDateKey` only so older imports keep working.
  */
 
 const KEY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/

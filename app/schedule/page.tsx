@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState, useSyncExternalStore } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { persistScheduleEvent, removeScheduleEvent } from '@/store/scheduleSlice'
 import { persistHealthRecord } from '@/store/healthSlice'
@@ -15,10 +15,13 @@ import {
 import { ScheduleCategory, ScheduleEvent } from '@/types/scheduleEvent'
 import { SCHEDULE_CATEGORIES } from '@/lib/scheduleAttributes'
 import { HealthRecord } from '@/types/healthRecord'
-import { buildMonthGrid, formatDateLabel, formatTimesLabel, CATEGORY_EMOJI, adjustedDateNote } from '@/lib/scheduleUtils'
+import { buildMonthGrid, formatDateLabel, CATEGORY_EMOJI } from '@/lib/scheduleUtils'
 import { todayKey } from '@/lib/dateKeys'
 import CatAvatar from '@/components/CatAvatar'
 import ScheduleCalendar from '@/components/ScheduleCalendar'
+import ScheduleList from '@/components/ScheduleList'
+import ScheduleEventRow from '@/components/ScheduleEventRow'
+import SegmentedControl from '@/components/SegmentedControl'
 import ScheduleEventForm from '@/components/ScheduleEventForm'
 import WeightLogForm from '@/components/WeightLogForm'
 import Reveal from '@/components/motion/Reveal'
@@ -34,8 +37,43 @@ const CHIP = (on: boolean) =>
       : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
   }`
 
+type ScheduleView = 'calendar' | 'list'
+
+const VIEW_OPTIONS: { value: ScheduleView; label: string }[] = [
+  { value: 'calendar', label: 'Calendar' },
+  { value: 'list', label: 'List' },
+]
+
+/* useSearchParams has to sit under a Suspense boundary, or Next gives up on
+   prerendering the route. The page renders nothing until the store has loaded
+   anyway, so an empty fallback costs nothing. */
 export default function SchedulePage() {
+  return (
+    <Suspense fallback={null}>
+      <SchedulePageContent />
+    </Suspense>
+  )
+}
+
+const noSubscribe = () => () => {}
+
+/**
+ * False while React hydrates server HTML, true from then on. A Suspense
+ * boundary hydrates after the rest of the page, by which time StoreProvider's
+ * effect has already loaded the store — so without this the first client
+ * render shows the schedule where the server sent nothing, and React throws
+ * the tree away as a hydration mismatch. The server snapshot is what hydration
+ * reads, so it matches; the switch to true needs no effect.
+ */
+function useHydrated(): boolean {
+  return useSyncExternalStore(noSubscribe, () => true, () => false)
+}
+
+function SchedulePageContent() {
+  const hydrated = useHydrated()
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const dispatch = useAppDispatch()
   const cats = useAppSelector(selectAllCats)
   const events = useAppSelector(selectScheduleEvents)
@@ -61,11 +99,24 @@ export default function SchedulePage() {
 
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | 'new' | null>(null)
 
+  /* The view lives in the URL rather than in state or storage, so a link to
+     ?view=list opens the list and Back leaves the page rather than flipping
+     views. The calendar stays the default: it's the view the page has always
+     opened on, and the one that shows a month at a glance. */
+  const view: ScheduleView = searchParams.get('view') === 'list' ? 'list' : 'calendar'
+  function changeView(next: ScheduleView) {
+    const params = new URLSearchParams(searchParams.toString())
+    if (next === 'list') params.set('view', 'list')
+    else params.delete('view')
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }
+
   useEffect(() => {
     if (loaded && cats.length === 0) router.replace('/onboarding')
   }, [loaded, cats.length, router])
 
-  if (!loaded || cats.length === 0) return null
+  if (!hydrated || !loaded || cats.length === 0) return null
 
   function handleWeightSave(record: HealthRecord) {
     dispatch(persistHealthRecord(record))
@@ -156,6 +207,7 @@ export default function SchedulePage() {
 
       <Reveal delay={0.05}>
         <div className="mb-4 space-y-3">
+          <SegmentedControl label="Schedule view" options={VIEW_OPTIONS} value={view} onChange={changeView} />
           {/* Labelled and wrapping, rather than two anonymous rows that ran off
               the side of a phone and had to be scrolled sideways to read. */}
           <div>
@@ -187,54 +239,49 @@ export default function SchedulePage() {
         </div>
       </Reveal>
 
-      <Reveal delay={0.1}>
-        <ScheduleCalendar
-          month={currentMonth}
-          cells={cells}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
-          onPrevMonth={() => shiftMonth(-1)}
-          onNextMonth={() => shiftMonth(1)}
-          onToday={goToday}
+      {/* No Reveal around the list: it waits until a fifth of its own height is
+          on screen, and a month of daily events is many screens tall, so the
+          list would never fade in at all. */}
+      {view === 'list' ? (
+        <ScheduleList
+          events={visibleEvents}
+          totalEvents={events.length}
+          today={todayKey()}
+          catNames={catNames}
+          onOpen={setEditingEvent}
         />
-      </Reveal>
+      ) : (
+        <>
+          <Reveal delay={0.1}>
+            <ScheduleCalendar
+              month={currentMonth}
+              cells={cells}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              onPrevMonth={() => shiftMonth(-1)}
+              onNextMonth={() => shiftMonth(1)}
+              onToday={goToday}
+            />
+          </Reveal>
 
-      <Reveal delay={0.15}>
-        <div className="mt-6 pt-6 border-t border-brand-tan/30">
-          <h3 className="text-sm font-semibold text-brand-slate mb-2">{formatDateLabel(selectedDate)}</h3>
-          {selectedItems.length === 0 ? (
-            <p className="text-brand-brown/60 text-sm py-4">Nothing scheduled this day.</p>
-          ) : (
-            <div className="space-y-2">
-              {selectedItems.map((item, i) => {
-                const { event } = item
-                const note = adjustedDateNote(item)
-                return (
-                  <button
-                    key={`${event.id}-${i}`}
-                    onClick={() => setEditingEvent(event)}
-                    className="hover-lift w-full flex items-center gap-3 px-4 py-3 bg-brand-tan/10 rounded-2xl hover:bg-brand-tan/20 transition-colors text-left"
-                  >
-                    <span className="text-5xl select-none leading-none" aria-hidden="true">{CATEGORY_EMOJI[event.category]}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-brand-charcoal truncate">
-                        {/* The emoji is the category for sighted users; this says it in words. */}
-                        <span className="sr-only">{event.category}: </span>
-                        {event.title}
-                      </p>
-                      {catNames(event.catIds) && <p className="text-xs text-brand-brown/60">{catNames(event.catIds)}</p>}
-                      {note && <p className="text-xs text-brand-orange/80 mt-0.5">{note}</p>}
-                    </div>
-                    {(event.times.length > 0 || event.durationMinutes) && (
-                      <span className="text-xs text-brand-brown/60 flex-shrink-0">{formatTimesLabel(event.times, event.durationMinutes)}</span>
-                    )}
-                  </button>
-                )
-              })}
+          <Reveal delay={0.15}>
+            <div className="mt-6 pt-6 border-t border-brand-tan/30">
+              <h3 className="text-sm font-semibold text-brand-slate mb-2">{formatDateLabel(selectedDate)}</h3>
+              {selectedItems.length === 0 ? (
+                <p className="text-brand-brown/60 text-sm py-4">Nothing scheduled this day.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {selectedItems.map((item, i) => (
+                    <li key={`${item.event.id}-${i}`}>
+                      <ScheduleEventRow item={item} catNames={catNames(item.event.catIds)} onOpen={() => setEditingEvent(item.event)} />
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          )}
-        </div>
-      </Reveal>
+          </Reveal>
+        </>
+      )}
 
       {editingEvent && (
         <ScheduleEventForm

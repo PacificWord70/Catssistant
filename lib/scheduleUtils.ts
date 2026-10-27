@@ -1,4 +1,5 @@
 import { ScheduleEvent, ScheduleCategory } from '@/types/scheduleEvent'
+import { parseDateKey, toDateKey } from '@/lib/dateKeys'
 
 export interface AgendaItem {
   event: ScheduleEvent
@@ -16,14 +17,9 @@ export const CATEGORY_EMOJI: Record<ScheduleCategory, string> = {
   Other: '📌',
 }
 
-export function toDateKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function parseDateKey(key: string): Date {
-  const [y, m, d] = key.split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
+/* Re-exported so existing `toDateKey` imports from here keep working; the one
+   implementation lives in lib/dateKeys.ts. */
+export { toDateKey }
 
 export interface DayCell {
   dateKey: string
@@ -102,7 +98,11 @@ export function expandEvents(events: ScheduleEvent[], rangeStart: Date, rangeEnd
       continue
     }
 
+    // A stored date that isn't a real day can't anchor a series. The old local
+    // parser produced an Invalid Date here, whose "NaN-NaN-NaN" key stopped
+    // every loop at once — skipping says the same thing on purpose.
     const anchor = parseDateKey(event.date)
+    if (!anchor) continue
     const recurEndKey = event.recurrenceEndDate && event.recurrenceEndDate < endKey ? event.recurrenceEndDate : endKey
 
     if (event.recurrence === 'monthly') {
@@ -153,6 +153,7 @@ export function groupByDate(items: AgendaItem[]): { date: string; items: AgendaI
 
 export function formatDateLabel(dateKey: string): string {
   const date = parseDateKey(dateKey)
+  if (!date) return dateKey
   const today = toDateKey(new Date())
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
