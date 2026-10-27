@@ -136,17 +136,18 @@ const CATS: {
   rect: Rect
   hoverRect: Rect
   /**
-   * Lies *in* its perch: the body is drawn behind the tree so the bowl or sling
-   * covers it, and the head is drawn again in front so it peeks out over the
-   * edge. Needs a `-head` image for each pose.
+   * Lies *in* its perch: the cat is drawn behind the tree so the bowl or sling
+   * covers its body, and these parts are drawn again in front of it — a tail
+   * draped over the edge, a head resting on it. Each needs a `-head` or
+   * `-tail` image per pose, lifted from the drawing's own closed shapes.
    */
-  behind?: boolean
+  inFront?: ('head' | 'tail')[]
 }[] = [
   { href: '/cats', name: 'biscuit', rect: { x: 463, y: 414, w: 180, h: 180 }, hoverRect: { x: 450, y: 403, w: 193, h: 191 } },
   { href: '/shopping', name: 'noodle', rect: { x: 456, y: -132, w: 231, h: 229 }, hoverRect: { x: 456, y: -132, w: 231, h: 229 } },
   { href: '/schedule', name: 'miso', rect: { x: 179, y: 61, w: 155, h: 179 }, hoverRect: { x: 138, y: 61, w: 196, h: 179 } },
-  { href: '/health', name: 'pepper', behind: true, rect: { x: 36, y: 514, w: 204, h: 147 }, hoverRect: { x: 36, y: 514, w: 203, h: 161 } },
-  { href: '/about', name: 'mochi', behind: true, rect: { x: 323, y: 933, w: 222, h: 147 }, hoverRect: { x: 348, y: 933, w: 197, h: 153 } },
+  { href: '/health', name: 'pepper', inFront: ['tail'], rect: { x: 36, y: 514, w: 204, h: 147 }, hoverRect: { x: 36, y: 514, w: 203, h: 161 } },
+  { href: '/about', name: 'mochi', inFront: ['head', 'tail'], rect: { x: 323, y: 933, w: 222, h: 147 }, hoverRect: { x: 348, y: 933, w: 197, h: 153 } },
   { href: '/resources', name: 'pickle', rect: { x: 668, y: 681, w: 101, h: 98 }, hoverRect: { x: 676, y: 684, w: 94, h: 94 } },
 ]
 
@@ -274,9 +275,9 @@ export default function CatTree() {
 
   /* Both poses are always in the page and swap by opacity, so hovering never
      waits on a download. */
-  const renderCat = (cat: (typeof CATS)[number], part: 'whole' | 'head' = 'whole') => {
+  const renderCat = (cat: (typeof CATS)[number], part: 'whole' | 'head' | 'tail' = 'whole') => {
     const on = hovered === cat.href
-    const suffix = part === 'head' ? '-head' : ''
+    const suffix = part === 'whole' ? '' : `-${part}`
     return (
       <span key={`${cat.name}-${part}`} aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -345,7 +346,7 @@ export default function CatTree() {
             </div>
           ))}
 
-        {CATS.filter(cat => cat.behind).map(cat => renderCat(cat))}
+        {CATS.filter(cat => cat.inFront).map(cat => renderCat(cat))}
 
         <img
           src={layers?.base ?? SRC}
@@ -386,8 +387,8 @@ export default function CatTree() {
 
         {/* The cats, in front of the tree and its toys — except those that
             lie in their perch, drawn before the tree above. */}
-        {CATS.filter(cat => !cat.behind).map(cat => renderCat(cat))}
-        {CATS.filter(cat => cat.behind).map(cat => renderCat(cat, 'head'))}
+        {CATS.filter(cat => !cat.inFront).map(cat => renderCat(cat))}
+        {CATS.flatMap(cat => (cat.inFront ?? []).map(part => renderCat(cat, part)))}
 
         {layers && (
           <div
