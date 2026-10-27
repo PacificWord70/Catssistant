@@ -683,7 +683,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       id: 'vet-checkup',
       catIds: [PEPPER],
       title: 'Thyroid bloodwork',
-      date: day(-21),
+      date: day(-25),
       times: ['14:30'],
       durationMinutes: 45,
       estimatedCost: 160,
