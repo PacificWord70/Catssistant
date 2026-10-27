@@ -67,8 +67,7 @@ export function loadHealthRecords() {
 
 export function persistHealthRecord(record: HealthRecord) {
   return (dispatch: AppDispatch) => {
-    writeToStorage(record)
-    dispatch(healthRecordSaved(record))
+    dispatch(healthRecordSaved(writeToStorage(record)))
   }
 }
 

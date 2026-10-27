@@ -7,6 +7,8 @@ export interface CatalogProduct {
   category: ProductCategory
   subCategory?: string   // free-text finer distinction, e.g. "Wet Food" / "Dry Food"
   createdAt: string
+  /** Last saved, ISO timestamp. Absent on older records; see Cat.updatedAt. */
+  updatedAt?: string
 }
 
 export type ItemStatus = 'current' | 'past'
@@ -20,4 +22,6 @@ export interface HouseholdItem {
   catIds: string[]        // references existing Cat.id values, may be empty
   notes?: string
   createdAt: string
+  /** Last saved, ISO timestamp. Absent on older records; see Cat.updatedAt. */
+  updatedAt?: string
 }

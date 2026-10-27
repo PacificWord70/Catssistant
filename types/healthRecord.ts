@@ -19,4 +19,6 @@ export interface HealthRecord {
   weightLbs?: number
   notes?: string
   createdAt: string
+  /** Last saved, ISO timestamp. Absent on older records; see Cat.updatedAt. */
+  updatedAt?: string
 }

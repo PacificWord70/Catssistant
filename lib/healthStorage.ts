@@ -1,5 +1,5 @@
 import { HealthRecord } from '@/types/healthRecord'
-import { readList, readListForWrite, upsertById, writeList } from '@/lib/storageSafety'
+import { readList, readListForWrite, stamped, upsertById, writeList } from '@/lib/storageSafety'
 
 /** Exported for `deleteCat` in lib/storage.ts, which clears a cat's readings along with it. */
 export const HEALTH_KEY = 'catssistant_health_records'
@@ -19,8 +19,11 @@ export function getHealthRecordsForCat(catId: string): HealthRecord[] {
   return getHealthRecords().filter(r => r.catId === catId)
 }
 
-export function saveHealthRecord(record: HealthRecord): void {
-  writeList(HEALTH_KEY, upsertById(readListForWrite<HealthRecord>(HEALTH_KEY), record))
+/** Returns the record as stored, with `updatedAt` stamped — dispatch that one. */
+export function saveHealthRecord(record: HealthRecord): HealthRecord {
+  const saved = stamped(record)
+  writeList(HEALTH_KEY, upsertById(readListForWrite<HealthRecord>(HEALTH_KEY), saved))
+  return saved
 }
 
 export function deleteHealthRecord(id: string): void {

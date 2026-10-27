@@ -13,6 +13,7 @@ const MORE_LINKS = [
   { href: '/items',     label: 'My Items' },
   { href: '/resources', label: 'Resources' },
   { href: '/about',     label: 'About' },
+  { href: '/backup',    label: 'Backup' },
 ]
 
 /* No Home link: the logo beside these already goes there, and the bar is hidden

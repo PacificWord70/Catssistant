@@ -49,4 +49,11 @@ export interface Cat {
   knownIllnesses?: string[]
   notes?: string
   createdAt: string
+  /**
+   * When this record was last saved, as an ISO timestamp. Stamped by the save
+   * function in lib/, never by a form. Records saved before it existed have
+   * none; anything comparing ages reads `updatedAt ?? createdAt`
+   * (see `lastChanged` in lib/backup.ts) rather than inventing a time for them.
+   */
+  updatedAt?: string
 }

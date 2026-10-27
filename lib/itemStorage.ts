@@ -1,8 +1,9 @@
 import { CatalogProduct, HouseholdItem } from '@/types/item'
-import { readList, readListForWrite, upsertById, writeList } from '@/lib/storageSafety'
+import { readList, readListForWrite, stamped, upsertById, writeList } from '@/lib/storageSafety'
 
-const CATALOG_KEY = 'catssistant_catalog_products'
-const ITEMS_KEY = 'catssistant_household_items'
+/** Exported for the whole-app read and write in lib/storage.ts that backups use. */
+export const CATALOG_KEY = 'catssistant_catalog_products'
+export const ITEMS_KEY = 'catssistant_household_items'
 
 export function getCatalogProducts(): CatalogProduct[] {
   return readList<CatalogProduct>(CATALOG_KEY)
@@ -12,8 +13,11 @@ export function getCatalogProductById(id: string): CatalogProduct | undefined {
   return getCatalogProducts().find(p => p.id === id)
 }
 
-export function saveCatalogProduct(product: CatalogProduct): void {
-  writeList(CATALOG_KEY, upsertById(readListForWrite<CatalogProduct>(CATALOG_KEY), product))
+/** Returns the product as stored, with `updatedAt` stamped — dispatch that one. */
+export function saveCatalogProduct(product: CatalogProduct): CatalogProduct {
+  const saved = stamped(product)
+  writeList(CATALOG_KEY, upsertById(readListForWrite<CatalogProduct>(CATALOG_KEY), saved))
+  return saved
 }
 
 export function deleteCatalogProduct(id: string): void {
@@ -29,8 +33,11 @@ export function getHouseholdItemById(id: string): HouseholdItem | undefined {
   return getHouseholdItems().find(i => i.id === id)
 }
 
-export function saveHouseholdItem(item: HouseholdItem): void {
-  writeList(ITEMS_KEY, upsertById(readListForWrite<HouseholdItem>(ITEMS_KEY), item))
+/** Returns the item as stored, with `updatedAt` stamped — dispatch that one. */
+export function saveHouseholdItem(item: HouseholdItem): HouseholdItem {
+  const saved = stamped(item)
+  writeList(ITEMS_KEY, upsertById(readListForWrite<HouseholdItem>(ITEMS_KEY), saved))
+  return saved
 }
 
 export function deleteHouseholdItem(id: string): void {

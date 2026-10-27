@@ -152,3 +152,16 @@ export function upsertById<T extends { id: string }>(list: T[], entry: T): T[] {
   next[index] = entry
   return next
 }
+
+/**
+ * Returns a copy of `record` marked as saved now. Every save function in lib/
+ * stamps here, so `updatedAt` is set in exactly one way and the thunks dispatch
+ * the stamped copy — if they dispatched what the form handed in, the store
+ * would hold a record one field different from the one in storage.
+ */
+export function stamped<T extends object>(
+  record: T,
+  now: Date = new Date(),
+): T & { updatedAt: string } {
+  return { ...record, updatedAt: now.toISOString() }
+}

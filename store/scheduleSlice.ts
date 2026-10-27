@@ -63,8 +63,7 @@ export function loadScheduleEvents() {
 
 export function persistScheduleEvent(event: ScheduleEvent) {
   return (dispatch: AppDispatch) => {
-    writeToStorage(event)
-    dispatch(scheduleEventSaved(event))
+    dispatch(scheduleEventSaved(writeToStorage(event)))
   }
 }
 

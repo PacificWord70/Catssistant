@@ -86,8 +86,9 @@ export function loadCats() {
 
 export function persistCat(cat: Cat) {
   return (dispatch: AppDispatch) => {
-    writeToStorage(cat)
-    dispatch(catSaved(cat))
+    // Storage stamps updatedAt, so state gets the copy storage kept, not the
+    // one the form handed in.
+    dispatch(catSaved(writeToStorage(cat)))
   }
 }
 

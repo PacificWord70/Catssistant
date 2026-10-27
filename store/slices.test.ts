@@ -300,3 +300,35 @@ describe('thunks keep storage and state in step', () => {
     expect(reloaded.getState().health.records.map(r => r.id)).toEqual(['b'])
   })
 })
+
+describe('state matches storage after a save', () => {
+  // Storage stamps updatedAt. If a thunk dispatched the record it was given
+  // rather than the one storage kept, state would be one field behind storage.
+  it('cats, events, health records, items and products all carry the stored updatedAt', () => {
+    const store = makeStore()
+    store.dispatch(persistCat(cat()))
+    store.dispatch(persistScheduleEvent(event()))
+    store.dispatch(persistHealthRecord(record()))
+    store.dispatch(persistHouseholdItem(item(), product()))
+
+    const s = store.getState()
+    expect(s.cats.items).toEqual(getCats())
+    expect(s.schedule.items).toEqual(getScheduleEvents())
+    expect(s.health.records).toEqual(getHealthRecords())
+    expect(s.items.items).toEqual(getHouseholdItems())
+    expect(s.items.catalog).toEqual(getCatalogProducts())
+    for (const saved of [s.cats.items[0], s.schedule.items[0], s.health.records[0], s.items.items[0], s.items.catalog[0]]) {
+      expect(saved.updatedAt).toEqual(expect.any(String))
+    }
+  })
+
+  it('items: an edited product replaces the stored one everywhere, without a second copy', () => {
+    const store = makeStore()
+    store.dispatch(persistHouseholdItem(item({ id: 'a' }), product({ name: 'Kibble' })))
+    store.dispatch(persistHouseholdItem(item({ id: 'b' })))
+    store.dispatch(persistHouseholdItem(item({ id: 'a' }), product({ name: 'Better kibble' })))
+    expect(getCatalogProducts().map(p => p.name)).toEqual(['Better kibble'])
+    expect(store.getState().items.catalog).toEqual(getCatalogProducts())
+    expect(getHouseholdItems().every(i => i.productId === 'p1')).toBe(true)
+  })
+})

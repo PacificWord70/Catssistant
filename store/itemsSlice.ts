@@ -82,20 +82,18 @@ export function loadItems() {
 }
 
 /**
- * Saves an item, optionally alongside a product that was created inline.
+ * Saves an item, optionally alongside its product — one created inline, or an
+ * existing one the owner edited. Either way the product is upserted by id, so
+ * an edit shows on every item that uses it.
  *
  * The product is written first: an item references a product by id, so storing
  * the item before its product would leave a dangling reference if the second
  * write failed.
  */
-export function persistHouseholdItem(item: HouseholdItem, newProduct?: CatalogProduct) {
+export function persistHouseholdItem(item: HouseholdItem, product?: CatalogProduct) {
   return (dispatch: AppDispatch) => {
-    if (newProduct) {
-      writeProductToStorage(newProduct)
-      dispatch(catalogProductSaved(newProduct))
-    }
-    writeItemToStorage(item)
-    dispatch(householdItemSaved(item))
+    if (product) dispatch(catalogProductSaved(writeProductToStorage(product)))
+    dispatch(householdItemSaved(writeItemToStorage(item)))
   }
 }
 

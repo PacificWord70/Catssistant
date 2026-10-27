@@ -61,4 +61,6 @@ export interface ScheduleEvent {
   estimatedCost?: number
 
   createdAt: string
+  /** Last saved, ISO timestamp. Absent on older records; see Cat.updatedAt. */
+  updatedAt?: string
 }

@@ -1,12 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   deleteCat,
   deleteScheduleEvent,
   getCatById,
   getCats,
   getScheduleEvents,
+  PartialWriteError,
+  readAllCollections,
   saveCat,
   saveScheduleEvent,
+  writeAllCollections,
 } from '@/lib/storage'
 import { getHealthRecords, saveHealthRecord } from '@/lib/healthStorage'
 import { StorageWriteError } from '@/lib/storageSafety'
@@ -133,8 +136,9 @@ describe('colour/pattern migration', () => {
     // that back must not migrate it a second time.
     storeLegacy('Colorpoint')
     const [migrated] = getCats()
-    saveCat(migrated)
-    expect(getCats()[0]).toEqual(migrated)
+    const saved = saveCat(migrated)
+    expect(getCats()[0]).toEqual(saved)
+    expect(saved).toEqual({ ...migrated, updatedAt: expect.any(String) })
   })
 
   it.each(['Tabby', 'Calico', 'Tortoiseshell', 'Tuxedo', 'Colorpoint'])(
@@ -394,7 +398,7 @@ describe('schedule events', () => {
   it('round-trips optional fields untouched', () => {
     const e = event({ recurrence: 'monthly', recurrenceEndDate: '2026-12-31', catIds: ['a', 'b'] })
     saveScheduleEvent(e)
-    expect(getScheduleEvents()).toEqual([e])
+    expect(getScheduleEvents()).toEqual([{ ...e, updatedAt: expect.any(String) }])
   })
 
   it('deletes only the event asked for', () => {
@@ -432,7 +436,9 @@ describe('deleteCat cascade', () => {
   it('drops the cat from a shared event and keeps the event for the other cat', () => {
     saveScheduleEvent(event({ id: 'shared', catIds: ['cat-1', 'cat-2'] }))
     const result = deleteCat('cat-1')
-    expect(getScheduleEvents()).toEqual([event({ id: 'shared', catIds: ['cat-2'] })])
+    expect(getScheduleEvents()).toEqual([
+      { ...event({ id: 'shared', catIds: ['cat-2'] }), updatedAt: expect.any(String) },
+    ])
     expect(result.updatedEvents).toEqual(getScheduleEvents())
     expect(result.deletedEventIds).toEqual([])
   })
@@ -459,5 +465,114 @@ describe('deleteCat cascade', () => {
     expect(() => deleteCat('cat-1')).toThrow(StorageWriteError)
     expect(getCats().map(c => c.id)).toEqual(['cat-1', 'cat-2'])
     expect(getScheduleEvents().map(e => e.id)).toEqual(['mine'])
+  })
+})
+
+// ─── updatedAt ────────────────────────────────────────────────────────────────
+
+describe('updatedAt', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('is stamped on every save, and the stamped copy is what is returned', () => {
+    vi.useFakeTimers({ now: new Date('2026-05-01T12:00:00.000Z') })
+    const saved = saveCat(cat())
+    expect(saved.updatedAt).toBe('2026-05-01T12:00:00.000Z')
+    expect(getCats()).toEqual([saved])
+  })
+
+  it('moves forward on each save, so the later edit reads as newer', () => {
+    vi.useFakeTimers({ now: new Date('2026-05-01T12:00:00.000Z') })
+    saveCat(cat({ name: 'Old' }))
+    vi.setSystemTime(new Date('2026-05-02T12:00:00.000Z'))
+    saveCat(cat({ name: 'New' }))
+    expect(getCats()[0].updatedAt).toBe('2026-05-02T12:00:00.000Z')
+  })
+
+  it('leaves records saved before it existed untouched on read', () => {
+    // No migration fills it in: the age of an old record is its createdAt, read
+    // as such by lib/backup.ts, rather than a made-up time written on read.
+    const old = cat()
+    localStorage.setItem(KEY, JSON.stringify([old]))
+    expect(getCats()).toEqual([old])
+    expect(getCats()[0].updatedAt).toBeUndefined()
+    expect(localStorage.getItem(KEY)).toBe(JSON.stringify([old]))
+  })
+
+  it('is stamped on a shared event that lost a cat to deleteCat', () => {
+    saveCat(cat({ id: 'cat-1' }))
+    localStorage.setItem(
+      SCHEDULE_KEY,
+      JSON.stringify([event({ id: 'shared', catIds: ['cat-1', 'cat-2'] })]),
+    )
+    vi.useFakeTimers({ now: new Date('2026-07-01T00:00:00.000Z') })
+    const { updatedEvents } = deleteCat('cat-1')
+    expect(updatedEvents[0].updatedAt).toBe('2026-07-01T00:00:00.000Z')
+    expect(getScheduleEvents()).toEqual(updatedEvents)
+  })
+})
+
+// ─── Every collection at once ─────────────────────────────────────────────────
+
+describe('readAllCollections / writeAllCollections', () => {
+  it('reads every key, migrating cats as getCats does', () => {
+    localStorage.setItem(KEY, JSON.stringify([{ ...cat(), color: 'Tabby' }]))
+    saveScheduleEvent(event())
+    const all = readAllCollections()
+    expect(all.cats[0].pattern).toBe('Tabby')
+    expect(all.scheduleEvents).toHaveLength(1)
+    expect(all).toMatchObject({ healthRecords: [], catalogProducts: [], householdItems: [] })
+  })
+
+  it('refuses when any one collection is unreadable', () => {
+    localStorage.setItem('catssistant_household_items', '{oops')
+    expect(() => readAllCollections()).toThrow(StorageWriteError)
+  })
+
+  it('writes only the collections that are a different array', () => {
+    const before = readAllCollections()
+    const written: string[] = []
+    const realSet = localStorage.setItem
+    localStorage.setItem = (k: string, v: string) => {
+      written.push(k)
+      realSet(k, v)
+    }
+    writeAllCollections({ ...before, cats: [cat()] }, before)
+    localStorage.setItem = realSet
+    expect(written).toEqual([KEY])
+    expect(getCats()).toEqual([cat()])
+  })
+
+  it('puts back what it already wrote when a later write fails', () => {
+    saveCat(cat({ id: 'a' }))
+    const before = readAllCollections()
+    const realSet = localStorage.setItem
+    localStorage.setItem = (k: string, v: string) => {
+      if (k === SCHEDULE_KEY) throw new DOMException('full', 'QuotaExceededError')
+      realSet(k, v)
+    }
+    const err = thrownBy(() =>
+      writeAllCollections({ ...before, cats: [...before.cats, cat({ id: 'b' })], scheduleEvents: [event()] }, before),
+    )
+    localStorage.setItem = realSet
+    expect(err.reason).toBe('quota')
+    expect(getCats().map(c => c.id)).toEqual(['a'])
+    expect(getScheduleEvents()).toEqual([])
+  })
+
+  it('says so plainly when putting things back fails too', () => {
+    const before = readAllCollections()
+    let calls = 0
+    const realSet = localStorage.setItem
+    localStorage.setItem = (k: string, v: string) => {
+      // First write (cats) works; everything after it fails, restore included.
+      if (calls++ > 0) throw new Error('broken')
+      realSet(k, v)
+    }
+    const err = thrownBy(() =>
+      writeAllCollections({ ...before, cats: [cat()], scheduleEvents: [event()] }, before),
+    )
+    localStorage.setItem = realSet
+    expect(err).toBeInstanceOf(PartialWriteError)
+    expect(err.message).toMatch(/importing the same file again/)
   })
 })
