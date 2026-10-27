@@ -135,7 +135,11 @@ const CATS: {
   name: string
   rect: Rect
   hoverRect: Rect
-  /** Lies *in* its perch, so the bowl or sling is drawn over its lower body. */
+  /**
+   * Lies *in* its perch: the body is drawn behind the tree so the bowl or sling
+   * covers it, and the head is drawn again in front so it peeks out over the
+   * edge. Needs a `-head` image for each pose.
+   */
   behind?: boolean
 }[] = [
   { href: '/cats', name: 'biscuit', rect: { x: 463, y: 414, w: 180, h: 180 }, hoverRect: { x: 450, y: 403, w: 193, h: 191 } },
@@ -270,13 +274,14 @@ export default function CatTree() {
 
   /* Both poses are always in the page and swap by opacity, so hovering never
      waits on a download. */
-  const renderCat = (cat: (typeof CATS)[number]) => {
+  const renderCat = (cat: (typeof CATS)[number], part: 'whole' | 'head' = 'whole') => {
     const on = hovered === cat.href
+    const suffix = part === 'head' ? '-head' : ''
     return (
-      <span key={cat.name} aria-hidden>
+      <span key={`${cat.name}-${part}`} aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`/images/cats/cat-${cat.name}.png`}
+          src={`/images/cats/cat-${cat.name}${suffix}.png`}
           alt=""
           draggable={false}
           className="select-none pointer-events-none"
@@ -284,7 +289,7 @@ export default function CatTree() {
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`/images/cats/cat-${cat.name}-hover.png`}
+          src={`/images/cats/cat-${cat.name}-hover${suffix}.png`}
           alt=""
           draggable={false}
           className="select-none pointer-events-none"
@@ -340,7 +345,7 @@ export default function CatTree() {
             </div>
           ))}
 
-        {CATS.filter(cat => cat.behind).map(renderCat)}
+        {CATS.filter(cat => cat.behind).map(cat => renderCat(cat))}
 
         <img
           src={layers?.base ?? SRC}
@@ -381,7 +386,8 @@ export default function CatTree() {
 
         {/* The cats, in front of the tree and its toys — except those that
             lie in their perch, drawn before the tree above. */}
-        {CATS.filter(cat => !cat.behind).map(renderCat)}
+        {CATS.filter(cat => !cat.behind).map(cat => renderCat(cat))}
+        {CATS.filter(cat => cat.behind).map(cat => renderCat(cat, 'head'))}
 
         {layers && (
           <div
