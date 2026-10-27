@@ -129,7 +129,8 @@ Catssistant/
 │   │   └── [id]/
 │   │       ├── page.tsx        # Cat profile
 │   │       └── edit/page.tsx   # Edit cat form
-│   ├── schedule/page.tsx       # Month calendar + per-day event list
+│   ├── schedule/page.tsx       # Calendar | List toggle (?view=list)
+│   ├── backup/page.tsx         # Back up & restore — export/import JSON
 │   ├── items/page.tsx          # My Items
 │   ├── health/page.tsx         # Weight records, per-cat charts and stats
 │   ├── breeds/, about/, resources/
@@ -151,9 +152,12 @@ Catssistant/
 │   ├── WeightLogForm.tsx       # Weight reading modal (Health, Schedule)
 │   ├── Dialog.tsx              # Shared modal — focus trap, Escape, discard confirm
 │   ├── MetricChart.tsx         # Health chart
+│   ├── HealthStatCard.tsx      # One cat's health stats (side by side when comparing)
+│   ├── ScheduleList.tsx        # Schedule list view — range, search, sort
+│   ├── ScheduleEventRow.tsx    # Event row shared by calendar day list and list view
+│   ├── SegmentedControl.tsx    # Accessible toggle group (aria-pressed)
 │   ├── CatTree.tsx             # Home page nav — callouts on Heidi's cat tree art
 │   ├── CatssistantLogo.tsx     # Logo component
-│   ├── EmptyState.tsx          # No-cats fallback (currently unused)
 │   └── motion/                 # Reveal, Parallax, HoverLift (framer-motion)
 ├── lib/
 │   ├── storage.ts              # Cats + schedule events in localStorage, plus migrations
@@ -167,6 +171,8 @@ Catssistant/
 │   ├── scheduleAttributes.ts   # Categories, litter types, durations
 │   ├── scheduleUtils.ts        # Recurrence expansion, month grid, date/time labels
 │   ├── scheduleValidation.ts   # Event form validation, field by field
+│   ├── scheduleList.ts         # List view windows, search, sort, grouping
+│   ├── backup.ts               # Backup build/validate/merge (schema version 1)
 │   ├── dateKeys.ts             # Local YYYY-MM-DD keys — never toISOString
 │   ├── health*.ts              # Health metrics, analysis, validation
 │   ├── photo.ts                # Photo type check + downscale/re-encode
@@ -208,6 +214,11 @@ Catssistant/
 - Modals use `components/Dialog.tsx`; every input has a label tied by `htmlFor`
 - User-facing copy makes no claims about where data lives ("stays on your
   device") — accounts with server storage are coming
+- Every stored record carries `updatedAt`, stamped by the storage save
+  functions, which return the stamped record for the thunk to dispatch. Old
+  records may lack it; compare with `updatedAt ?? createdAt`. Backup merges
+  depend on this, so never bypass the save functions
+- New collections must be added to `lib/backup.ts`, or backups silently drop them
 
 ---
 

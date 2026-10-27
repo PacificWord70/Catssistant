@@ -12,8 +12,8 @@ This milestone closes the two biggest gaps in the Cat Owner View: a way to scan 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Care Event List View** - Owner can view, filter, and sort care events in a list, alongside the existing calendar
-- [ ] **Phase 2: Data Export & Import** - Owner can back up all app data to a JSON file and restore it safely
+- [x] **Phase 1: Care Event List View** - Owner can view, filter, and sort care events in a list, alongside the existing calendar
+- [x] **Phase 2: Data Export & Import** - Owner can back up all app data to a JSON file and restore it safely
 - [x] **Phase 3: Health Tracking** - Owner can record dated weights and chart health data per cat *(delivered 2026-08-24, out of order)*
 
 ## Phase Details
@@ -72,10 +72,11 @@ silently lose a cat's weight history.
 
 **Execution Order:**
 Phases execute in numeric order: 1 → 2. Phase 3 was built before either of
-them, which is why both still read as not started.
+them. All three are now delivered, each through quick tasks rather than
+planned phase work.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Care Event List View | 0/TBD | Not started | - |
-| 2. Data Export & Import | 0/TBD | Not started | - |
+| 1. Care Event List View | n/a | Delivered as quick task 261027-ij6 | 2026-10-27 |
+| 2. Data Export & Import | n/a | Delivered as quick task 261027-ij6 | 2026-10-27 |
 | 3. Health Tracking | n/a | Delivered out of order | 2026-08-24 |

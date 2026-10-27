@@ -11,15 +11,15 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **CARE-01**: Owner can log care events (feeding, medication, care routine incl. litter, vet, grooming, play) — existing
 - [x] **CARE-02**: Owner can view care events in a calendar view — existing
-- [ ] **CARE-03**: Owner can view care events in a list view, defaulting to current/upcoming events
-- [ ] **CARE-04**: Owner can filter/sort the list view by any event attribute (category, cat, date range, etc.) to see any subset of events
+- [x] **CARE-03**: Owner can view care events in a list view, defaulting to current/upcoming events
+- [x] **CARE-04**: Owner can filter/sort the list view by any event attribute (category, cat, date range, etc.) to see any subset of events
 - [x] **CARE-05**: Monthly-recurring events fall back to the last valid day of a short month instead of drifting permanently, with a UI note explaining the adjustment — fixed 2026-07-04
 
 ### Data Portability
 
-- [ ] **DATA-01**: Owner can export all app data (cats, schedule events) as a JSON file with an explicit schema version
-- [ ] **DATA-02**: Owner can import a previously exported JSON file to restore their data
-- [ ] **DATA-03**: Import behavior (merge vs. overwrite vs. reject conflicts) is an explicit, approved design decision before implementation — never silently destroys or duplicates existing data
+- [x] **DATA-01**: Owner can export all app data (cats, schedule events) as a JSON file with an explicit schema version
+- [x] **DATA-02**: Owner can import a previously exported JSON file to restore their data
+- [x] **DATA-03**: Import behavior (merge vs. overwrite vs. reject conflicts) is an explicit, approved design decision before implementation — never silently destroys or duplicates existing data
 
 ## v2 Requirements
 
@@ -56,12 +56,12 @@ Explicitly excluded from this milestone. Documented to prevent scope creep.
 |-------------|-------|--------|
 | CARE-01 | — | Complete (existing) |
 | CARE-02 | — | Complete (existing) |
-| CARE-03 | Phase 1 | Pending |
-| CARE-04 | Phase 1 | Pending |
+| CARE-03 | Phase 1 | Complete |
+| CARE-04 | Phase 1 | Complete |
 | CARE-05 | — | Complete (fixed 2026-07-04) |
-| DATA-01 | Phase 2 | Pending |
-| DATA-02 | Phase 2 | Pending |
-| DATA-03 | Phase 2 | Pending |
+| DATA-01 | Phase 2 | Complete |
+| DATA-02 | Phase 2 | Complete |
+| DATA-03 | Phase 2 | Complete |
 
 **Coverage:**
 - v1 requirements: 8 total

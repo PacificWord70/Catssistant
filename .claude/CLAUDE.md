@@ -88,8 +88,8 @@ Tapestry.
 ## Notable Absence
 
 - No backend, no database, no authentication, no `.env` files, no API keys.
-- No CI workflow.
-- Tests cover logic only: 20 Vitest files under `lib/` and `store/` (storage,
+- CI: `.github/workflows/ci.yml` runs lint, typecheck, test and build on push/PR to main.
+- Tests cover logic only: 23 Vitest files under `lib/` and `store/` (storage,
   migrations, recurrence incl. DST, slices, selectors, health, photos, URL
   guards). Components and pages have no tests — there is no DOM test tooling.
 

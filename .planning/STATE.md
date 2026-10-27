@@ -1,12 +1,12 @@
 ---
 gsd_state_version: '1.0'
-status: planning
+status: milestone-complete
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 2
   total_plans: 0
   completed_plans: 0
-  percent: 0
+  percent: 100
 ---
 
 # Project State
@@ -16,20 +16,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-04)
 
 **Core value:** Reliable daily care tracking plus a trustworthy central record for each cat
-**Current focus:** Phase 1 — Care Event List View
+**Current focus:** Example household for first-time visitors (next), then accounts
 
 ## Current Position
 
-Phase: 1 of 2 (Care Event List View)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-10-26 — Finished the fix pass from the October review:
-data-loss bugs in storage, Next 16 and date bugs, form and page accessibility,
-URL guards, CSP/HSTS and Next 16.4.3. Since late September: the home page
-redesign (headline beside the tree, warm outline, callouts; drawn cats to come)
-and tests grown from 187 to 371
+Phase: 2 of 2 — both phases of this milestone delivered
+Plan: n/a (delivered through quick tasks)
+Status: Milestone complete; next work is unplanned
+Last activity: 2026-10-27 — List view on Schedule (Phase 1) and back up &
+restore (Phase 2), plus CI, updatedAt on every record, per-cat Health cards,
+delete-cat, My Cats search, editable product names and a Safari focus fix
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -62,6 +60,20 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
+Next up, agreed with Heidi 2026-10-27:
+
+- **Example household for first-time visitors.** With no cats saved, show the
+  cat tree characters as a clearly labelled, view-only example — held in memory,
+  never stored, so it can't mix with real data or reach a backup. Home hero gets
+  "Add your first cat" and "Look around the example"; other pages a slim banner.
+  Pages stop redirecting empty visitors to onboarding; onboarding becomes where
+  "Add your first cat" leads. Saving a first real cat ends the example. Becomes
+  "not signed in" once accounts exist.
+- **Later: a help button on each page** showing that page with the example data
+  and short notes on what it can do, for owners who have added a cat and aren't
+  sure what to do next.
+- **Declined for now:** a UI to restore the automatic backups of unreadable data.
+
 Avatar artwork (see the avatar-system memory for how the layers and filenames work):
 
 - **No pattern artwork exists.** `pattern-tabby.png` is the highest-value one
@@ -85,7 +97,7 @@ Elsewhere:
 
 ### Blockers/Concerns
 
-- Nothing is deployed yet and there is no CI, so nothing checks a build on push.
+- CI now checks lint, typecheck, tests and the build on every push to main.
   `npm run build` passes locally as of 2026-10-26 (Next 16.4.3).
 - Two quick tasks have now landed a whole feature area (Health) that the roadmap
   does not mention. Phase 1 is still unplanned. This should be reconciled before
@@ -106,6 +118,7 @@ Elsewhere:
 | 260824-28p | Health page: made the unused HealthRecord type real (localStorage + a fourth Redux slice), added a hand-drawn SVG weight-over-time chart with time-proportional spacing, a dated weight log form, and summary stats drawn from existing schedule and profile data. 15 new tests. | 2026-08-24 | 49ba0d3 | [260824-28p-health-page-weight-over-time](./quick/260824-28p-health-page-weight-over-time/) |
 | 260927-juc | Home page design trial: cat tree outline recoloured to cocoa, paper grain, contact shadow, callout labels with hover glow, swaying toys, editorial hero beside a headline. Callouts are a stand-in until Heidi's drawn cats land. | 2026-09-30 | 6e819aa | [260927-juc-home-page-design-elevation](./quick/260927-juc-home-page-design-elevation/) |
 | 261010-lx1 | Fixes from the full review: unreadable storage is backed up and never overwritten, quota errors surface, cat delete cascades, DST-proof month grid, local date keys, Next 16 searchParams, health page fixes, shared accessible Dialog, photo downscale (strips EXIF GPS), labels throughout, URL guards, Next 16.4.3, CSP/HSTS, accurate About page. | 2026-10-26 | 84f86c3 | [261010-lx1-fix-review-bugs-accessibility-security](./quick/261010-lx1-fix-review-bugs-accessibility-security/) |
+| 261027-ij6 | Self-serve batch: CI, Back up & restore with a newest-wins merge (Phase 2), updatedAt on every record, Schedule list view (Phase 1), per-cat Health cards, delete-cat, My Cats search, editable product names, lazy photos, Dialog focus fix for Safari. | 2026-10-27 | cb371bd | [261027-ij6-self-serve-batch-ci-export-import-list-v](./quick/261027-ij6-self-serve-batch-ci-export-import-list-v/) |
 
 ## Deferred Items
 
