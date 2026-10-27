@@ -54,8 +54,20 @@ body {
   animation-delay: -2.3s;
 }
 
+/* Noodle swatting the top toy while his label is hovered: a short, bigger
+   swing on top of the idle sway. */
+@keyframes cat-tree-swat {
+  0%, 100% { transform: rotate(-7deg); }
+  50% { transform: rotate(7deg); }
+}
+
+.cat-tree-swat {
+  animation: cat-tree-swat 0.9s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .cat-tree-sway {
+  .cat-tree-sway,
+  .cat-tree-swat {
     animation: none;
   }
 

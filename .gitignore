@@ -173,3 +173,8 @@ iOSInjectionProject/
 # a file. Without this it is ignored, and a fresh clone renders a broken image
 # where the site's main navigation should be.
 !public/images/cat-tree.png
+#
+# The cats that sit on the tree, one per page. Heidi's drawings, lifted off her
+# layers and coloured the same way as the tree — her lines, untouched. Same
+# exception, same ordering reason.
+!public/images/cats/cat-*.png

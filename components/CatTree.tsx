@@ -95,34 +95,48 @@ interface Perch {
 const PERCHES: Perch[] = [
   {
     href: '/cats', label: 'My Cats', blurb: 'A profile for every cat',
-    spot: 3, lines: 1.5, side: 'right', dot: { x: 668, y: 452 },
+    spot: 3, lines: 2.5, side: 'right', dot: { x: 668, y: 452 },
     region: { seeds: [[400, 500], [531, 470], [430, 390]] },
   },
   {
     href: '/health', label: 'Health Home', blurb: 'Weight and checkups',
-    spot: 4, lines: -1.5, side: 'left', dot: { x: 72, y: 600 },
+    spot: 4, lines: 1.4, side: 'left', dot: { x: 72, y: 600 },
     region: { seeds: [[135, 609]] },
   },
   {
     href: '/schedule', label: 'Schedule', blurb: 'Feeding, meds and vet visits',
-    spot: 2, lines: -1, side: 'left', dot: { x: 162, y: 226 },
+    spot: 2, lines: 0.9, side: 'left', dot: { x: 162, y: 226 },
     region: { seeds: [[266, 226]] },
   },
   {
     href: '/shopping', label: 'Shopping', blurb: 'Coming soon',
-    spot: 1, lines: -1.25, side: 'right', dot: { x: 636, y: 38 },
+    spot: 1, lines: 1, side: 'right', dot: { x: 636, y: 38 },
     region: { seeds: [[530, 38]] },
   },
   {
     href: '/resources', label: 'Resources', blurb: 'Guides and breed notes',
-    spot: 7, lines: -0.5, side: 'right', dot: { x: 744, y: 767 },
+    spot: 7, lines: 0.75, side: 'right', dot: { x: 744, y: 767 },
     region: { rect: { x: 664, y: 758, w: 112, h: 20 } },
   },
   {
     href: '/about', label: 'About', blurb: 'Who makes Catssistant',
-    spot: 6, lines: -1, side: 'left', dot: { x: 420, y: 1040 },
+    spot: 6, lines: 1.5, side: 'left', dot: { x: 420, y: 1040 },
     region: { seeds: [[449, 1040]] },
   },
+]
+
+/* The cats on the tree — Heidi's drawings, one per page, each sitting on the
+   spot its page links from (see the PERCHES comment). Each has a second pose
+   shown while its label is hovered. A cat can reach past the drawing's edge —
+   Noodle lies above the top bed — so each carries its own box in the
+   artwork's coordinates rather than sharing the tree's canvas. */
+const CATS: { href: string; name: string; rect: Rect; hoverRect: Rect }[] = [
+  { href: '/cats', name: 'biscuit', rect: { x: 463, y: 414, w: 180, h: 180 }, hoverRect: { x: 450, y: 403, w: 193, h: 191 } },
+  { href: '/shopping', name: 'noodle', rect: { x: 456, y: -132, w: 231, h: 229 }, hoverRect: { x: 456, y: -132, w: 231, h: 229 } },
+  { href: '/schedule', name: 'miso', rect: { x: 179, y: 61, w: 155, h: 179 }, hoverRect: { x: 138, y: 61, w: 196, h: 179 } },
+  { href: '/health', name: 'pepper', rect: { x: 36, y: 514, w: 204, h: 147 }, hoverRect: { x: 36, y: 514, w: 203, h: 161 } },
+  { href: '/about', name: 'mochi', rect: { x: 323, y: 933, w: 222, h: 147 }, hoverRect: { x: 348, y: 933, w: 197, h: 153 } },
+  { href: '/resources', name: 'pickle', rect: { x: 668, y: 681, w: 101, h: 98 }, hoverRect: { x: 676, y: 684, w: 94, h: 94 } },
 ]
 
 /* The two toys hang free, so they are lifted out of the drawing and swung on
@@ -308,7 +322,7 @@ export default function CatTree() {
               alt=""
               aria-hidden
               draggable={false}
-              className={`select-none ${className}`}
+              className={`select-none ${className} ${i === 0 && hovered === '/shopping' ? 'cat-tree-swat' : ''}`}
               style={{
                 ...boxStyle(rect),
                 transformOrigin: `${pct(pivot.x - rect.x, rect.w)} ${pct(pivot.y - rect.y, rect.h)}`,
@@ -329,6 +343,33 @@ export default function CatTree() {
               style={{ opacity: hovered === href ? 1 : 0, filter: 'brightness(1.1) saturate(1.15)' }}
             />
           ))}
+
+        {/* The cats, in front of the tree and its toys. Both poses are always
+            in the page and swap by opacity, so hovering never waits on a
+            download. */}
+        {CATS.map(cat => {
+          const on = hovered === cat.href
+          return (
+            <span key={cat.name} aria-hidden>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/images/cats/cat-${cat.name}.png`}
+                alt=""
+                draggable={false}
+                className="select-none pointer-events-none"
+                style={{ ...boxStyle(cat.rect), opacity: on ? 0 : 1 }}
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/images/cats/cat-${cat.name}-hover.png`}
+                alt=""
+                draggable={false}
+                className="select-none pointer-events-none"
+                style={{ ...boxStyle(cat.hoverRect), opacity: on ? 1 : 0 }}
+              />
+            </span>
+          )
+        })}
 
         {layers && (
           <div
