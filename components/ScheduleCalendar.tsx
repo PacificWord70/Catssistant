@@ -2,9 +2,12 @@
 
 import { DayCell, CATEGORY_EMOJI } from '@/lib/scheduleUtils'
 import { parseDateKey } from '@/lib/dateKeys'
+import { ScheduleCategory } from '@/types/scheduleEvent'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MAX_DOTS = 3
+/** Shown small in a day's top corner rather than in the main slots. */
+const ROUTINE: ScheduleCategory[] = ['Feeding', 'Play']
 
 /**
  * What a screen reader hears for a day. The visible cell is a bare number, a
@@ -67,10 +70,10 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
         {cells.map(cell => {
           const isSelected = cell.dateKey === selectedDate
           const categories = Array.from(new Set(cell.items.map(i => i.event.category)))
-          /* Feeding happens most days, so it gets a corner of its own instead of
-             taking one of the three slots and crowding out what's unusual. */
-          const hasFeeding = categories.includes('Feeding')
-          const others = categories.filter(c => c !== 'Feeding')
+          /* Meals and play happen most days, so they share the top corner
+             instead of taking the three slots and crowding out what's unusual. */
+          const routine = ROUTINE.filter(c => categories.includes(c))
+          const others = categories.filter(c => !ROUTINE.includes(c))
           const shown = others.slice(0, MAX_DOTS)
           const extra = others.length - shown.length
           return (
@@ -101,7 +104,11 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
                 <span className={`text-xs sm:text-sm ${cell.isToday && !isSelected ? 'font-bold text-brand-orange' : 'font-medium'}`}>
                   {cell.dayNumber}
                 </span>
-                {hasFeeding && <span className="hidden sm:inline text-[11px] lg:text-[13px]">{CATEGORY_EMOJI.Feeding}</span>}
+                {routine.length > 0 && (
+                  <span className="hidden sm:flex gap-px text-[11px] lg:text-[13px]">
+                    {routine.map(c => <span key={c}>{CATEGORY_EMOJI[c]}</span>)}
+                  </span>
+                )}
               </span>
               {shown.length > 0 && (
                 <span aria-hidden="true" className="mt-auto flex items-center justify-center gap-0.5 leading-none">
@@ -112,7 +119,7 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
                       <span key={c} className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-brand-orange'}`} />
                     ))}
                   </span>
-                  <span className="hidden sm:flex items-center gap-px text-[13px] lg:text-[15px]">
+                  <span className="hidden sm:flex items-center gap-0.5 text-[15px] lg:text-[18px]">
                     {shown.map(c => <span key={c}>{CATEGORY_EMOJI[c]}</span>)}
                   </span>
                   {extra > 0 && <span className="hidden sm:inline text-[10px] font-semibold opacity-70">+{extra}</span>}

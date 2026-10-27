@@ -28,7 +28,7 @@ export default function ScheduleEventRow({ item, catNames, dateLabel, onOpen }: 
       {/* A badge rather than a bare emoji: it keeps every row's icon the same
           size and lines the titles up, whatever the emoji's own proportions. */}
       <span
-        className="flex-shrink-0 w-10 h-10 rounded-xl bg-white border border-brand-tan/30 flex items-center justify-center text-xl leading-none select-none"
+        className="flex-shrink-0 w-12 h-12 rounded-xl bg-white border border-brand-tan/30 flex items-center justify-center text-[28px] leading-none select-none"
         aria-hidden="true"
       >
         {CATEGORY_EMOJI[event.category]}

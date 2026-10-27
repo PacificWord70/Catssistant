@@ -15,25 +15,33 @@ import {
 import { ScheduleCategory, ScheduleEvent } from '@/types/scheduleEvent'
 import { SCHEDULE_CATEGORIES } from '@/lib/scheduleAttributes'
 import { HealthRecord } from '@/types/healthRecord'
-import { buildMonthGrid, formatDateLabel, formatTimesLabel, CATEGORY_EMOJI } from '@/lib/scheduleUtils'
+import { buildMonthGrid, formatDateLabel, CATEGORY_EMOJI } from '@/lib/scheduleUtils'
 import { todayKey } from '@/lib/dateKeys'
 import CatAvatar from '@/components/CatAvatar'
 import ScheduleCalendar from '@/components/ScheduleCalendar'
 import ScheduleList from '@/components/ScheduleList'
 import ScheduleEventRow from '@/components/ScheduleEventRow'
+import ScheduleRoutineBlock from '@/components/ScheduleRoutineBlock'
 import SegmentedControl from '@/components/SegmentedControl'
 import ScheduleEventForm from '@/components/ScheduleEventForm'
 import WeightLogForm from '@/components/WeightLogForm'
 import Reveal from '@/components/motion/Reveal'
 
-/** "3 meals · 2 other things", or "Nothing scheduled this day." */
-function dayCountLabel(meals: number, others: number): string {
-  if (meals === 0 && others === 0) return 'Nothing scheduled this day.'
-  const parts: string[] = []
-  if (meals > 0) parts.push(`${meals} ${meals === 1 ? 'meal' : 'meals'}`)
-  if (others > 0) parts.push(`${others} ${meals > 0 ? 'other ' : ''}${others === 1 ? 'thing' : 'things'}`)
-  return parts.join(' \u00b7 ')
+/** "2 things · 1 play session · 3 meals", or "Nothing scheduled this day." */
+function dayCountLabel(others: number, play: number, meals: number): string {
+  if (others + play + meals === 0) return 'Nothing scheduled this day.'
+  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+  return [
+    others > 0 && plural(others, 'thing', 'things'),
+    play > 0 && plural(play, 'play session', 'play sessions'),
+    meals > 0 && plural(meals, 'meal', 'meals'),
+  ]
+    .filter(Boolean)
+    .join(' \u00b7 ')
 }
+
+/** Categories that happen most days and are shown compactly, not as full rows. */
+const ROUTINE_CATEGORIES = new Set(['Feeding', 'Play'])
 
 
 /* Matches the health page's filter chips, so the two read the same way. */
@@ -180,7 +188,8 @@ function SchedulePageContent() {
   const selectedCell = cells.find(c => c.dateKey === selectedDate)
   const selectedItems = selectedCell?.items ?? []
   const selectedMeals = selectedItems.filter(i => i.event.category === 'Feeding')
-  const selectedOthers = selectedItems.filter(i => i.event.category !== 'Feeding')
+  const selectedPlay = selectedItems.filter(i => i.event.category === 'Play')
+  const selectedOthers = selectedItems.filter(i => !ROUTINE_CATEGORIES.has(i.event.category))
   /* An event can outlive a cat it was shared with. Those ids are skipped rather
      than shown as "Unknown cat" — the event still belongs to whoever remains,
      and if nobody does the line is simply left off. */
@@ -288,55 +297,35 @@ function SchedulePageContent() {
               <h2 id="selected-day-heading" className="font-display text-xl text-brand-brown mb-1">
                 {formatDateLabel(selectedDate)}
               </h2>
-              <p className="text-xs text-brand-brown/55 mb-3">{dayCountLabel(selectedMeals.length, selectedOthers.length)}</p>
+              <p className="text-xs text-brand-brown/55 mb-3">
+                {dayCountLabel(selectedOthers.length, selectedPlay.length, selectedMeals.length)}
+              </p>
 
-              {/* Meals are on most days and say the same thing every day, so they
-                  get a compact block of their own rather than full rows that
-                  bury the vet visit or the medication change underneath them. */}
-              {selectedMeals.length > 0 && (
-                <div className="rounded-2xl bg-brand-tan/15 border border-brand-tan/30 px-3 py-2.5 mb-4">
-                  <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-brown/60 mb-1">
-                    <span aria-hidden="true">{CATEGORY_EMOJI.Feeding}</span>
-                    Meals
-                  </h3>
-                  <ul className="divide-y divide-brand-tan/30">
-                    {selectedMeals.map((item, i) => (
-                      <li key={`${item.event.id}-${i}`}>
-                        <button
-                          type="button"
-                          onClick={() => setEditingEvent(item.event)}
-                          className="w-full flex items-center gap-3 py-1.5 text-left rounded-lg hover:text-brand-orange transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40"
-                        >
-                          <span className="flex-1 min-w-0">
-                            <span className="block text-sm font-medium text-brand-charcoal truncate">{item.event.title}</span>
-                            <span className="block text-xs text-brand-brown/55 truncate">{catNames(item.event.catIds)}</span>
-                          </span>
-                          {item.event.times.length > 0 && (
-                            <span className="flex-shrink-0 max-w-[45%] text-right text-xs text-brand-brown/70">
-                              {formatTimesLabel(item.event.times, item.event.durationMinutes)}
-                            </span>
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
+              {/* What is different about the day comes first and largest; the
+                  routine that happens most days sits underneath, compact. */}
               {selectedOthers.length > 0 && (
-                <>
-                  {selectedMeals.length > 0 && (
-                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-brand-brown/60 mb-2">Also on this day</h3>
-                  )}
-                  <ul className="space-y-2">
-                    {selectedOthers.map((item, i) => (
-                      <li key={`${item.event.id}-${i}`}>
-                        <ScheduleEventRow item={item} catNames={catNames(item.event.catIds)} onOpen={() => setEditingEvent(item.event)} />
-                      </li>
-                    ))}
-                  </ul>
-                </>
+                <ul className="space-y-2">
+                  {selectedOthers.map((item, i) => (
+                    <li key={`${item.event.id}-${i}`}>
+                      <ScheduleEventRow item={item} catNames={catNames(item.event.catIds)} onOpen={() => setEditingEvent(item.event)} />
+                    </li>
+                  ))}
+                </ul>
               )}
+              <ScheduleRoutineBlock
+                title="Play"
+                emoji={CATEGORY_EMOJI.Play}
+                items={selectedPlay}
+                catNames={catNames}
+                onOpen={item => setEditingEvent(item.event)}
+              />
+              <ScheduleRoutineBlock
+                title="Meals"
+                emoji={CATEGORY_EMOJI.Feeding}
+                items={selectedMeals}
+                catNames={catNames}
+                onOpen={item => setEditingEvent(item.event)}
+              />
             </section>
           </Reveal>
         </div>
