@@ -57,17 +57,18 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
         {WEEKDAYS.map(w => (
-          <div key={w} className="text-center text-xs font-semibold text-brand-brown/60 py-1">{w}</div>
+          <div key={w} className="text-center text-[11px] font-semibold uppercase tracking-wide text-brand-brown/50 py-1">{w}</div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1.5">
         {cells.map(cell => {
           const isSelected = cell.dateKey === selectedDate
-          const categories = Array.from(new Set(cell.items.map(i => i.event.category))).slice(0, MAX_DOTS)
-          const extra = cell.items.length - categories.length
+          const categories = Array.from(new Set(cell.items.map(i => i.event.category)))
+          const shown = categories.slice(0, MAX_DOTS)
+          const extra = categories.length - shown.length
           return (
             <button
               key={cell.dateKey}
@@ -75,33 +76,39 @@ export default function ScheduleCalendar({ month, cells, selectedDate, onSelectD
               onClick={() => onSelectDate(cell.dateKey)}
               aria-label={dayLabel(cell)}
               aria-pressed={isSelected}
-              /* Height follows the viewport rather than the container's width.
-               aspect-square grew the month with the screen, so a wide display
-               pushed it past the fold; a plain fixed height ignores how much
-               room there actually is. Clamped so six rows stay usable on a short
-               laptop and do not become vast on a tall monitor. */
-            className={`h-[clamp(2.25rem,5.6vh,4.25rem)] rounded-2xl flex flex-col items-center justify-start pt-1.5 gap-0.5 text-sm transition-colors
+              /* Square days, so a month reads as a calendar rather than a
+                 spreadsheet. The width cap on the calendar (see the page) is
+                 what keeps six square rows from growing past the fold on a wide
+                 screen; the cell itself just stays square. */
+              className={`aspect-square min-w-0 rounded-xl p-1 sm:p-1.5 flex flex-col items-stretch text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40
                 ${
                   isSelected
-                    ? 'bg-brand-orange text-white'
+                    ? 'bg-brand-orange text-white shadow-soft'
                     : cell.items.length > 0
-                      ? // A day with something on it is tinted, which is the only
-                        // signal small screens get once the emoji are hidden.
-                        'bg-brand-orange/15 text-brand-charcoal hover:bg-brand-orange/25'
+                      ? 'bg-brand-orange/10 text-brand-charcoal hover:bg-brand-orange/20'
                       : cell.isToday
-                        ? 'bg-brand-tan/20 text-brand-charcoal'
-                        : 'hover:bg-brand-tan/10 text-brand-charcoal'
+                        ? 'bg-brand-tan/25 text-brand-charcoal'
+                        : 'bg-brand-cream hover:bg-brand-tan/15 text-brand-charcoal'
                 }
-                ${!cell.inCurrentMonth ? 'opacity-30' : ''}`}
+                ${cell.isToday && !isSelected ? 'ring-1 ring-brand-orange/50' : ''}
+                ${!cell.inCurrentMonth ? 'opacity-35' : ''}`}
             >
-              <span aria-hidden="true" className={cell.isToday && !isSelected ? 'font-bold text-brand-orange' : ''}>{cell.dayNumber}</span>
-              {/* Hidden on phones: a cell is about 45px across there, and three
-                  emoji plus a "+N" cannot be read at that size — the tint says
-                  "something is on" and tapping the day shows what. */}
+              <span aria-hidden="true" className={`text-xs sm:text-sm leading-none ${cell.isToday && !isSelected ? 'font-bold text-brand-orange' : 'font-medium'}`}>
+                {cell.dayNumber}
+              </span>
               {cell.items.length > 0 && (
-                <span aria-hidden="true" className="hidden sm:inline text-3xl leading-none tracking-tighter">
-                  {categories.map(c => CATEGORY_EMOJI[c]).join('')}
-                  {extra > 0 && `+${extra}`}
+                <span aria-hidden="true" className="mt-auto flex items-center justify-center gap-0.5 leading-none">
+                  {/* Dots on phones, where a day is about 40px across and emoji
+                      cannot be told apart; small emoji once there is room. */}
+                  <span className="flex gap-0.5 sm:hidden">
+                    {shown.map(c => (
+                      <span key={c} className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-brand-orange'}`} />
+                    ))}
+                  </span>
+                  <span className="hidden sm:flex items-center gap-px text-[13px] lg:text-[15px]">
+                    {shown.map(c => <span key={c}>{CATEGORY_EMOJI[c]}</span>)}
+                  </span>
+                  {extra > 0 && <span className="hidden sm:inline text-[10px] font-semibold opacity-70">+{extra}</span>}
                 </span>
               )}
             </button>

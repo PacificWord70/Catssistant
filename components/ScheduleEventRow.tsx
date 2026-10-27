@@ -23,23 +23,31 @@ export default function ScheduleEventRow({ item, catNames, dateLabel, onOpen }: 
     <button
       type="button"
       onClick={onOpen}
-      className="hover-lift w-full flex items-center gap-3 px-4 py-3 bg-brand-tan/10 rounded-2xl hover:bg-brand-tan/20 transition-colors text-left"
+      className="w-full flex items-center gap-3 px-3 py-2.5 bg-brand-cream border border-brand-tan/30 rounded-2xl hover:bg-brand-tan/15 hover:border-brand-tan/60 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40"
     >
-      <span className="text-5xl select-none leading-none" aria-hidden="true">
+      {/* A badge rather than a bare emoji: it keeps every row's icon the same
+          size and lines the titles up, whatever the emoji's own proportions. */}
+      <span
+        className="flex-shrink-0 w-10 h-10 rounded-xl bg-white border border-brand-tan/30 flex items-center justify-center text-xl leading-none select-none"
+        aria-hidden="true"
+      >
         {CATEGORY_EMOJI[event.category]}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-brand-charcoal truncate">
+        <p className="text-[15px] font-semibold text-brand-charcoal truncate">
           {/* The emoji is the category for sighted users; this says it in words. */}
           <span className="sr-only">{event.category}: </span>
           {event.title}
         </p>
-        {dateLabel && <p className="text-xs text-brand-slate">{dateLabel}</p>}
-        {catNames && <p className="text-xs text-brand-brown/60">{catNames}</p>}
+        {(dateLabel || catNames) && (
+          <p className="text-xs text-brand-brown/65 truncate">
+            {[dateLabel, catNames].filter(Boolean).join(' · ')}
+          </p>
+        )}
         {note && <p className="text-xs text-brand-orange/80 mt-0.5">{note}</p>}
       </div>
       {(event.times.length > 0 || event.durationMinutes) && (
-        <span className="text-xs text-brand-brown/60 flex-shrink-0">
+        <span className="flex-shrink-0 max-w-[40%] text-right text-xs font-medium text-brand-brown/75 bg-white border border-brand-tan/30 rounded-xl px-2.5 py-1">
           {formatTimesLabel(event.times, event.durationMinutes)}
         </span>
       )}

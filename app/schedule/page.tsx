@@ -249,7 +249,10 @@ function SchedulePageContent() {
           onOpen={setEditingEvent}
         />
       ) : (
-        <>
+        /* Calendar and the chosen day side by side once there is room, so
+           picking a day does not mean scrolling down to see what is on it. The
+           calendar's width is capped so its square days stay a sensible size. */
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,38rem)_minmax(18rem,1fr)] lg:items-start">
           <Reveal delay={0.1}>
             <ScheduleCalendar
               month={currentMonth}
@@ -263,11 +266,19 @@ function SchedulePageContent() {
           </Reveal>
 
           <Reveal delay={0.15}>
-            <div className="mt-6 pt-6 border-t border-brand-tan/30">
-              <h3 className="text-sm font-semibold text-brand-slate mb-2">{formatDateLabel(selectedDate)}</h3>
-              {selectedItems.length === 0 ? (
-                <p className="text-brand-brown/60 text-sm py-4">Nothing scheduled this day.</p>
-              ) : (
+            <section
+              aria-labelledby="selected-day-heading"
+              className="pt-6 border-t border-brand-tan/30 lg:pt-0 lg:border-t-0 lg:border-l lg:pl-6 lg:sticky lg:top-24"
+            >
+              <h2 id="selected-day-heading" className="font-display text-xl text-brand-brown mb-1">
+                {formatDateLabel(selectedDate)}
+              </h2>
+              <p className="text-xs text-brand-brown/55 mb-3">
+                {selectedItems.length === 0
+                  ? 'Nothing scheduled this day.'
+                  : `${selectedItems.length} ${selectedItems.length === 1 ? 'thing' : 'things'} scheduled`}
+              </p>
+              {selectedItems.length > 0 && (
                 <ul className="space-y-2">
                   {selectedItems.map((item, i) => (
                     <li key={`${item.event.id}-${i}`}>
@@ -276,9 +287,9 @@ function SchedulePageContent() {
                   ))}
                 </ul>
               )}
-            </div>
+            </section>
           </Reveal>
-        </>
+        </div>
       )}
 
       {editingEvent && (
