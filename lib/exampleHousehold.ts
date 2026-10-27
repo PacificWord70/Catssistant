@@ -43,7 +43,8 @@
  * - Pickle: a rescued kitten. Weekly weigh-ins, a vaccine series, deworming,
  *   and a cold that flattens her growth for a week or two
  * - Biscuit: ear drops and a dental cleaning; weight steady
- * - Mochi: the healthy baseline to compare the others against
+ * - Mochi: the healthy baseline to compare the others against, bar a small
+ *   dip after a few nights at a boarding cattery
  *
  * The history reaches back about two years, because the charts offer a two
  * year range. Doses and findings are kept general: this is a demo of the
@@ -137,6 +138,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
   const MISO_VET = -121
   const MISO_DIET = MISO_VET + 1 // prescription food collected the next day
   const PICKLE_HOME = -70
+  const MOCHI_BOARDING = -310 // five nights at a cattery while the household was away
 
   const home = {
     weightUnit: 'lbs' as const,
@@ -161,7 +163,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       color: 'Orange',
       pattern: 'Tabby',
       coatLength: 'Short',
-      personality: 'Greets every visitor at the door, then follows them from room to room.',
+      personality: 'meets everyone at the door then follows them around the whole visit',
       energyLevel: 'Medium',
       huntingPreyDrive: ['Mouse'],
       huntingLocation: ['Indoor'],
@@ -178,13 +180,12 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       color: 'Black',
       pattern: 'Solid',
       coatLength: 'Short',
-      personality: 'Will swat anything that dangles, and most things that don’t.',
+      personality: 'swats anything that dangles. and most things that don’t',
       energyLevel: 'High',
       huntingPreyDrive: ['Bug', 'Bird'],
       huntingLocation: ['Indoor'],
       likesElectronicToys: 'Yes',
-      notes:
-        'On a weight-control diet: measured portions, no topping up, two play sessions a day. Goal is about 11 lb.',
+      notes: 'diet food, measured, NO top ups. 2 play sessions a day. goal ~11 lbs',
       createdAt: made(-HISTORY, 40),
     },
     {
@@ -197,13 +198,12 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       color: 'Black',
       pattern: 'Tuxedo',
       coatLength: 'Short',
-      personality: 'Sits by the food bowl at 5:55 every evening and stares until dinner arrives.',
+      personality: 'sits by his bowl at 5:55 every night and just stares at you',
       energyLevel: 'Medium',
       huntingPreyDrive: ['Bird'],
       huntingLocation: ['Indoor'],
       likesElectronicToys: 'Unknown',
-      notes:
-        'Prescription urinary food only, since the crystals. If he strains in the litter box again, call the vet the same day.',
+      notes: 'urinary food ONLY since the crystals. if he’s straining in the box again call vet same day',
       createdAt: made(-HISTORY, 30),
     },
     {
@@ -216,12 +216,12 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       color: 'Gray',
       pattern: 'Solid',
       coatLength: 'Short',
-      personality: 'Calm and dignified. Spends most afternoons in a sunny loaf.',
+      personality: 'very dignified old lady. loafs in the sun all afternoon',
       energyLevel: 'Low',
       huntingLocation: ['Indoor'],
       likesElectronicToys: 'No',
       knownIllnesses: ['Hyperthyroidism'],
-      notes: 'Thyroid tablet twice a day, hidden in a pill pocket.',
+      notes: 'thyroid pill 2x a day in a pill pocket',
       createdAt: made(-HISTORY, 20),
     },
     {
@@ -234,11 +234,11 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       color: 'Cream',
       pattern: 'Solid',
       coatLength: 'Long',
-      personality: 'Gentle and sleepy. Purrs the moment she’s picked up.',
+      personality: 'sleepy sweetheart, purrs as soon as you pick her up',
       energyLevel: 'Low',
       huntingLocation: ['Indoor'],
       likesElectronicToys: 'No',
-      notes: 'Needs brushing every week or her coat mats behind the ears.',
+      notes: 'brush weekly or she mats behind the ears',
       createdAt: made(-HISTORY, 10),
     },
     {
@@ -252,12 +252,12 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       color: 'White',
       pattern: 'Calico',
       coatLength: 'Short',
-      personality: 'Curious about everything, and climbs whatever is tallest.',
+      personality: 'into everything. climbs whatever’s tallest',
       energyLevel: 'High',
       huntingPreyDrive: ['Bug', 'Mouse'],
       huntingLocation: ['Indoor'],
       likesElectronicToys: 'Yes',
-      notes: 'Found under the porch at about six weeks old. Spay booked for when she’s big enough.',
+      notes: 'found her under the porch, ~6 wks old. spay booked once she’s big enough',
       createdAt: made(-PICKLE_HOME),
     },
   ]
@@ -336,7 +336,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
         times: ['07:30'],
         foodBrand: 'Hearth & Paw',
         foodName: 'Chicken pâté',
-        notes: 'Miso has his own urinary food now, so keep him away from this one.',
+        notes: 'keep Miso away from this, he has his own food now',
       },
       [
         [BISCUIT, 0.5, 'can'],
@@ -366,7 +366,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
         times: ['07:45'],
         foodBrand: 'Hearth & Paw',
         foodName: 'Senior chicken pâté',
-        notes: 'Fed in the bedroom. Pill pocket first.',
+        notes: 'in the bedroom, pill pocket first',
       },
       [[PEPPER, 0.5, 'can']],
     ),
@@ -379,7 +379,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
         times: ['18:00'],
         foodBrand: 'Hearth & Paw',
         foodName: 'Indoor adult dry',
-        notes: 'Noodle’s bowl gets topped up whenever he asks.',
+        notes: 'noodle gets topped up whenever he yells (oops)',
       },
       [
         [BISCUIT, 0.25, 'cup'],
@@ -398,7 +398,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
         times: ['18:00'],
         foodBrand: 'Hearth & Paw',
         foodName: 'Indoor adult dry',
-        notes: 'Noodle has his own measured dinner now.',
+        notes: 'noodle’s on his own dinner now',
       },
       [
         [BISCUIT, 0.25, 'cup'],
@@ -415,7 +415,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
         times: ['18:00'],
         foodBrand: 'Hearth & Paw',
         foodName: 'Indoor adult dry',
-        notes: 'Miso will remind you.',
+        notes: 'miso will remind you lol',
       },
       [
         [BISCUIT, 0.25, 'cup'],
@@ -433,7 +433,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
         times: ['12:00', '18:00'],
         foodBrand: 'Hearth & Paw',
         foodName: 'Weight control dry',
-        notes: 'Use the measuring scoop, level, every time. No top-ups.',
+        notes: 'LEVEL scoop every time. no top ups even if he begs',
       },
       [[NOODLE, 0.15, 'cup']],
     ),
@@ -446,7 +446,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
         times: ['07:30', '18:00'],
         foodBrand: 'Northpaw Veterinary',
         foodName: 'Urinary care chicken stew',
-        notes: 'A splash of warm water in it helps too.',
+        notes: 'add a splash of warm water',
       },
       [[MISO, 0.5, 'can']],
     ),
@@ -485,7 +485,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       recurrence: 'daily',
       medicationStatus: 'Started',
       medicationDuration: 'Forever',
-      notes: 'Dose as prescribed, hidden in a pill pocket. Ongoing, with regular bloodwork.',
+      notes: 'pill pocket. ongoing, bloodwork every few months',
     }),
     event({
       id: 'ear-drops',
@@ -498,7 +498,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       recurrenceEndDate: day(-36),
       medicationStatus: 'Started',
       medicationDuration: 'Set duration',
-      notes: 'Ten-day course for a mild ear infection.',
+      notes: '10 days for his ear',
     }),
     /* A medication event marks a moment, so a finished course is a Started
        and a Stopped. Without the second, the health card would count the
@@ -510,7 +510,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       title: 'Ear drops',
       date: day(-35),
       medicationStatus: 'Stopped',
-      notes: 'Course finished. All clear at the recheck.',
+      notes: 'done! all clear at recheck',
     }),
     event({
       id: 'miso-pain-relief',
@@ -523,7 +523,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       recurrenceEndDate: day(MISO_VET + 4),
       medicationStatus: 'Started',
       medicationDuration: 'Set duration',
-      notes: 'Five days, to settle his bladder while the new food starts working.',
+      notes: '5 days while the new food kicks in',
     }),
     event({
       id: 'miso-pain-relief-stopped',
@@ -532,7 +532,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       title: 'Pain relief from the vet',
       date: day(MISO_VET + 5),
       medicationStatus: 'Stopped',
-      notes: 'Course finished. Peeing normally again.',
+      notes: 'done, peeing normally again thank god',
     }),
     /* Two doses two weeks apart is one course: the first is the Started, the
        last is the Stopped, so the card does not count a finished dewormer. */
@@ -545,7 +545,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       times: ['10:00'],
       medicationStatus: 'Started',
       medicationDuration: 'Set duration',
-      notes: 'First dose, given at the new-kitten exam. Second one in two weeks.',
+      notes: '1st dose at the vet, 2nd in 2 wks',
     }),
     event({
       id: 'pickle-dewormer-stopped',
@@ -554,7 +554,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       title: 'Kitten dewormer',
       date: day(PICKLE_HOME + 16),
       medicationStatus: 'Stopped',
-      notes: 'Second and last dose given this morning.',
+      notes: '2nd dose this am, all done',
     }),
     event({
       id: 'pickle-flea',
@@ -566,7 +566,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       recurrence: 'monthly',
       medicationStatus: 'Started',
       medicationDuration: 'Forever',
-      notes: 'Kitten-safe spot-on from the clinic, on the back of the neck.',
+      notes: 'back of the neck. the kitten one from the clinic',
     }),
     event({
       id: 'pickle-antibiotic',
@@ -579,7 +579,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       recurrenceEndDate: day(-31),
       medicationStatus: 'Started',
       medicationDuration: 'Set duration',
-      notes: 'Twice a day for ten days, with food. Finish the whole bottle.',
+      notes: '2x a day w/ food, 10 days. finish the bottle!!',
     }),
     event({
       id: 'pickle-antibiotic-stopped',
@@ -588,7 +588,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       title: 'Amoxicillin-clavulanate liquid',
       date: day(-30),
       medicationStatus: 'Stopped',
-      notes: 'Course finished. No more sneezing.',
+      notes: 'finished, no more sneezing',
     }),
 
     // ─── Care routine ────────────────────────────────────────────────────────
@@ -604,7 +604,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       routineBrand: 'Clean Paws',
       routineItemName: 'Unscented clumping litter',
       litterType: 'Clumping Clay',
-      notes: 'Scoop daily; empty and wash the boxes on this day.',
+      notes: 'dump + wash all boxes',
     }),
     event({
       id: 'senior-food',
@@ -615,7 +615,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       routineType: 'Changed food',
       routineBrand: 'Hearth & Paw',
       routineItemName: 'Senior chicken pâté',
-      notes: 'Mixed in over a week. Took to it straight away.',
+      notes: 'mixed it in over a week, she loved it right away',
     }),
     event({
       id: 'noodle-food-change',
@@ -626,7 +626,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       routineType: 'Changed food',
       routineBrand: 'Hearth & Paw',
       routineItemName: 'Weight control dry',
-      notes: 'Mixed in over a week, as the vet suggested.',
+      notes: 'new food, he’s not thrilled lol. mixing in over a week',
     }),
     event({
       id: 'miso-food-change',
@@ -637,7 +637,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       routineType: 'Changed food',
       routineBrand: 'Northpaw Veterinary',
       routineItemName: 'Urinary care',
-      notes: 'Prescription food only from now on: nothing else, not even treats.',
+      notes: 'rx food only now. not even treats :(',
     }),
 
     // ─── Vet: Pepper's thyroid ───────────────────────────────────────────────
@@ -649,8 +649,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       times: ['15:00'],
       durationMinutes: 45,
       estimatedCost: 280,
-      notes:
-        'Losing weight though she’s eating more than ever. Bloodwork: T4 high, kidneys normal. Diagnosed hyperthyroid; starting methimazole.',
+      notes: 'losing weight even tho she eats everything. T4 high, kidneys ok. hyperthyroid, starting methimazole',
     }),
     vet({
       id: 'pepper-recheck-3wk',
@@ -659,7 +658,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(PEPPER_DIAGNOSED + 21),
       times: ['15:00'],
       estimatedCost: 140,
-      notes: 'T4 coming down, kidney values still fine. Same dose.',
+      notes: 'T4 coming down, kidneys still fine. same dose',
     }),
     vet({
       id: 'pepper-recheck-3mo',
@@ -668,7 +667,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(PEPPER_DIAGNOSED + 90),
       times: ['15:00'],
       estimatedCost: 140,
-      notes: 'T4 in the normal range. Weight starting to come back.',
+      notes: 'T4 normal!! weight coming back',
     }),
     vet({
       id: 'pepper-recheck-6mo',
@@ -677,7 +676,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(PEPPER_DIAGNOSED + 180),
       times: ['15:00'],
       estimatedCost: 140,
-      notes: 'Still in range. Next bloodwork in about three months.',
+      notes: 'still in range. bloodwork again in ~3 months',
     }),
     vet({
       id: 'vet-checkup',
@@ -687,8 +686,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       times: ['14:30'],
       durationMinutes: 45,
       estimatedCost: 160,
-      notes:
-        'Routine bloodwork. T4 still in range, kidneys fine. Same dose, recheck in a few weeks.',
+      notes: 'T4 still good, kidneys fine. same dose, recheck in a few wks',
     }),
     vet({
       id: 'vet-recheck',
@@ -697,7 +695,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(5),
       times: ['10:15'],
       estimatedCost: 95,
-      notes: 'Bring the pill pockets — she’s calmer with a treat.',
+      notes: 'bring pill pockets, she’s calmer w/ a treat',
     }),
 
     // ─── Vet: Noodle's weight ────────────────────────────────────────────────
@@ -708,8 +706,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(NOODLE_DIET),
       times: ['11:00'],
       estimatedCost: 90,
-      notes:
-        'About 2 lb overweight. Plan: weight-control food, measured meals, more play. Aim to lose slowly, 1–2% a month.',
+      notes: 'vet says ~2 lbs over. diet food, measure everything, more play. slow, 1-2% a month',
     }),
     vet({
       id: 'noodle-weigh-in',
@@ -718,7 +715,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(NOODLE_DIET + 90),
       times: ['11:00'],
       durationMinutes: 15,
-      notes: 'Losing at a good pace. Keep going.',
+      notes: 'good pace, keep going',
     }),
 
     // ─── Vet: Miso's bladder ─────────────────────────────────────────────────
@@ -730,8 +727,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       times: ['09:30'],
       durationMinutes: 60,
       estimatedCost: 240,
-      notes:
-        'Seen the same day: straining can mean a blockage in a male cat, which is an emergency. Not blocked. Urinalysis showed struvite crystals. Prescription urinary diet and more water.',
+      notes: 'got him in same day (straining = could be blocked). NOT blocked thank god. struvite crystals. rx urinary food + more water',
     }),
     vet({
       id: 'miso-recheck',
@@ -740,7 +736,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(MISO_VET + 42),
       times: ['09:30'],
       estimatedCost: 85,
-      notes: 'No crystals. Stay on the urinary food for good.',
+      notes: 'no crystals! urinary food for life',
     }),
 
     // ─── Vet: Pickle's kitten care ───────────────────────────────────────────
@@ -751,8 +747,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(PICKLE_HOME + 2),
       times: ['10:00'],
       estimatedCost: 120,
-      notes:
-        'About six weeks old and healthy. FeLV/FIV test negative. First dewormer dose and flea treatment.',
+      notes: '~6 wks, healthy. FeLV/FIV neg. dewormer + flea stuff',
     }),
     vet({
       id: 'pickle-fvrcp-1',
@@ -761,7 +756,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(PICKLE_HOME + 14),
       times: ['16:00'],
       estimatedCost: 60,
-      notes: 'First FVRCP, at eight weeks.',
+      notes: '1st FVRCP',
     }),
     vet({
       id: 'pickle-cold',
@@ -770,8 +765,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(-40),
       times: ['12:00'],
       estimatedCost: 95,
-      notes:
-        'Upper respiratory infection, common in shelter and stray kittens. Antibiotic for ten days; keep her eating and her eyes clean.',
+      notes: 'sneezy + gunky eyes, URI. abx 10 days, keep her eating + wipe eyes',
     }),
     vet({
       id: 'pickle-fvrcp-2',
@@ -780,7 +774,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(-21),
       times: ['16:00'],
       estimatedCost: 60,
-      notes: 'Second FVRCP. Pushed back a week while she got over her cold.',
+      notes: '2nd FVRCP, pushed a week bc of the cold',
     }),
     vet({
       id: 'kitten-vaccines',
@@ -789,7 +783,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(9),
       times: ['16:00'],
       estimatedCost: 75,
-      notes: 'Final FVRCP booster and rabies.',
+      notes: 'last FVRCP + rabies',
     }),
     vet({
       id: 'pickle-spay',
@@ -799,7 +793,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       times: ['08:00'],
       durationMinutes: undefined,
       estimatedCost: 350,
-      notes: 'Drop off at 8, collect in the afternoon. No food after midnight the night before.',
+      notes: 'drop off 8am, pick up afternoon. no food after midnight!',
     }),
 
     // ─── Vet: Biscuit and Mochi ──────────────────────────────────────────────
@@ -811,8 +805,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       times: ['08:00'],
       durationMinutes: undefined,
       estimatedCost: 650,
-      notes:
-        'Under anaesthetic, bloodwork first. Scale and polish, one small tooth out. Soft food for a few days.',
+      notes: 'bloodwork first then cleaning. 1 small tooth out. soft food few days',
     }),
     vet({
       id: 'biscuit-ears',
@@ -821,7 +814,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(-45),
       times: ['17:30'],
       estimatedCost: 85,
-      notes: 'Mild ear infection. Ten days of drops.',
+      notes: 'ear infection, mild. drops x10 days',
     }),
     vet({
       id: 'biscuit-ears-recheck',
@@ -831,7 +824,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       times: ['17:30'],
       durationMinutes: 15,
       estimatedCost: 40,
-      notes: 'All clear.',
+      notes: 'all clear',
     }),
     vet({
       id: 'mochi-checkup-last-year',
@@ -840,7 +833,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(-425),
       times: ['13:00'],
       estimatedCost: 90,
-      notes: 'Healthy. Vaccines up to date.',
+      notes: 'all good, shots done',
     }),
     vet({
       id: 'mochi-checkup',
@@ -849,7 +842,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(-60),
       times: ['13:00'],
       estimatedCost: 90,
-      notes: 'Healthy, weight right where it should be. Keep up the brushing.',
+      notes: 'perfect weight. keep brushing',
     }),
 
     // ─── Grooming ────────────────────────────────────────────────────────────
@@ -932,6 +925,35 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
     }),
 
     // ─── Other ───────────────────────────────────────────────────────────────
+    /* One-off moments in a single cat's life, which the weight chart can
+       show beside the line. The monthly bed wash below is a chore, not one
+       of these. */
+    event({
+      id: 'pickle-came-home',
+      catIds: [PICKLE],
+      category: 'Other',
+      title: 'Came home',
+      date: day(PICKLE_HOME),
+      times: ['18:30'],
+      notes: 'got her out from under the porch w/ chicken. spare room for now',
+    }),
+    event({
+      id: 'mochi-boarding',
+      catIds: [MOCHI],
+      category: 'Other',
+      title: 'Stayed at a boarding cattery',
+      date: day(MOCHI_BOARDING),
+      times: ['09:00'],
+      notes: '5 nights at Whisker Lodge while we’re away. packed her blanket',
+    }),
+    event({
+      id: 'biscuit-window-perch',
+      catIds: [BISCUIT],
+      category: 'Other',
+      title: 'Window perch put up',
+      date: day(-200),
+      notes: 'living room window. he’s obsessed, birds all morning',
+    }),
     event({
       id: 'wash-beds',
       catIds: EVERYONE,
@@ -940,7 +962,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       date: day(-690),
       durationMinutes: 30,
       recurrence: 'monthly',
-      notes: 'Hammock and the top bed too.',
+      notes: 'hammock + top bed too',
     }),
   ]
 
@@ -967,20 +989,20 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       [480, 11.0],
       [450, 10.9],
       [420, 10.6],
-      [390, 10.3, 'Eating more but losing weight'],
+      [390, 10.3, 'eating like crazy but still dropping weight??'],
       [360, 10.0],
-      [330, 9.8, 'Always hungry, and drinking a lot'],
+      [330, 9.8, 'always hungry. drinking a ton too'],
       [300, 9.5],
-      [285, 9.4, 'Booked a vet visit'],
-      [-PEPPER_DIAGNOSED, 9.3, 'Weighed at the vet. Hyperthyroid; tablets start today'],
-      [-PEPPER_DIAGNOSED - 21, 9.3, '3-week recheck'],
+      [285, 9.4, 'booked the vet'],
+      [-PEPPER_DIAGNOSED, 9.3, 'T4 high. starting the pills 2x a day'],
+      [-PEPPER_DIAGNOSED - 21, 9.3, '3 wk recheck'],
       [230, 9.4],
-      [-PEPPER_DIAGNOSED - 90, 9.5, 'Weighed at the vet'],
+      [-PEPPER_DIAGNOSED - 90, 9.5, 'vet scale. going up slowly'],
       [150, 9.7],
       [120, 9.8],
-      [-PEPPER_DIAGNOSED - 180, 9.9, 'Weighed at the vet'],
+      [-PEPPER_DIAGNOSED - 180, 9.9],
       [60, 10.0],
-      [21, 10.1, 'Weighed at the vet'],
+      [21, 10.1, 'finally back over 10 lbs!!'],
       [2, 10.2],
     ]),
     /* A year of creeping up on generous portions, then about 2% a month off
@@ -998,14 +1020,14 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       [305, 13.1],
       [275, 13.2],
       [240, 13.3],
-      [-NOODLE_DIET, 13.4, 'Vet says about 2 lb over. Diet starts today'],
+      [-NOODLE_DIET, 13.4, 'vet says 2 lbs over :( diet starts today'],
       [180, 13.15],
       [150, 12.9],
-      [-NOODLE_DIET - 90, 12.65, 'Weighed at the vet. Good pace'],
+      [-NOODLE_DIET - 90, 12.65, 'vet nurse happy w/ him'],
       [90, 12.4],
-      [60, 12.15, 'Halfway there'],
+      [60, 12.15, 'halfway!'],
       [30, 11.9],
-      [4, 11.6, 'Nearly at goal weight'],
+      [4, 11.6, 'almost there'],
     ]),
     // Steady through the urinary scare: the problem was crystals, not weight.
     ...readings(MISO, [
@@ -1014,21 +1036,21 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       [460, 11.6],
       [340, 11.5],
       [240, 11.7],
-      [-MISO_VET, 11.6, 'Weighed at the vet'],
-      [-MISO_VET - 42, 11.5, 'Weighed at the recheck'],
+      [-MISO_VET, 11.6, 'at vet. weight fine at least'],
+      [-MISO_VET - 42, 11.5],
       [20, 11.6],
     ]),
     /* Weekly, as for any young kitten: about a pound a month, with a flat
        week or two while the cold put her off her food. */
     ...readings(PICKLE, [
-      [70, 1.3, 'First weigh-in at home. About six weeks old'],
+      [70, 1.3, 'first weigh in! tiny. ~6 wks'],
       [63, 1.55],
-      [56, 1.8, 'Weighed at the vet'],
+      [56, 1.8, 'vet scale'],
       [49, 2.05],
-      [42, 2.3, 'Sneezing a bit'],
-      [35, 2.3, 'Off her food with the cold'],
-      [28, 2.4, 'Eating properly again'],
-      [21, 2.75, 'Weighed at the vet'],
+      [42, 2.3, 'bit sneezy'],
+      [35, 2.3, 'not eating much, the cold'],
+      [28, 2.4, 'eating again'],
+      [21, 2.75],
       [14, 3.05],
       [7, 3.35],
       [1, 3.6],
@@ -1037,17 +1059,20 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       [600, 12.5],
       [420, 12.6],
       [240, 12.4],
-      [150, 12.5, 'Weighed before his dental'],
-      [45, 12.4, 'Weighed at the vet'],
+      [150, 12.5, 'before dental'],
+      [45, 12.4, 'at vet for ear'],
       [10, 12.5],
     ]),
-    // The healthy baseline: the same give or take a couple of ounces.
+    /* The healthy baseline: the same give or take a couple of ounces, apart
+       from a small dip after the cattery, where she ate less than at home. */
     ...readings(MOCHI, [
       [650, 9.7],
-      [425, 9.8, 'Annual checkup'],
-      [300, 9.9],
+      [425, 9.8, 'checkup'],
+      [-MOCHI_BOARDING + 6, 9.9],
+      [-MOCHI_BOARDING - 6, 9.5, 'back from cattery. didn’t eat much there apparently'],
+      [270, 9.8, 'back to normal'],
       [180, 9.8],
-      [60, 9.8, 'Annual checkup'],
+      [60, 9.8],
       [15, 9.7],
     ]),
   ]
@@ -1149,19 +1174,19 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       productId: products.weightControl.id,
       dateStarted: day(NOODLE_DIET),
       catIds: [NOODLE],
-      notes: 'Measured with the level scoop.',
+      notes: 'level scoop!',
     }),
     item('urinary-wet', {
       productId: products.urinaryWet.id,
       dateStarted: day(MISO_DIET),
       catIds: [MISO],
-      notes: 'Prescription, ordered through the clinic.',
+      notes: 'rx, order from clinic',
     }),
     item('urinary-dry', {
       productId: products.urinaryDry.id,
       dateStarted: day(MISO_DIET),
       catIds: [MISO],
-      notes: 'Prescription, ordered through the clinic.',
+      notes: 'rx thru the clinic. order before it runs out',
     }),
     item('kitten', {
       productId: products.kitten.id,
@@ -1174,14 +1199,14 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       dateStarted: day(HISTORY - 300),
       dateEnded: day(HISTORY - 1),
       catIds: [BISCUIT, NOODLE, MISO, PEPPER, MOCHI],
-      notes: 'Noodle kept leaving it. Switched to Hearth & Paw.',
+      notes: 'noodle wouldn’t eat it, switched to hearth & paw',
     }),
     item('litter', { productId: products.litter.id, dateStarted: day(-800), catIds: EVERYONE }),
     item('methimazole', {
       productId: products.methimazole.id,
       dateStarted: day(PEPPER_DIAGNOSED),
       catIds: [PEPPER],
-      notes: 'Refill every 30 days.',
+      notes: 'refill every 30 days',
     }),
     item('ear-drops', {
       productId: products.earDrops.id,
@@ -1194,7 +1219,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       productId: products.flea.id,
       dateStarted: day(PICKLE_HOME + 2),
       catIds: [PICKLE],
-      notes: 'One tube a month.',
+      notes: '1 tube/month',
     }),
     item('wand', {
       productId: products.wand.id,
@@ -1216,7 +1241,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       productId: products.fountain.id,
       dateStarted: day(MISO_DIET),
       catIds: EVERYONE,
-      notes: 'Bought for Miso, but everyone drinks from it.',
+      notes: 'got it for Miso but everyone uses it',
     }),
     item('pill-pockets', {
       productId: products.pillPockets.id,

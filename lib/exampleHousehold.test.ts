@@ -12,6 +12,7 @@ import { buildMetrics } from '@/lib/healthMetrics'
 import { SCHEDULE_CATEGORIES } from '@/lib/scheduleAttributes'
 import { PRODUCT_CATEGORIES } from '@/lib/itemAttributes'
 import { catLifeStage } from '@/lib/utils'
+import { chartMarkers } from '@/lib/chartMarkers'
 
 const TODAY = '2026-10-27'
 const house = buildExampleHousehold(TODAY)
@@ -218,6 +219,36 @@ describe('the example health stories', () => {
     expect(steps.some(s => s <= 0.05)).toBe(true)
     expect(steps.filter(s => s > 0.05).length).toBeGreaterThanOrEqual(steps.length - 2)
     expect(w[w.length - 1] - w[0]).toBeGreaterThan(2)
+  })
+
+  it('has one-off life events, each for a single cat', () => {
+    const life = house.events.filter(e => e.category === 'Other' && e.recurrence === 'none')
+    expect(life.length).toBeGreaterThanOrEqual(3)
+    for (const e of life) expect(e.catIds, e.id).toHaveLength(1)
+    const pickleHome = life.find(e => e.id === 'example-pickle-came-home')!
+    expect(pickleHome.date).toBe(seriesFor('Pickle')[0].date)
+  })
+
+  it('marks Noodle’s new play plan as an activity change, but not anyone’s first play', () => {
+    const names = new Map(house.cats.map(c => [c.id, c.name]))
+    const activity = chartMarkers(house.events, names, house.cats.map(c => c.id), '2024-10-27', TODAY).filter(
+      m => m.kind === 'activity',
+    )
+    const diet = house.events.find(e => e.id === 'example-noodle-diet')!.date
+    expect(activity.find(m => m.date === diet)?.catIds).toEqual([catNamed('Noodle').id])
+    for (const name of ['Pickle', 'Biscuit']) {
+      expect(activity.some(m => m.catIds.includes(catNamed(name).id)), name).toBe(false)
+    }
+  })
+
+  it('dips Mochi’s weight a little after the cattery, then brings it back', () => {
+    const boarding = house.events.find(e => e.id === 'example-mochi-boarding')!.date
+    const series = seriesFor('Mochi')
+    const before = series.filter(p => p.date < boarding).pop()!
+    const after = series.find(p => p.date > boarding)!
+    expect(after.value).toBeLessThan(before.value)
+    expect(before.value - after.value).toBeLessThanOrEqual(0.5)
+    expect(series[series.length - 1].value).toBeGreaterThan(after.value)
   })
 
   it('pairs every Stopped medication with a Started one before it', () => {
