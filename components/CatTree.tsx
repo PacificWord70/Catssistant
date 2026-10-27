@@ -130,12 +130,19 @@ const PERCHES: Perch[] = [
    shown while its label is hovered. A cat can reach past the drawing's edge —
    Noodle lies above the top bed — so each carries its own box in the
    artwork's coordinates rather than sharing the tree's canvas. */
-const CATS: { href: string; name: string; rect: Rect; hoverRect: Rect }[] = [
+const CATS: {
+  href: string
+  name: string
+  rect: Rect
+  hoverRect: Rect
+  /** Lies *in* its perch, so the bowl or sling is drawn over its lower body. */
+  behind?: boolean
+}[] = [
   { href: '/cats', name: 'biscuit', rect: { x: 463, y: 414, w: 180, h: 180 }, hoverRect: { x: 450, y: 403, w: 193, h: 191 } },
   { href: '/shopping', name: 'noodle', rect: { x: 456, y: -132, w: 231, h: 229 }, hoverRect: { x: 456, y: -132, w: 231, h: 229 } },
   { href: '/schedule', name: 'miso', rect: { x: 179, y: 61, w: 155, h: 179 }, hoverRect: { x: 138, y: 61, w: 196, h: 179 } },
-  { href: '/health', name: 'pepper', rect: { x: 36, y: 514, w: 204, h: 147 }, hoverRect: { x: 36, y: 514, w: 203, h: 161 } },
-  { href: '/about', name: 'mochi', rect: { x: 323, y: 933, w: 222, h: 147 }, hoverRect: { x: 348, y: 933, w: 197, h: 153 } },
+  { href: '/health', name: 'pepper', behind: true, rect: { x: 36, y: 514, w: 204, h: 147 }, hoverRect: { x: 36, y: 514, w: 203, h: 161 } },
+  { href: '/about', name: 'mochi', behind: true, rect: { x: 323, y: 933, w: 222, h: 147 }, hoverRect: { x: 348, y: 933, w: 197, h: 153 } },
   { href: '/resources', name: 'pickle', rect: { x: 668, y: 681, w: 101, h: 98 }, hoverRect: { x: 676, y: 684, w: 94, h: 94 } },
 ]
 
@@ -261,6 +268,32 @@ export default function CatTree() {
   const [hovered, setHovered] = useState<string | null>(null)
   const layers = useTreeLayers()
 
+  /* Both poses are always in the page and swap by opacity, so hovering never
+     waits on a download. */
+  const renderCat = (cat: (typeof CATS)[number]) => {
+    const on = hovered === cat.href
+    return (
+      <span key={cat.name} aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/images/cats/cat-${cat.name}.png`}
+          alt=""
+          draggable={false}
+          className="select-none pointer-events-none"
+          style={{ ...boxStyle(cat.rect), opacity: on ? 0 : 1 }}
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/images/cats/cat-${cat.name}-hover.png`}
+          alt=""
+          draggable={false}
+          className="select-none pointer-events-none"
+          style={{ ...boxStyle(cat.hoverRect), opacity: on ? 1 : 0 }}
+        />
+      </span>
+    )
+  }
+
   const hoverProps = (href: string) => ({
     onMouseEnter: () => setHovered(href),
     onMouseLeave: () => setHovered(null),
@@ -307,6 +340,8 @@ export default function CatTree() {
             </div>
           ))}
 
+        {CATS.filter(cat => cat.behind).map(renderCat)}
+
         <img
           src={layers?.base ?? SRC}
           alt="A hand-drawn cat tree"
@@ -344,32 +379,9 @@ export default function CatTree() {
             />
           ))}
 
-        {/* The cats, in front of the tree and its toys. Both poses are always
-            in the page and swap by opacity, so hovering never waits on a
-            download. */}
-        {CATS.map(cat => {
-          const on = hovered === cat.href
-          return (
-            <span key={cat.name} aria-hidden>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/images/cats/cat-${cat.name}.png`}
-                alt=""
-                draggable={false}
-                className="select-none pointer-events-none"
-                style={{ ...boxStyle(cat.rect), opacity: on ? 0 : 1 }}
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/images/cats/cat-${cat.name}-hover.png`}
-                alt=""
-                draggable={false}
-                className="select-none pointer-events-none"
-                style={{ ...boxStyle(cat.hoverRect), opacity: on ? 1 : 0 }}
-              />
-            </span>
-          )
-        })}
+        {/* The cats, in front of the tree and its toys — except those that
+            lie in their perch, drawn before the tree above. */}
+        {CATS.filter(cat => !cat.behind).map(renderCat)}
 
         {layers && (
           <div
