@@ -22,6 +22,17 @@ export const selectSelectedCatId = (state: RootState) => state.cats.selectedCatI
 export const selectIsExample = (state: RootState) => state.example.active
 
 /**
+ * True while an owner with cats of their own is looking at the example from a
+ * page's help button (`startExamplePreview`). Anything that nudges "add your
+ * first cat" wants `selectIsFirstVisitExample` rather than `selectIsExample`:
+ * a previewing owner already has one.
+ */
+export const selectIsExamplePreview = (state: RootState) => state.example.preview
+
+export const selectIsFirstVisitExample = (state: RootState) =>
+  state.example.active && !state.example.preview
+
+/**
  * The currently selected cat, or undefined.
  *
  * Built with createSelector because it *derives* a value rather than reading one

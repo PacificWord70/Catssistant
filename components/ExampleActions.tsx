@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useAppSelector } from '@/store/hooks'
-import { selectIsExample } from '@/store/selectors'
+import { selectIsFirstVisitExample } from '@/store/selectors'
 
 /**
  * The home page's two ways in for someone with no cats yet: start their own
@@ -10,10 +10,11 @@ import { selectIsExample } from '@/store/selectors'
  * the home page can stay a server component.
  *
  * Renders nothing until the store has loaded, and nothing once real cats
- * exist — an owner coming home to their own household needs neither.
+ * exist — an owner coming home to their own household needs neither, and
+ * one previewing the example from a help button already has a first cat.
  */
 export default function ExampleActions() {
-  const isExample = useAppSelector(selectIsExample)
+  const isExample = useAppSelector(selectIsFirstVisitExample)
   if (!isExample) return null
 
   return (

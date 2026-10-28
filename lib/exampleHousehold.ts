@@ -67,13 +67,22 @@ export const EXAMPLE_REFUSAL_MESSAGE =
   'This is the example household, so changes aren’t saved. Add your first cat to start your own.'
 
 /**
+ * The same refusal for an owner who already has cats and opened the example
+ * from a page's help button (`startExamplePreview` in store/catsSlice.ts).
+ * "Add your first cat" would be wrong advice for them: their way back is the
+ * banner's Exit preview, not the Add Cat form.
+ */
+export const EXAMPLE_PREVIEW_REFUSAL_MESSAGE =
+  'This is a preview of the example household, so changes aren’t saved. Exit the preview to get back to your own cats.'
+
+/**
  * Thrown by a save or delete while the example is showing. Forms already show
  * a thrown error's message inline, so the refusal reaches the visitor through
  * the same path as "storage is full" without any form knowing about examples.
  */
 export class ExampleHouseholdError extends Error {
-  constructor() {
-    super(EXAMPLE_REFUSAL_MESSAGE)
+  constructor(preview = false) {
+    super(preview ? EXAMPLE_PREVIEW_REFUSAL_MESSAGE : EXAMPLE_REFUSAL_MESSAGE)
     this.name = 'ExampleHouseholdError'
   }
 }

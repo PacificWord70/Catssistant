@@ -9,8 +9,13 @@ import {
 import { getHealthRecords } from '@/lib/healthStorage'
 import { getCatalogProducts, getHouseholdItems } from '@/lib/itemStorage'
 import { todayKey } from '@/lib/dateKeys'
-import { buildExampleHousehold, ExampleHouseholdError, isExampleId } from '@/lib/exampleHousehold'
-import { exampleEnded, exampleShown, refuseWhileExample } from '@/store/exampleSlice'
+import { buildExampleHousehold, isExampleId } from '@/lib/exampleHousehold'
+import {
+  exampleEnded,
+  examplePreviewStarted,
+  exampleShown,
+  refuseWhileExample,
+} from '@/store/exampleSlice'
 import { healthRecordDeleted, healthRecordsLoaded } from '@/store/healthSlice'
 import { itemsLoaded } from '@/store/itemsSlice'
 import {
@@ -113,20 +118,12 @@ export function loadCats() {
  * from a household whose cats were all deleted stay untouched in storage and
  * come back with the next real cat; showing them beside example cats would
  * mix the two, which is the one thing the example must never do.
- *
- * The flag goes first, so no subscriber ever sees example cats while saves
- * are still allowed.
  */
 export function loadHousehold() {
   return (dispatch: AppDispatch) => {
     const cats = getCats()
     if (cats.length === 0) {
-      const example = buildExampleHousehold(todayKey())
-      dispatch(exampleShown())
-      dispatch(catsLoaded(example.cats))
-      dispatch(scheduleEventsLoaded(example.events))
-      dispatch(itemsLoaded({ items: example.items, catalog: example.products }))
-      dispatch(healthRecordsLoaded(example.healthRecords))
+      fillWithExample(dispatch, exampleShown())
       return
     }
     dispatch(exampleEnded())
@@ -138,16 +135,65 @@ export function loadHousehold() {
 }
 
 /**
- * Saves a cat. While the example is showing, a brand-new cat — anything
- * without an example id, which only the Add Cat form produces — is the
- * owner's first real one: it is saved, and reloading the household from
+ * Fills every slice with the example. The flag goes first, so no subscriber
+ * ever sees example cats while saves are still allowed. Which flag depends on
+ * why the example is showing: the first visit, or a preview.
+ */
+function fillWithExample(
+  dispatch: AppDispatch,
+  flag: ReturnType<typeof exampleShown> | ReturnType<typeof examplePreviewStarted>,
+) {
+  const example = buildExampleHousehold(todayKey())
+  dispatch(flag)
+  dispatch(catsLoaded(example.cats))
+  dispatch(scheduleEventsLoaded(example.events))
+  dispatch(itemsLoaded({ items: example.items, catalog: example.products }))
+  dispatch(healthRecordsLoaded(example.healthRecords))
+}
+
+/**
+ * Shows the example household to an owner who already has cats, so a page's
+ * help notes can point at something filled in. Only the store changes:
+ * storage is neither read nor written, so the owner's records are exactly
+ * where they were, and a reload — which loads from storage — ends the
+ * preview by itself. Ending it on purpose is `endExamplePreview`.
+ */
+export function startExamplePreview() {
+  return (dispatch: AppDispatch) => {
+    fillWithExample(dispatch, examplePreviewStarted())
+  }
+}
+
+/**
+ * Puts the owner's own household back. Loading from storage rather than
+ * restoring a saved copy of the slices means the preview never has to carry
+ * the real household around with it; storage is the copy that was never in
+ * doubt.
+ */
+export function endExamplePreview() {
+  return (dispatch: AppDispatch) => {
+    dispatch(loadHousehold())
+  }
+}
+
+/**
+ * Saves a cat. While the first-visit example is showing, a brand-new cat —
+ * anything without an example id, which only the Add Cat form produces — is
+ * the owner's first real one: it is saved, and reloading the household from
  * storage then finds a cat there and ends the example. Editing an example
  * cat is refused like any other change to the example.
+ *
+ * During a preview every save is refused, a new cat included. The owner
+ * already has cats, so there is no first cat to welcome, and a save that
+ * quietly ended the preview and landed in their real household would be the
+ * one surprise a preview must not spring. The refusal says to exit first,
+ * and the form keeps what was typed.
  */
 export function persistCat(cat: Cat) {
   return (dispatch: AppDispatch, getState: () => RootState) => {
-    if (getState().example.active) {
-      if (isExampleId(cat.id)) throw new ExampleHouseholdError()
+    const { active, preview } = getState().example
+    if (active) {
+      if (preview || isExampleId(cat.id)) refuseWhileExample(getState)
       writeToStorage(cat)
       dispatch(loadHousehold())
       return

@@ -4,16 +4,17 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAppSelector } from '@/store/hooks'
-import { selectCatsLoaded, selectIsExample } from '@/store/selectors'
+import { selectCatsLoaded, selectIsFirstVisitExample } from '@/store/selectors'
 import CatAvatar from '@/components/CatAvatar'
 
 export default function OnboardingPage() {
   const router = useRouter()
   const loaded = useAppSelector(selectCatsLoaded)
-  const isExample = useAppSelector(selectIsExample)
+  const isExample = useAppSelector(selectIsFirstVisitExample)
 
   // Only real cats count. The example household always has cats in the store,
-  // and this page is where "Add your first cat" leads from it.
+  // and this page is where "Add your first cat" leads from it. A preview of
+  // the example does not count either: that owner has cats.
   useEffect(() => {
     if (loaded && !isExample) router.replace('/')
   }, [loaded, isExample, router])
