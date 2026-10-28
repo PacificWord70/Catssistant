@@ -6,6 +6,7 @@ import CatAvatar from '@/components/CatAvatar'
 import MetricChart, { lineColor } from '@/components/MetricChart'
 import WeightLogForm from '@/components/WeightLogForm'
 import HealthStatCard from '@/components/HealthStatCard'
+import HelpButton from '@/components/HelpButton'
 import ScheduleEventForm from '@/components/ScheduleEventForm'
 import Reveal from '@/components/motion/Reveal'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
@@ -198,8 +199,11 @@ export default function HealthPage() {
 
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-4 mb-6 flex-wrap">
-        <h1 className="font-display text-3xl text-brand-brown">Health</h1>
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div className="flex items-center gap-3">
+          <h1 className="font-display text-3xl text-brand-brown">Health</h1>
+          <HelpButton page="health" />
+        </div>
         <button
           onClick={() => setLogging(true)}
           className="px-4 py-2 rounded-2xl bg-brand-orange text-white text-sm font-medium hover:bg-brand-orange/90 transition-colors"

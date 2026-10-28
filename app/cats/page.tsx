@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAppSelector } from '@/store/hooks'
 import { selectCatsByNewest, selectCatsLoaded } from '@/store/selectors'
 import CatCard from '@/components/CatCard'
+import HelpButton from '@/components/HelpButton'
 import Reveal from '@/components/motion/Reveal'
 
 /**
@@ -43,8 +44,11 @@ export default function CatsPage() {
   return (
     <div className="bg-white rounded-3xl shadow-soft p-7 min-h-[calc(100vh-8rem)]">
       <Reveal>
-        <div className="flex items-center justify-between mb-7">
-          <h1 className="font-display text-3xl text-brand-brown">My Cats</h1>
+        <div className="flex items-center justify-between gap-3 mb-7">
+          <div className="flex items-center gap-3">
+            <h1 className="font-display text-3xl text-brand-brown">My Cats</h1>
+            <HelpButton page="cats" />
+          </div>
           <Link
             href="/cats/new"
             className="hover-lift px-4 py-2 bg-brand-orange text-white rounded-2xl text-sm font-semibold hover:bg-brand-orange/90 transition-colors shadow-soft"

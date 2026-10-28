@@ -14,6 +14,7 @@ import { CATEGORY_ORDER, PRODUCT_CATEGORIES } from '@/lib/itemAttributes'
 import { formatDateKey, todayKey } from '@/lib/dateKeys'
 import { errorMessage } from '@/lib/formErrors'
 import ItemForm from '@/components/ItemForm'
+import HelpButton from '@/components/HelpButton'
 import Reveal from '@/components/motion/Reveal'
 
 type CategoryFilter = 'all' | ProductCategory
@@ -89,8 +90,11 @@ export default function ItemsPage() {
   return (
     <div className="bg-white rounded-3xl shadow-soft p-7 min-h-[calc(100vh-8rem)]">
       <Reveal>
-        <div className="flex items-center justify-between mb-7">
-          <h1 className="font-display text-3xl text-brand-brown">My Items</h1>
+        <div className="flex items-center justify-between gap-3 mb-7">
+          <div className="flex items-center gap-3">
+            <h1 className="font-display text-3xl text-brand-brown">My Items</h1>
+            <HelpButton page="items" />
+          </div>
           <button
             onClick={() => setEditing('new')}
             className="hover-lift px-4 py-2 bg-brand-orange text-white rounded-2xl text-sm font-semibold hover:bg-brand-orange/90 transition-colors shadow-soft"

@@ -23,6 +23,7 @@ import ScheduleList from '@/components/ScheduleList'
 import ScheduleEventRow from '@/components/ScheduleEventRow'
 import ScheduleRoutineBlock from '@/components/ScheduleRoutineBlock'
 import SegmentedControl from '@/components/SegmentedControl'
+import HelpButton from '@/components/HelpButton'
 import ScheduleEventForm from '@/components/ScheduleEventForm'
 import WeightLogForm from '@/components/WeightLogForm'
 import Reveal from '@/components/motion/Reveal'
@@ -202,9 +203,12 @@ function SchedulePageContent() {
   return (
     <div className="bg-white rounded-3xl shadow-soft p-4 sm:p-6 min-h-[calc(100vh-8rem)]">
       <Reveal>
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="font-display text-3xl text-brand-brown">Schedule</h1>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <h1 className="font-display text-3xl text-brand-brown">Schedule</h1>
+            <HelpButton page="schedule" />
+          </div>
+          <div className="flex flex-wrap justify-end items-center gap-2">
             {/* Weight belongs to the health page, but the moment you are most
                 likely to have a number to hand is while logging the vet visit
                 you took it at. */}

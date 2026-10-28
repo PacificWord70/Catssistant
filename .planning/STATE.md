@@ -65,9 +65,10 @@ Next up, agreed with Heidi 2026-10-27:
 - **Example household: done 2026-10-27.** Six cat tree characters (Biscuit,
   Noodle, Miso, Pepper, Mochi, Pickle), in memory only, view only, ended by the
   first real cat. The home tree's labels now sit on those cats' spots.
-- **Later: a help button on each page** showing that page with the example data
-  and short notes on what it can do, for owners who have added a cat and aren't
-  sure what to do next.
+- **Help button on each page: done 2026-10-28.** A "?" by the heading of My
+  Cats, Schedule, Health, My Items and Back up & restore opens short notes on
+  the page and can switch it to a preview of the example household, which
+  the sticky banner ends.
 - **Declined for now:** a UI to restore the automatic backups of unreadable data.
 
 Avatar artwork (see the avatar-system memory for how the layers and filenames work):

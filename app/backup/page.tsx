@@ -2,10 +2,11 @@
 
 import { ChangeEvent, useId, useState } from 'react'
 import Dialog from '@/components/Dialog'
+import HelpButton from '@/components/HelpButton'
 import Reveal from '@/components/motion/Reveal'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { loadHousehold } from '@/store/catsSlice'
-import { selectIsExample } from '@/store/selectors'
+import { selectIsExample, selectIsExamplePreview } from '@/store/selectors'
 import {
   backupFileName,
   buildBackup,
@@ -69,6 +70,7 @@ function importErrorMessage(err: unknown): string {
 export default function BackupPage() {
   const dispatch = useAppDispatch()
   const isExample = useAppSelector(selectIsExample)
+  const isPreview = useAppSelector(selectIsExamplePreview)
   const uid = useId()
   const ids = {
     file: `${uid}-file`,
@@ -165,7 +167,10 @@ export default function BackupPage() {
     <div>
       <div className="max-w-2xl mx-auto py-6 space-y-6">
         <Reveal>
-          <h1 className="font-display text-3xl text-brand-brown mb-2">Back up &amp; restore</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="font-display text-3xl text-brand-brown">Back up &amp; restore</h1>
+            <HelpButton page="backup" />
+          </div>
           <p className="text-brand-brown/70">
             Save a copy of everything you’ve entered to a file, and bring it back later — on a new
             browser, or after clearing this one.
@@ -182,11 +187,15 @@ export default function BackupPage() {
               household items. Keep it somewhere you’ll be able to find it again.
             </p>
             {/* The file is built from storage, which the example never touches,
-                so this is a description of what happens, not a filter. */}
+                so this is a description of what happens, not a filter. During
+                a preview that cuts the other way: the owner's real records are
+                exactly what the download holds, even though the pages are
+                showing Biscuit and friends. */}
             {isExample && (
               <p className="text-sm text-brand-brown/80 bg-brand-cream border border-brand-tan/50 rounded-2xl px-4 py-3 mb-4">
-                The example household isn’t part of backups. A backup holds only the cats and
-                records you’ve added yourself.
+                {isPreview
+                  ? 'The preview isn’t part of backups. Downloading now saves your own cats and records, not the example household.'
+                  : 'The example household isn’t part of backups. A backup holds only the cats and records you’ve added yourself.'}
               </p>
             )}
             <button type="button" onClick={handleExport} className={PRIMARY_BTN}>
