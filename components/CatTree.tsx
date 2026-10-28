@@ -148,7 +148,7 @@ const CATS: {
   { href: '/schedule', name: 'miso', inFront: [], rect: { x: 179, y: 61, w: 155, h: 179 }, hoverRect: { x: 138, y: 61, w: 196, h: 179 } },
   { href: '/health', name: 'pepper', inFront: ['tail'], rect: { x: 36, y: 514, w: 204, h: 147 }, hoverRect: { x: 36, y: 514, w: 203, h: 161 } },
   { href: '/about', name: 'mochi', inFront: ['head', 'tail'], rect: { x: 323, y: 933, w: 222, h: 147 }, hoverRect: { x: 348, y: 933, w: 197, h: 153 } },
-  { href: '/resources', name: 'pickle', rect: { x: 676, y: 684, w: 94, h: 94 }, hoverRect: { x: 668, y: 681, w: 101, h: 98 } },
+  { href: '/resources', name: 'pickle', rect: { x: 678, y: 684, w: 94, h: 94 }, hoverRect: { x: 678, y: 680, w: 101, h: 98 } },
 ]
 
 /* The two toys hang free, so they are lifted out of the drawing and swung on
