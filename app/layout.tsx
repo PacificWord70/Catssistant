@@ -33,8 +33,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               the cap only bites on displays wider than about 1900px. The cap is
               not the same thing as the line-length caps inside pages — those
               stay, because a form stretched across a monitor is worse, not
-              better. Keep this in step with the NavBar's container. */}
-          <main className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 py-8">
+              better. Keep this in step with the NavBar's container.
+
+              The extra bottom padding below md is for the NavBar's phone tab
+              bar, which is fixed over the foot of the screen: without it the
+              last row of any page would sit under the tabs. */}
+          <main className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pt-8 pb-24 md:pb-8">
             <ExampleBanner />
             {children}
           </main>
