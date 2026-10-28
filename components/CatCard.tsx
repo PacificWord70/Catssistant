@@ -23,6 +23,9 @@ export default function CatCard({ cat }: Props) {
   // A stored photo that fails the allowlist is treated as no photo at all, so
   // the avatar shows instead of a broken image or a request to somewhere else.
   const photoSrc = safeImageSrc(cat.photoUrl)
+  // The example household's cats are line drawings on a transparent ground;
+  // cropping them to fill the frame like a photo would lop off ears and tails.
+  const drawn = photoSrc?.startsWith('/images/cats/') ?? false
 
   return (
     <Link href={`/cats/${cat.id}`} className="block h-full">
@@ -41,7 +44,7 @@ export default function CatCard({ cat }: Props) {
               alt={cat.name}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover"
+              className={drawn ? 'w-full h-full object-contain p-3' : 'w-full h-full object-cover'}
             />
           ) : (
             // No photo, so fall back to the drawn avatar rather than a generic

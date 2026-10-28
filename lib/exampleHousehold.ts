@@ -164,8 +164,11 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
   const cats: Cat[] = [
     {
       ...home,
+      // The example cats are the ones drawn on the home page's tree, so their
+      // cards show those drawings rather than a generated avatar.
       id: BISCUIT,
       name: 'Biscuit',
+      photoUrl: '/images/cats/cat-biscuit.png',
       breed: ['Domestic Shorthair'],
       birthday: yearsAgo(5, 40),
       weight: 12.5,
@@ -183,6 +186,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       ...home,
       id: NOODLE,
       name: 'Noodle',
+      photoUrl: '/images/cats/cat-noodle.png',
       breed: ['Bombay'],
       birthday: yearsAgo(2, 95),
       weight: 11.6,
@@ -201,6 +205,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       ...home,
       id: MISO,
       name: 'Miso',
+      photoUrl: '/images/cats/cat-miso.png',
       breed: ['Domestic Shorthair'],
       birthday: yearsAgo(7, 200),
       weight: 11.6,
@@ -219,6 +224,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       ...home,
       id: PEPPER,
       name: 'Pepper',
+      photoUrl: '/images/cats/cat-pepper.png',
       breed: ['Domestic Shorthair'],
       birthday: yearsAgo(13, 60),
       weight: 10.2,
@@ -237,6 +243,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       ...home,
       id: MOCHI,
       name: 'Mochi',
+      photoUrl: '/images/cats/cat-mochi.png',
       breed: ['Domestic Longhair'],
       birthday: yearsAgo(4, 150),
       weight: 9.8,
@@ -254,6 +261,7 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       ...home,
       id: PICKLE,
       name: 'Pickle',
+      photoUrl: '/images/cats/cat-pickle.png',
       breed: ['Domestic Shorthair'],
       // About six weeks old when she was found, so sixteen weeks today.
       birthday: day(PICKLE_HOME - 42),

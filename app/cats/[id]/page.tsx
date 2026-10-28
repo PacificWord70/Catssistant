@@ -60,6 +60,9 @@ export default function CatProfilePage() {
   // attribute. An unsafe photo falls back to the avatar; an unusable phone
   // number is still shown, just not as a link.
   const photoSrc = safeImageSrc(cat.photoUrl)
+  // The example household's cats are line drawings on a transparent ground;
+  // cropping them to fill the frame like a photo would lop off ears and tails.
+  const drawn = photoSrc?.startsWith('/images/cats/') ?? false
   const vetTel = telHref(cat.vet?.phone)
 
   const aboutRows = [
@@ -91,7 +94,7 @@ export default function CatProfilePage() {
               alt={cat.name}
               loading="eager"
               decoding="async"
-              className="w-full h-full object-cover"
+              className={drawn ? 'w-full h-full object-contain p-3' : 'w-full h-full object-cover'}
             />
           ) : (
             <CatAvatar cat={cat} size={210} />
