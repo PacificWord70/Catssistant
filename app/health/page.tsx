@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import CatAvatar from '@/components/CatAvatar'
+import CatPicture from '@/components/CatPicture'
 import MetricChart, { lineColor } from '@/components/MetricChart'
 import WeightLogForm from '@/components/WeightLogForm'
 import HealthStatCard from '@/components/HealthStatCard'
@@ -233,7 +233,7 @@ export default function HealthPage() {
                     : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
                 }`}
               >
-                <CatAvatar cat={c} size={24} />
+                <CatPicture cat={c} size={24} decorative />
                 <span className="text-sm font-medium">{c.name}</span>
                 {/* The colour this cat takes on the comparison chart, so the chip
                     and the line read as the same cat. */}

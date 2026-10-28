@@ -24,7 +24,6 @@ const config = [
       'node_modules/**',
       'next-env.d.ts', // generated, and regenerated on every build
       '.planning/**',
-      'public/art-assets/**',
     ],
   },
 ]

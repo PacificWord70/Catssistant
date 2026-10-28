@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useId, useState } from 'react'
-import CatAvatar from '@/components/CatAvatar'
+import CatPicture from '@/components/CatPicture'
 import Dialog from '@/components/Dialog'
 import { Cat } from '@/types/cat'
 import { HealthRecord } from '@/types/healthRecord'
@@ -181,7 +181,7 @@ export default function WeightLogForm({
                         : 'border-brand-tan/50 text-brand-brown/60 hover:bg-brand-tan/15'
                     }`}
                   >
-                    <CatAvatar cat={c} size={22} />
+                    <CatPicture cat={c} size={22} decorative />
                     <span className="text-sm font-medium">{c.name}</span>
                   </button>
                 ))}

@@ -11,21 +11,7 @@ npm-debug.log*
 .env
 .env*.local
 
-# Artwork. No images are committed to this repo.
-#
-# Hand-drawn avatar layers go here. Next only serves static files from public/,
-# so the folder has to live inside it to be fetchable at runtime — but it stays
-# gitignored, so real art can be dropped in locally without landing in a
-# commit. CatAvatar falls back to its code-drawn placeholder when a layer is
-# missing, which is the normal state for a fresh clone.
-#
-# Ignoring the *contents* rather than the folder itself. Git won't descend into
-# an excluded directory, so `public/art-assets/` would make the negation below
-# impossible and the README couldn't be tracked.
-public/art-assets/*
-!public/art-assets/README.md
-
-# No image files of any kind.
+# Artwork. No image files of any kind.
 # Note: git keeps tracking files committed before this rule was added (the
 # brand logos, the docs/design mockups), so those are unaffected. New images
 # need an explicit `git add -f` to get in, which is the point.
@@ -152,29 +138,20 @@ iOSInjectionProject/
 # Vercel
 .vercel
 
-# The avatar artwork is the exception to the no-images rule above, and has to
-# sit *after* it: gitignore takes the last matching rule, so a negation placed
-# before `*.png` would be overridden by it.
+# The home page cat tree is the other exception to the no-images rule, and has
+# to sit *after* it: gitignore takes the last matching rule, so a negation
+# placed before `*.png` would be overridden by it.
 #
-# This art has to ship with the site to render on it — ignored art means every
-# deployed cat falls back to the placeholder — and unlike generated filler it is
-# real hand-drawn work. One file per face/hair/eye combination, plus its
-# untinted features layer.
-!public/art-assets/base-*.png
-!public/art-assets/features-*.png
-!public/art-assets/pattern-*.png
-
-# The home page cat tree, same exception and for the same reason as the avatar
-# artwork above — and it has to sit after `*.png` for the same ordering reason.
-#
-# This one is Heidi's line drawing with its enclosed regions flood-filled in
-# brand colours; her linework is untouched, pixel for pixel. It cannot be drawn
-# in code without redrawing it by hand, which loses the drawing, so it ships as
-# a file. Without this it is ignored, and a fresh clone renders a broken image
+# This is Heidi's line drawing with its enclosed regions flood-filled in brand
+# colours; her linework is untouched, pixel for pixel. It cannot be drawn in
+# code without redrawing it by hand, which loses the drawing, so it ships as a
+# file. Without this it is ignored, and a fresh clone renders a broken image
 # where the site's main navigation should be.
 !public/images/cat-tree.png
 #
 # The cats that sit on the tree, one per page. Heidi's drawings, lifted off her
-# layers and coloured the same way as the tree — her lines, untouched. Same
-# exception, same ordering reason.
+# layers and coloured the same way as the tree — her lines, untouched. They
+# also stand in for any cat without a photo (lib/catPicture.ts), so a deploy
+# without them would show a broken image on every such card. Same exception,
+# same ordering reason.
 !public/images/cats/cat-*.png

@@ -1,6 +1,5 @@
 import { Cat, CoatColor, CoatLength, CoatPattern, EnergyLevel } from '@/types/cat'
 import { BREEDS } from '@/lib/breeds'
-import { BREED_TRAITS, DrawHair } from '@/lib/avatar/breedTraits'
 
 /**
  * Fills in what the owner left blank, using the breed they picked.
@@ -28,14 +27,64 @@ const BREED_COLOR: Record<string, CoatColor> = {
   Chartreux: 'Gray',
 }
 
-/** The three drawing buckets widen back out to the stored coat lengths. */
-const HAIR_TO_COAT: Record<DrawHair, CoatLength> = {
+/**
+ * The coat each breed comes with, where the breed settles it.
+ *
+ * Keyed by the exact `name` strings in lib/breeds.ts, so a typo here fails to
+ * match rather than silently mis-describing a cat. `hair` is in three steps
+ * rather than the five of CoatLength because that is all a breed standard
+ * fixes: an owner can still record 'Medium' for their own cat. `pattern` is
+ * only set for breeds defined by their markings; a Maine Coon can be
+ * anything, so it has none.
+ *
+ * 'Ticked' is deliberately absent. An Abyssinian's coat is banded hair by
+ * hair with no marking shape, so Solid is the nearest description.
+ */
+interface BreedCoat {
+  hair: 'Long' | 'Short' | 'None'
+  pattern?: 'Solid' | 'Tabby' | 'Spotted' | 'Colorpoint'
+}
+
+const BREED_COAT: Record<string, BreedCoat> = {
+  Abyssinian: { hair: 'Short', pattern: 'Solid' },
+  'American Shorthair': { hair: 'Short' },
+  Balinese: { hair: 'Long', pattern: 'Colorpoint' },
+  Bengal: { hair: 'Short', pattern: 'Spotted' },
+  Birman: { hair: 'Long', pattern: 'Colorpoint' },
+  Bombay: { hair: 'Short', pattern: 'Solid' },
+  'British Shorthair': { hair: 'Short' },
+  Burmese: { hair: 'Short', pattern: 'Solid' },
+  Chartreux: { hair: 'Short', pattern: 'Solid' },
+  'Cornish Rex': { hair: 'None' },
+  'Devon Rex': { hair: 'None' },
+  'Domestic Longhair': { hair: 'Long' },
+  'Domestic Shorthair': { hair: 'Short' },
+  'Egyptian Mau': { hair: 'Short', pattern: 'Spotted' },
+  Himalayan: { hair: 'Long', pattern: 'Colorpoint' },
+  'Maine Coon': { hair: 'Long' },
+  Manx: { hair: 'Short' },
+  'Oriental Shorthair': { hair: 'Short' },
+  Persian: { hair: 'Long' },
+  Ragdoll: { hair: 'Long', pattern: 'Colorpoint' },
+  'Russian Blue': { hair: 'Short', pattern: 'Solid' },
+  Savannah: { hair: 'Short', pattern: 'Spotted' },
+  'Scottish Fold': { hair: 'Short' },
+  Siamese: { hair: 'Short', pattern: 'Colorpoint' },
+  Siberian: { hair: 'Long' },
+  Singapura: { hair: 'Short', pattern: 'Solid' },
+  Sphynx: { hair: 'None' },
+  Tonkinese: { hair: 'Short', pattern: 'Colorpoint' },
+  'Turkish Angora': { hair: 'Long' },
+}
+
+/** The three breed-standard steps widen back out to the stored coat lengths. */
+const HAIR_TO_COAT: Record<BreedCoat['hair'], CoatLength> = {
   Long: 'Long',
   Short: 'Short',
   None: 'Hairless',
 }
 
-/** The first breed listed is the one that decides, matching traitsForBreed. */
+/** The first breed listed is the one that decides. */
 function primaryBreed(cat: Pick<Cat, 'breed'>): string | undefined {
   return cat.breed?.[0]
 }
@@ -55,10 +104,12 @@ export function effectiveEnergy(cat: Pick<Cat, 'breed' | 'energyLevel'>): Energy
 }
 
 /** Coat length, falling back to the breed's. */
-export function effectiveCoatLength(cat: Pick<Cat, 'breed' | 'coatLength'>): CoatLength | undefined {
+export function effectiveCoatLength(
+  cat: Pick<Cat, 'breed' | 'coatLength'>,
+): CoatLength | undefined {
   if (cat.coatLength && cat.coatLength !== 'Unknown') return cat.coatLength
   const breed = primaryBreed(cat)
-  const hair = breed ? BREED_TRAITS[breed]?.hair : undefined
+  const hair = breed ? BREED_COAT[breed]?.hair : undefined
   return hair ? HAIR_TO_COAT[hair] : cat.coatLength
 }
 
@@ -70,7 +121,7 @@ export function effectiveCoatLength(cat: Pick<Cat, 'breed' | 'coatLength'>): Coa
 export function effectivePattern(cat: Pick<Cat, 'breed' | 'pattern'>): CoatPattern | undefined {
   if (cat.pattern) return cat.pattern
   const breed = primaryBreed(cat)
-  const pattern = breed ? BREED_TRAITS[breed]?.pattern : undefined
+  const pattern = breed ? BREED_COAT[breed]?.pattern : undefined
   if (!pattern) return undefined
   switch (pattern) {
     case 'Colorpoint':
@@ -79,10 +130,6 @@ export function effectivePattern(cat: Pick<Cat, 'breed' | 'pattern'>): CoatPatte
       return 'Solid'
     // Spotted is a tabby marking; CoatPattern has no entry of its own for it
     // yet, and tabby is closer than leaving a Bengal blank.
-    //
-    // Ticked coats need no case here — breedTraits already records Abyssinian
-    // and Singapura as Solid, because banding each hair produces no marking
-    // shape to draw at any size the avatar uses.
     case 'Spotted':
       return 'Tabby'
   }
@@ -92,8 +139,7 @@ export function effectivePattern(cat: Pick<Cat, 'breed' | 'pattern'>): CoatPatte
  * Coat colour: what the owner entered, then the breed where it fixes one.
  *
  * Returns undefined when neither applies, so callers that put this on screen as
- * text can say nothing rather than invent a colour. The drawing wants a colour
- * regardless — see effectiveAppearance, which supplies the white default.
+ * text can say nothing rather than invent a colour.
  */
 export function effectiveColor(cat: Pick<Cat, 'breed' | 'color'>): CoatColor | undefined {
   if (cat.color) return cat.color
@@ -137,21 +183,4 @@ export function breedFillIns(
     if (energy !== 'Unknown') fills.energyLevel = energy
   }
   return fills
-}
-
-/**
- * Everything the avatar needs, with breed fallbacks applied in one call, so
- * drawing code does not have to remember which fields have defaults.
- *
- * Colour is left undefined when nothing settles it, rather than being forced to
- * a named coat here. The palette owns that decision: tonesFor paints an
- * undescribed cat in its unknown-coat tone, which is the tan the artwork was
- * drawn in.
- */
-export function effectiveAppearance(cat: Pick<Cat, 'breed' | 'color' | 'pattern' | 'coatLength'>) {
-  return {
-    color: effectiveColor(cat),
-    pattern: effectivePattern(cat),
-    coatLength: effectiveCoatLength(cat),
-  }
 }

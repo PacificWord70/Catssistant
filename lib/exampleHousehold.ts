@@ -25,10 +25,8 @@
  * - Pickle, calico kitten, on the small ledge — Resources
  *
  * Mochi is a solid cream rather than a calico so the two never read as the
- * same cat. Pickle is recorded as White + Calico because the avatar draws a
- * calico as its base colour with orange patches (lib/avatar/palette.ts):
- * Orange + Calico would have no visible patches, while white with orange reads
- * as a calico at a glance.
+ * same cat. Pickle is recorded as White + Calico, white being the base coat a
+ * calico's patches sit on.
  *
  * Each cat also carries a health story, so the Health charts have something
  * true-to-life to show and the Schedule shows the events behind each bend in

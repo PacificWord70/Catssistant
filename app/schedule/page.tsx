@@ -17,7 +17,7 @@ import { SCHEDULE_CATEGORIES } from '@/lib/scheduleAttributes'
 import { HealthRecord } from '@/types/healthRecord'
 import { buildMonthGrid, formatDateLabel, CATEGORY_EMOJI } from '@/lib/scheduleUtils'
 import { todayKey } from '@/lib/dateKeys'
-import CatAvatar from '@/components/CatAvatar'
+import CatPicture from '@/components/CatPicture'
 import ScheduleCalendar from '@/components/ScheduleCalendar'
 import ScheduleList from '@/components/ScheduleList'
 import ScheduleEventRow from '@/components/ScheduleEventRow'
@@ -240,7 +240,7 @@ function SchedulePageContent() {
               <button onClick={() => setPickedCats(new Set())} disabled={shownCats.size === 0} className={PICK_BTN}>None</button>
               {cats.map(c => (
                 <button key={c.id} onClick={() => toggleCat(c.id)} aria-pressed={shownCats.has(c.id)} className={CHIP(shownCats.has(c.id))}>
-                  <CatAvatar cat={c} size={18} />
+                  <CatPicture cat={c} size={18} decorative />
                   <span className="font-medium">{c.name}</span>
                 </button>
               ))}

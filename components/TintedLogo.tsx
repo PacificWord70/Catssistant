@@ -11,7 +11,7 @@ import { useEffect, useState, type ReactNode } from 'react'
  * as pasted on, so instead the file is recoloured at runtime: every pixel the
  * drawing covers becomes cream, and its coverage (the alpha) is kept exactly,
  * so the anti-aliased edges stay smooth. Nothing is redrawn — the geometry is
- * hers, only the colour changes, the same rule as lib/avatar/artLayers.ts.
+ * hers, only the colour changes.
  *
  * The PNG as exported has a transparent background, so the alpha channel is
  * the coverage and is used as it stands. Should it ever be re-exported on

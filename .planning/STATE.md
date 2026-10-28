@@ -71,19 +71,9 @@ Next up, agreed with Heidi 2026-10-27:
   the sticky banner ends.
 - **Declined for now:** a UI to restore the automatic backups of unreadable data.
 
-Avatar artwork (see the avatar-system memory for how the layers and filenames work):
-
-- **No pattern artwork exists.** `pattern-tabby.png` is the highest-value one
-  missing — tabby is the most common cat there is, and one file works across
-  every coat colour and face shape. Also unmade: spotted, colorpoint, tuxedo,
-  tortoiseshell, and calico (which needs two layers for its third colour).
-- **The features layers are inferred, not exported.** The 36 installed PNGs were
-  pulled out of Heidi's flattened sheets by a throwaway script. The eye whites
-  come out clean; the pink nose and inner ears are found by a colour threshold
-  and are ragged and inconsistent between drawings, because her tan fur sits too
-  close in hue to the pink. The fix is Heidi exporting eyes/nose/inner-ears as
-  their own transparent layer named `features-{face}-{hair}-{eyes}.png`, which
-  the code already looks for.
+- **Old avatar system removed 2026-10-28.** The canvas cat-head avatars,
+  `lib/avatar/` and `public/art-assets/` are gone; a cat without a photo now
+  shows the tree cat nearest its colour (`lib/catPicture.ts`).
 
 Elsewhere:
 

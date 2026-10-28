@@ -138,17 +138,10 @@ it runs.
 
 ## Canvas rendering
 
-The avatar renders on a canvas. With no artwork installed it draws an empty
-placeholder slot — a bordered box with a cross through it. An earlier version
-drew a cat face from primitives, but a generated stand-in reads as a finished
-design decision, so it was removed in favour of an obvious gap that real
-hand-drawn art will fill.
-
-Note what that means for the sections below: the **setup** (device pixel ratio,
-normalised coordinates, transform resets) runs on every avatar, while the
-**compositing and tinting** only runs once real PNGs exist in
-`public/art-assets/`. Worth being precise about that distinction rather than
-claiming more than the code does.
+The cat avatars that used to render on a canvas were removed on 2026-10-28 in
+favour of showing one of the six hand-drawn tree cats for any cat without a
+photo (`lib/catPicture.ts`). The canvas lessons from that code are kept here
+because they are general.
 
 ### Buffer size vs display size
 
@@ -167,14 +160,15 @@ This is the canvas gotcha most often asked about.
 
 ### A normalised coordinate space
 
-A second scale sits on top of the DPR one:
+A second scale can sit on top of the DPR one:
 
 ```ts
-ctx.scale(size / AVATAR_VIEWBOX, size / AVATAR_VIEWBOX)  // viewbox is 100
+ctx.scale(size / VIEWBOX, size / VIEWBOX)  // viewbox is e.g. 100
 ```
 
-Every drawing function works in a fixed 100×100 box, so one code path renders a
-28px icon and a 210px portrait — no branching, no per-size magic numbers.
+Every drawing function then works in a fixed 100×100 box, so one code path
+renders a 28px icon and a 210px portrait — no branching, no per-size magic
+numbers.
 
 ### Path2D as a reusable shape
 
@@ -190,9 +184,7 @@ ctx.stroke(box)  // used twice
 
 Its other use is as a **clipping region** — `ctx.clip(path)` confines everything
 drawn afterwards to that shape, which is how you keep markings inside a
-silhouette without calculating bounds per stripe. Not currently needed, since
-the placeholder is one box, but it's the reason to reach for `Path2D` over plain
-`ctx.rect()`.
+silhouette without calculating bounds per stripe.
 
 `save()`/`restore()` push and pop the *entire* context state — transform, clip,
 fill style, alpha, line width. Forgetting `restore()` after a clip leaks it into
@@ -201,9 +193,8 @@ everything drawn afterwards, which is a genuinely confusing bug to chase.
 ### Draw order is the painter's algorithm
 
 Canvas has no z-index; later draws cover earlier ones, so the order of calls
-*is* the layering. In the avatar: fill the box, stroke its border, then the
-cross on top. With art layers it becomes body → markings, which is why a
-pattern PNG has to be drawn second to be visible at all.
+*is* the layering. A pattern layer has to be drawn after the body to be visible
+at all.
 
 ### Transforms are cumulative
 
@@ -415,14 +406,14 @@ Git won't descend into an excluded directory, so a negation inside one never
 matches:
 
 ```gitignore
-public/art-assets/           # can't un-ignore anything inside this
-!public/art-assets/README.md # never applies
+public/art/           # can't un-ignore anything inside this
+!public/art/README.md # never applies
 ```
 
 Ignoring the contents instead leaves the directory itself visible, so the
 negation works:
 
 ```gitignore
-public/art-assets/*
-!public/art-assets/README.md
+public/art/*
+!public/art/README.md
 ```

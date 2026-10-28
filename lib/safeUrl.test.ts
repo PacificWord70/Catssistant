@@ -11,7 +11,7 @@ describe('safeImageSrc', () => {
     'data:image/webp;base64,UklGRg==',
     'data:image/gif;base64,R0lGODlh',
     '/images/pets/milo.jpg',
-    '/art-assets/base-short.png',
+    '/images/cats/cat-miso.png',
   ])('allows %s', url => {
     expect(safeImageSrc(url)).toBe(url)
   })

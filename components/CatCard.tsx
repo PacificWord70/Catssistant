@@ -5,9 +5,8 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { Cat } from '@/types/cat'
 import { catAgeShort, coatLabel } from '@/lib/utils'
 import BreedTag from '@/components/BreedTag'
-import CatAvatar from '@/components/CatAvatar'
 import { effectiveColor, effectivePattern } from '@/lib/breedDefaults'
-import { safeImageSrc } from '@/lib/safeUrl'
+import { catPictureSrc, isDrawnPicture } from '@/lib/catPicture'
 
 interface Props {
   cat: Cat
@@ -20,12 +19,11 @@ export default function CatCard({ cat }: Props) {
   const effective = { color: effectiveColor(cat), pattern: effectivePattern(cat) }
 
   const reduceMotion = useReducedMotion()
-  // A stored photo that fails the allowlist is treated as no photo at all, so
-  // the avatar shows instead of a broken image or a request to somewhere else.
-  const photoSrc = safeImageSrc(cat.photoUrl)
-  // The example household's cats are line drawings on a transparent ground;
-  // cropping them to fill the frame like a photo would lop off ears and tails.
-  const drawn = photoSrc?.startsWith('/images/cats/') ?? false
+  // The cat's photo, or the tree cat that stands in for one. The drawings sit
+  // on a transparent ground, so they are fitted into the frame rather than
+  // cropped to fill it like a photo.
+  const src = catPictureSrc(cat)
+  const drawn = isDrawnPicture(src)
 
   return (
     <Link href={`/cats/${cat.id}`} className="block h-full">
@@ -36,21 +34,15 @@ export default function CatCard({ cat }: Props) {
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
         <div className="h-44 bg-brand-tan/20 flex items-center justify-center overflow-hidden flex-shrink-0">
-          {photoSrc ? (
-            // Lazy, because a long grid would otherwise fetch and decode every
-            // photo up front, including the ones far below the fold.
-            <img
-              src={photoSrc}
-              alt={cat.name}
-              loading="lazy"
-              decoding="async"
-              className={drawn ? 'w-full h-full object-contain p-3' : 'w-full h-full object-cover'}
-            />
-          ) : (
-            // No photo, so fall back to the drawn avatar rather than a generic
-            // emoji — it at least reflects this cat's colour and markings.
-            <CatAvatar cat={cat} size={128} />
-          )}
+          {/* Lazy, because a long grid would otherwise fetch and decode every
+              photo up front, including the ones far below the fold. */}
+          <img
+            src={src}
+            alt={cat.name}
+            loading="lazy"
+            decoding="async"
+            className={drawn ? 'w-full h-full object-contain p-3' : 'w-full h-full object-cover'}
+          />
         </div>
         <div className="p-4 flex flex-col justify-between flex-1 min-h-[5.5rem]">
           <div>
@@ -62,10 +54,10 @@ export default function CatCard({ cat }: Props) {
             </div>
           </div>
           <div className="flex items-center justify-between mt-2">
-            {/* Falls back to the breed's own colour and markings, matching the
-                avatar above rather than leaving the caption blank beside a
-                clearly grey cat. Where the breed settles nothing — a Persian can
-                be any colour — both stay quiet instead of inventing one. */}
+            {/* Falls back to the breed's own colour and markings rather than
+                leaving the caption blank beside a clearly grey cat. Where the
+                breed settles nothing — a Persian can be any colour — both stay
+                quiet instead of inventing one. */}
             {coatLabel(effective) && (
               <span className="text-xs text-brand-brown/60 truncate">{coatLabel(effective)}</span>
             )}

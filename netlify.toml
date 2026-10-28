@@ -29,11 +29,6 @@
   [headers.values]
     Cache-Control = "public, max-age=86400, must-revalidate"
 
-[[headers]]
-  for = "/art-assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=86400, must-revalidate"
-
 # Security headers for every response. The app stores everything in
 # localStorage and talks to no backend, so almost everything can be locked to
 # our own origin. Netlify only — `next dev` does not read this file, which is

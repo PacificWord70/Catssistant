@@ -1,4 +1,4 @@
-import CatAvatar from '@/components/CatAvatar'
+import CatPicture from '@/components/CatPicture'
 import { CatHealthSummary } from '@/lib/healthAnalysis'
 import { daysBetween, formatDateKey, todayKey } from '@/lib/dateKeys'
 import { Cat } from '@/types/cat'
@@ -64,7 +64,7 @@ export default function HealthStatCard({ cat, summary, color, wide = false }: Pr
       className="bg-white rounded-3xl shadow-soft border border-brand-tan/30 p-6 min-w-0"
     >
       <div className="flex items-center gap-3 mb-4">
-        <CatAvatar cat={cat} size={36} />
+        <CatPicture cat={cat} size={36} decorative />
         <h2 id={headingId} className="font-display text-xl text-brand-brown truncate flex-1">
           {cat.name}
         </h2>

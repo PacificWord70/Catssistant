@@ -159,10 +159,10 @@ Tapestry.
 - Inline comments for non-obvious logic: `// Reset phone prefix if phone is empty or only a dial code`
 - Commented render conditions for component variants: `// Removable chip — form use`, `// Inline text — profile page`, `// Pill — card use`
 - JSDoc `/** */` blocks are used widely — 30 of 65 source files carry them.
-  They explain *why*, not what: the two compounding scale problems in
-  `CatAvatar`, why reducers must not touch storage in `store/catsSlice.ts`, why
-  multiply-tinting forces the art to be drawn light in `lib/avatar/artLayers.ts`.
-  Match that habit; do not add comments that restate the code.
+  They explain *why*, not what: why reducers must not touch storage in
+  `store/catsSlice.ts`, why the stand-in picture in `lib/catPicture.ts` is a
+  stand-in by colour and not a likeness. Match that habit; do not add comments
+  that restate the code.
 
 ## Function Design
 

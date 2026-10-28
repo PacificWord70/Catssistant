@@ -9,8 +9,8 @@ import { selectCatById, selectCatsLoaded } from '@/store/selectors'
 import { catAgeLabel, catHumanAge, coatLabel } from '@/lib/utils'
 import { effectiveCoatLength, effectiveColor, effectiveEnergy, effectivePattern } from '@/lib/breedDefaults'
 import BreedTag from '@/components/BreedTag'
-import CatAvatar from '@/components/CatAvatar'
-import { safeImageSrc, telHref } from '@/lib/safeUrl'
+import { catPictureSrc, isDrawnPicture } from '@/lib/catPicture'
+import { telHref } from '@/lib/safeUrl'
 
 const FEATURE_TABS = ['Feeding', 'Health', 'Litter', 'Meds', 'Notes']
 
@@ -57,12 +57,12 @@ export default function CatProfilePage() {
   const list = (values?: string[]) => (values?.length ? values.join(', ') : undefined)
 
   // Stored values go through the allowlists in lib/safeUrl before reaching an
-  // attribute. An unsafe photo falls back to the avatar; an unusable phone
-  // number is still shown, just not as a link.
-  const photoSrc = safeImageSrc(cat.photoUrl)
-  // The example household's cats are line drawings on a transparent ground;
-  // cropping them to fill the frame like a photo would lop off ears and tails.
-  const drawn = photoSrc?.startsWith('/images/cats/') ?? false
+  // attribute. An unsafe photo falls back to the stand-in drawing; an unusable
+  // phone number is still shown, just not as a link.
+  const src = catPictureSrc(cat)
+  // The drawings sit on a transparent ground, so they are fitted into the
+  // frame rather than cropped to fill it like a photo.
+  const drawn = isDrawnPicture(src)
   const vetTel = telHref(cat.vet?.phone)
 
   const aboutRows = [
@@ -86,19 +86,15 @@ export default function CatProfilePage() {
 
         {/* Photo hero */}
         <div className="h-64 bg-brand-tan/20 flex items-center justify-center overflow-hidden relative">
-          {photoSrc ? (
-            // Eager: the hero is the first thing on screen, and lazy-loading it
-            // would only delay the one photo the owner came here to see.
-            <img
-              src={photoSrc}
-              alt={cat.name}
-              loading="eager"
-              decoding="async"
-              className={drawn ? 'w-full h-full object-contain p-3' : 'w-full h-full object-cover'}
-            />
-          ) : (
-            <CatAvatar cat={cat} size={210} />
-          )}
+          {/* Eager: the hero is the first thing on screen, and lazy-loading it
+              would only delay the one photo the owner came here to see. */}
+          <img
+            src={src}
+            alt={cat.name}
+            loading="eager"
+            decoding="async"
+            className={drawn ? 'w-full h-full object-contain p-3' : 'w-full h-full object-cover'}
+          />
           <Link
             href="/cats"
             className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm text-brand-brown text-sm font-medium px-3 py-1.5 rounded-full hover:bg-white transition-colors shadow-soft"

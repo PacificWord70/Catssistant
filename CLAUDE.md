@@ -69,21 +69,22 @@ performance, tests) is framework-agnostic.
 - Inputs: `rounded-2xl border border-brand-tan/50 focus:ring-brand-orange/40`
 
 ### No images in this repo
-`*.png/jpg/jpeg/gif/webp` are gitignored, as is `public/art-assets/`. Do not
-create, generate, or download artwork. Where art is needed, draw it in code or
-use a CSS placeholder so real hand-drawn work can be dropped in later. Files
-committed before this rule (brand logos, design mockups) stay tracked.
+`*.png/jpg/jpeg/gif/webp` are gitignored. Do not create, generate, or download
+artwork. Where art is needed, draw it in code or use a CSS placeholder so real
+hand-drawn work can be dropped in later. Files committed before this rule
+(brand logos, design mockups) stay tracked.
 
-Three explicit exceptions carry a `.gitignore` negation, each of which must sit
+Two explicit exceptions carry a `.gitignore` negation, each of which must sit
 **after** the blanket `*.png` rule, since the last matching rule wins:
-`public/images/pets/*` (About page photos), `public/art-assets/{base,features,pattern}-*.png`
-(avatar layers), and `public/images/cat-tree.png` (home page navigation).
+`public/images/pets/*` (About page photos), and `public/images/cat-tree.png`
+plus `public/images/cats/cat-*.png` (home page navigation, and the stand-in
+pictures for cats without a photo).
 
 ### Never redraw Heidi's artwork
 When Heidi supplies a drawing, use **her file**. Do not re-derive the linework
 by eye into paths or canvas calls — it comes out an imitation and she will spot
-it immediately. The avatars work precisely because the code never draws a cat:
-it tints and layers her exported PNGs, so the geometry is always hers.
+it immediately. The tree cats work precisely because the code never draws a
+cat: it colours and places her exported PNGs, so the geometry is always hers.
 
 To colour line art without moving a line: label connected components of non-line
 pixels, render a numbered region map, look at it, then assign a brand token per
@@ -143,7 +144,7 @@ Catssistant/
 ├── components/
 │   ├── NavBar.tsx              # Orange top nav, sliding indicator, scroll-shrink
 │   ├── CatCard.tsx             # Grid card — avatar/photo, name, 2 breeds, coat, age
-│   ├── CatAvatar.tsx           # Canvas avatar (see notes below)
+│   ├── CatPicture.tsx          # Round chip — photo or stand-in drawing
 │   ├── BreedTag.tsx            # Breed label + portalled tooltip (pill/inline/removable)
 │   ├── CatForm.tsx             # Add/edit cat form (shared by /new and /edit)
 │   ├── ScheduleEventForm.tsx   # Event modal, per-category fields, multi-cat
@@ -168,6 +169,7 @@ Catssistant/
 │   ├── catAttributes.ts        # Coat/energy/hunting/illness option lists
 │   ├── itemAttributes.ts       # Household item option lists
 │   ├── breedDefaults.ts        # effective* readers, plus breedFillIns for CatForm
+│   ├── catPicture.ts           # Photo or stand-in tree cat for any cat (see notes below)
 │   ├── scheduleAttributes.ts   # Categories, litter types, durations
 │   ├── scheduleUtils.ts        # Recurrence expansion, month grid, date/time labels
 │   ├── scheduleValidation.ts   # Event form validation, field by field
@@ -180,12 +182,7 @@ Catssistant/
 │   ├── catTreeArt.ts           # Pixel work on the cat tree drawing
 │   ├── utils.ts                # catHumanAge, catAgeLabel, catAgeShort,
 │   │                           #   coatLabel, catLifeStage, catWeightLbs
-│   ├── *.test.ts               # Vitest — logic tests live beside the code
-│   └── avatar/
-│       ├── palette.ts          # Coat colour → base/shade/light tones
-│       ├── placeholder.ts      # Code-drawn cat, Canvas 2D primitives only
-│       ├── breedTraits.ts      # Breed → face/hair/eye traits
-│       └── artLayers.ts        # Optional PNG layers + runtime tinting
+│   └── *.test.ts               # Vitest — logic tests live beside the code
 └── types/
     ├── cat.ts                  # Cat, Vet, coat/energy/hunting unions, LifeStage
     ├── scheduleEvent.ts        # ScheduleEvent + per-category field types
@@ -256,19 +253,18 @@ empty one, because an empty hammock reads as a missing link.
 
 ### CatCard
 - Shows up to 2 breeds (silently truncates, no +N badge)
-- Falls back to `CatAvatar` when a cat has no uploaded photo
+- Shows the stand-in drawing when a cat has no uploaded photo
 
-### CatAvatar
-Canvas-rendered avatar, `components/CatAvatar.tsx`.
-- Drawing code works in a fixed 100×100 space; the context is scaled to the
-  requested `size`, so one code path serves every size
-- The canvas buffer is separately sized by `devicePixelRatio` — without this it
-  looks blurry on retina screens
-- Draws `lib/avatar/placeholder.ts` first, then swaps in PNG layers from
-  `public/art-assets/` if any exist. That folder is gitignored, so the
-  placeholder is the normal path
-- Layers are greyscale and tinted at runtime (`multiply`, then `destination-in`
-  to restore the alpha mask), so one body serves all six coat colours
+### Cat pictures
+`lib/catPicture.ts` decides what picture a cat gets. `catPictureSrc(cat)` is
+the photo if it passes `safeImageSrc`, otherwise `standInPictureFor(cat)`: one
+of the six tree cats in `public/images/cats/`, used as exported. It is a
+stand-in by colour, not a likeness — kitten → Pickle; tuxedo → Miso; orange or
+brown → Biscuit; black or chocolate → Noodle; grey, silver or lilac → Pepper;
+anything else (white, cream, calico, tortie, colorpoint, unknown) → Mochi.
+`isDrawnPicture(src)` tells callers to use `object-contain` with padding, since
+the drawings sit on a transparent ground and cropping takes the ears off.
+`components/CatPicture.tsx` is the round chip version for pickers and headings.
 
 ### Storage migrations
 `lib/storage.ts` migrates old shapes on read rather than rewriting localStorage,

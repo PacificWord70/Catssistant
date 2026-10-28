@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import {
-  effectiveAppearance,
   effectiveCoatLength,
   effectiveColor,
   effectiveEnergy,
@@ -111,23 +110,5 @@ describe('effectiveColor', () => {
 
   it('says nothing with no breed at all', () => {
     expect(effectiveColor({ breed: [], color: undefined })).toBeUndefined()
-  })
-})
-
-describe('effectiveAppearance', () => {
-  it('resolves the three drawing fields together', () => {
-    expect(effectiveAppearance({ breed: ['Russian Blue'], color: undefined, pattern: undefined, coatLength: undefined }))
-      .toEqual({ color: 'Gray', pattern: 'Solid', coatLength: 'Short' })
-  })
-
-  it('lets the owner override every one of them', () => {
-    expect(effectiveAppearance({ breed: ['Russian Blue'], color: 'Cream', pattern: 'Tabby', coatLength: 'Long' }))
-      .toEqual({ color: 'Cream', pattern: 'Tabby', coatLength: 'Long' })
-  })
-
-  it('leaves an unbreeded cat entirely undecided', () => {
-    // No colour is invented here; the palette paints an unknown coat instead.
-    expect(effectiveAppearance({ breed: [], color: undefined, pattern: undefined, coatLength: undefined }))
-      .toEqual({ color: undefined, pattern: undefined, coatLength: undefined })
   })
 })
