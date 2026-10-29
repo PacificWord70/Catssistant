@@ -6,7 +6,8 @@ import { Cat } from '@/types/cat'
 import { catAgeShort, coatLabel } from '@/lib/utils'
 import BreedTag from '@/components/BreedTag'
 import { effectiveColor, effectivePattern } from '@/lib/breedDefaults'
-import { catPictureSrc, isDrawnPicture } from '@/lib/catPicture'
+import { catPictureSrc } from '@/lib/catPicture'
+import CatPortrait from '@/components/CatPortrait'
 
 interface Props {
   cat: Cat
@@ -19,11 +20,9 @@ export default function CatCard({ cat }: Props) {
   const effective = { color: effectiveColor(cat), pattern: effectivePattern(cat) }
 
   const reduceMotion = useReducedMotion()
-  // The cat's photo, or the tree cat that stands in for one. The drawings sit
-  // on a transparent ground, so they are fitted into the frame rather than
-  // cropped to fill it like a photo.
+  // The cat's photo if it has a usable one; otherwise a portrait painted from
+  // its details, which sits in the frame rather than filling it like a photo.
   const src = catPictureSrc(cat)
-  const drawn = isDrawnPicture(src)
 
   return (
     <Link href={`/cats/${cat.id}`} className="block h-full">
@@ -36,13 +35,17 @@ export default function CatCard({ cat }: Props) {
         <div className="h-44 bg-brand-tan/20 flex items-center justify-center overflow-hidden flex-shrink-0">
           {/* Lazy, because a long grid would otherwise fetch and decode every
               photo up front, including the ones far below the fold. */}
-          <img
-            src={src}
-            alt={cat.name}
-            loading="lazy"
-            decoding="async"
-            className={drawn ? 'w-full h-full object-contain p-3' : 'w-full h-full object-cover'}
-          />
+          {src ? (
+            <img
+              src={src}
+              alt={cat.name}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <CatPortrait cat={cat} size={160} />
+          )}
         </div>
         <div className="p-4 flex flex-col justify-between flex-1 min-h-[5.5rem]">
           <div>

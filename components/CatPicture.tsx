@@ -1,8 +1,11 @@
+'use client'
+
 import { Cat } from '@/types/cat'
-import { catPictureSrc, isDrawnPicture } from '@/lib/catPicture'
+import { catPictureSrc } from '@/lib/catPicture'
+import CatPortrait from '@/components/CatPortrait'
 
 interface Props {
-  cat: Pick<Cat, 'name' | 'photoUrl' | 'birthday' | 'breed' | 'color' | 'pattern'>
+  cat: Pick<Cat, 'name' | 'photoUrl' | 'birthday' | 'breed' | 'energyLevel' | 'color' | 'pattern'>
   /** Rendered width and height in CSS pixels. */
   size: number
   /**
@@ -15,30 +18,35 @@ interface Props {
 
 /**
  * A small round picture of a cat for chips and headings: the cat's photo, or
- * the tree cat that stands in for one (lib/catPicture.ts).
+ * a portrait painted from its details when it has none.
  *
- * Photos fill the circle. The drawings sit inside it on a cream ground with a
- * little room, because their ears and tails run close to the edge of the file
+ * Photos fill the circle. The portrait sits inside it on a cream ground with
+ * a little room, because ears and tails run close to the edge of the drawing
  * and a tight crop would take them off.
  */
 export default function CatPicture({ cat, size, decorative = false, className = '' }: Props) {
   const src = catPictureSrc(cat)
-  const drawn = isDrawnPicture(src)
   return (
     <span
       className={`inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden bg-brand-cream border border-brand-tan/40 ${className}`}
       style={{ width: size, height: size }}
     >
-      <img
-        src={src}
-        alt={decorative ? '' : cat.name}
-        aria-hidden={decorative || undefined}
-        width={size}
-        height={size}
-        loading="lazy"
-        decoding="async"
-        className={drawn ? 'w-full h-full object-contain p-[12%]' : 'w-full h-full object-cover'}
-      />
+      {src ? (
+        <img
+          src={src}
+          alt={decorative ? '' : cat.name}
+          aria-hidden={decorative || undefined}
+          width={size}
+          height={size}
+          loading="lazy"
+          decoding="async"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        /* Enough inset that the whole square drawing sits inside the circle:
+           the round clip must never take a corner off a pose. */
+        <CatPortrait cat={cat} size={size} decorative={decorative} className="p-[10%]" />
+      )}
     </span>
   )
 }

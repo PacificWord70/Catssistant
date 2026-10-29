@@ -150,8 +150,11 @@ iOSInjectionProject/
 !public/images/cat-tree.png
 #
 # The cats that sit on the tree, one per page. Heidi's drawings, lifted off her
-# layers and coloured the same way as the tree — her lines, untouched. They
-# also stand in for any cat without a photo (lib/catPicture.ts), so a deploy
-# without them would show a broken image on every such card. Same exception,
-# same ordering reason.
+# layers and coloured the same way as the tree — her lines, untouched. Same
+# exception, same ordering reason.
 !public/images/cats/cat-*.png
+#
+# The portrait poses: Heidi's outline, her inner part lines and a region map
+# per pose, which components/CatPortrait.tsx colours in for any cat without a
+# photo. Without them every such card is blank. Same ordering reason.
+!public/images/portraits/*.png

@@ -315,14 +315,3 @@ describe('ExampleHouseholdError', () => {
     expect(err.message).toBe(EXAMPLE_REFUSAL_MESSAGE)
   })
 })
-
-describe('example cat pictures', () => {
-  it('uses the home page tree drawings, which pass the photo URL check', async () => {
-    const { safeImageSrc } = await import('@/lib/safeUrl')
-    const { cats } = buildExampleHousehold('2026-10-28')
-    for (const cat of cats) {
-      expect(cat.photoUrl).toBe(`/images/cats/cat-${cat.name.toLowerCase()}.png`)
-      expect(safeImageSrc(cat.photoUrl)).toBe(cat.photoUrl)
-    }
-  })
-})

@@ -9,7 +9,8 @@ import { selectCatById, selectCatsLoaded } from '@/store/selectors'
 import { catAgeLabel, catHumanAge, coatLabel } from '@/lib/utils'
 import { effectiveCoatLength, effectiveColor, effectiveEnergy, effectivePattern } from '@/lib/breedDefaults'
 import BreedTag from '@/components/BreedTag'
-import { catPictureSrc, isDrawnPicture } from '@/lib/catPicture'
+import { catPictureSrc } from '@/lib/catPicture'
+import CatPortrait from '@/components/CatPortrait'
 import { telHref } from '@/lib/safeUrl'
 
 const FEATURE_TABS = ['Feeding', 'Health', 'Litter', 'Meds', 'Notes']
@@ -57,12 +58,9 @@ export default function CatProfilePage() {
   const list = (values?: string[]) => (values?.length ? values.join(', ') : undefined)
 
   // Stored values go through the allowlists in lib/safeUrl before reaching an
-  // attribute. An unsafe photo falls back to the stand-in drawing; an unusable
+  // attribute. An unsafe photo falls back to the drawn portrait; an unusable
   // phone number is still shown, just not as a link.
   const src = catPictureSrc(cat)
-  // The drawings sit on a transparent ground, so they are fitted into the
-  // frame rather than cropped to fill it like a photo.
-  const drawn = isDrawnPicture(src)
   const vetTel = telHref(cat.vet?.phone)
 
   const aboutRows = [
@@ -88,13 +86,17 @@ export default function CatProfilePage() {
         <div className="h-64 bg-brand-tan/20 flex items-center justify-center overflow-hidden relative">
           {/* Eager: the hero is the first thing on screen, and lazy-loading it
               would only delay the one photo the owner came here to see. */}
-          <img
-            src={src}
-            alt={cat.name}
-            loading="eager"
-            decoding="async"
-            className={drawn ? 'w-full h-full object-contain p-3' : 'w-full h-full object-cover'}
-          />
+          {src ? (
+            <img
+              src={src}
+              alt={cat.name}
+              loading="eager"
+              decoding="async"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <CatPortrait cat={cat} size={232} />
+          )}
           <Link
             href="/cats"
             className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm text-brand-brown text-sm font-medium px-3 py-1.5 rounded-full hover:bg-white transition-colors shadow-soft"

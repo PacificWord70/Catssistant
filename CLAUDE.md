@@ -74,17 +74,19 @@ artwork. Where art is needed, draw it in code or use a CSS placeholder so real
 hand-drawn work can be dropped in later. Files committed before this rule
 (brand logos, design mockups) stay tracked.
 
-Two explicit exceptions carry a `.gitignore` negation, each of which must sit
+Three explicit exceptions carry a `.gitignore` negation, each of which must sit
 **after** the blanket `*.png` rule, since the last matching rule wins:
-`public/images/pets/*` (About page photos), and `public/images/cat-tree.png`
-plus `public/images/cats/cat-*.png` (home page navigation, and the stand-in
-pictures for cats without a photo).
+`public/images/pets/*` (About page photos), `public/images/cat-tree.png` plus
+`public/images/cats/cat-*.png` (home page navigation), and
+`public/images/portraits/*.png` (the portrait layers coloured in for cats
+without a photo).
 
 ### Never redraw Heidi's artwork
 When Heidi supplies a drawing, use **her file**. Do not re-derive the linework
 by eye into paths or canvas calls — it comes out an imitation and she will spot
-it immediately. The tree cats work precisely because the code never draws a
-cat: it colours and places her exported PNGs, so the geometry is always hers.
+it immediately. The tree cats and the portraits work precisely because the
+code never draws a cat: it colours and places her exported PNGs, so the
+geometry is always hers.
 
 To colour line art without moving a line: label connected components of non-line
 pixels, render a numbered region map, look at it, then assign a brand token per
@@ -144,7 +146,8 @@ Catssistant/
 ├── components/
 │   ├── NavBar.tsx              # Orange top nav, sliding indicator, scroll-shrink
 │   ├── CatCard.tsx             # Grid card — avatar/photo, name, 2 breeds, coat, age
-│   ├── CatPicture.tsx          # Round chip — photo or stand-in drawing
+│   ├── CatPicture.tsx          # Round chip — photo or CatPortrait
+│   ├── CatPortrait.tsx         # Portrait painted from the cat's details (see notes below)
 │   ├── BreedTag.tsx            # Breed label + portalled tooltip (pill/inline/removable)
 │   ├── CatForm.tsx             # Add/edit cat form (shared by /new and /edit)
 │   ├── ScheduleEventForm.tsx   # Event modal, per-category fields, multi-cat
@@ -169,7 +172,9 @@ Catssistant/
 │   ├── catAttributes.ts        # Coat/energy/hunting/illness option lists
 │   ├── itemAttributes.ts       # Household item option lists
 │   ├── breedDefaults.ts        # effective* readers, plus breedFillIns for CatForm
-│   ├── catPicture.ts           # Photo or stand-in tree cat for any cat (see notes below)
+│   ├── catPicture.ts           # catPictureSrc — the photo, if usable
+│   ├── portrait.ts             # Pose + colour per part from age/energy/coat (see notes below)
+│   ├── portraitRegions.ts      # Which numbered region of each pose is which part
 │   ├── scheduleAttributes.ts   # Categories, litter types, durations
 │   ├── scheduleUtils.ts        # Recurrence expansion, month grid, date/time labels
 │   ├── scheduleValidation.ts   # Event form validation, field by field
@@ -253,18 +258,36 @@ empty one, because an empty hammock reads as a missing link.
 
 ### CatCard
 - Shows up to 2 breeds (silently truncates, no +N badge)
-- Shows the stand-in drawing when a cat has no uploaded photo
+- Shows a `CatPortrait` when a cat has no uploaded photo
 
 ### Cat pictures
-`lib/catPicture.ts` decides what picture a cat gets. `catPictureSrc(cat)` is
-the photo if it passes `safeImageSrc`, otherwise `standInPictureFor(cat)`: one
-of the six tree cats in `public/images/cats/`, used as exported. It is a
-stand-in by colour, not a likeness — kitten → Pickle; tuxedo → Miso; orange or
-brown → Biscuit; black or chocolate → Noodle; grey, silver or lilac → Pepper;
-anything else (white, cream, calico, tortie, colorpoint, unknown) → Mochi.
-`isDrawnPicture(src)` tells callers to use `object-contain` with padding, since
-the drawings sit on a transparent ground and cropping takes the ears off.
-`components/CatPicture.tsx` is the round chip version for pickers and headings.
+`catPictureSrc(cat)` in `lib/catPicture.ts` is the photo if it passes
+`safeImageSrc`, else `undefined`, and every caller (CatCard, the profile hero,
+`components/CatPicture.tsx` for chips) then renders `components/CatPortrait.tsx`
+instead: a portrait painted from the cat's own details, so the example cats
+and an owner's cats get the same treatment. The home page tree still uses
+`public/images/cats/`.
+
+`lib/portrait.ts` decides what to paint. Pose: kitten if the life stage is
+Kitten, otherwise `POSE_BY_ENERGY[effectiveEnergy(cat)]` — Low → lying,
+Medium → sit-tail-out, High → stretch-curl, Unknown → sit-tail-curl
+(stretch-up is a spare). Colours: `COAT_TONES` gives each `CoatColor` a
+base/shade/light triple, and `portraitColours(color, pattern)` assigns one to
+each part — Solid is base all over with no inner lines; Tabby pales the
+bib/belly/paws and darkens the tips; Tuxedo whites the front; Colorpoint is
+the light tone with the shade on ears, legs, paws and tail tip; Calico and
+Tortoiseshell patch in fixed orange (and black) regardless of coat colour.
+Ear insides are always `EAR_PINK`. Unknown colour → Cream, unknown pattern →
+Solid. It is a stand-in by colour, not a likeness.
+
+The layers live in `public/images/portraits/{pose}-{outline,inner,regions}.png`:
+Heidi's outline, her thin part-dividing lines, and a map whose R channel is a
+region id (alpha 255 inside the cat). `lib/portraitRegions.ts` names each id
+by looking at a numbered render — if a pose is re-exported, check it again.
+`CatPortrait` fills each region's pixels with its part's colour, draws the
+inner lines when the pattern has colour changes to edge, then the outline on
+top, exports a blob URL cached per appearance for the session, and shows it in
+an `<img>` at native layer resolution so the browser's downscale stays crisp.
 
 ### Storage migrations
 `lib/storage.ts` migrates old shapes on read rather than rewriting localStorage,

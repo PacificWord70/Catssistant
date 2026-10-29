@@ -138,10 +138,11 @@ it runs.
 
 ## Canvas rendering
 
-The cat avatars that used to render on a canvas were removed on 2026-10-28 in
-favour of showing one of the six hand-drawn tree cats for any cat without a
-photo (`lib/catPicture.ts`). The canvas lessons from that code are kept here
-because they are general.
+The cat avatars that used to render on a canvas were removed on 2026-10-28.
+Cats without a photo now get a portrait that colours in Heidi's drawn pose
+layers (`components/CatPortrait.tsx`, rules in `lib/portrait.ts`); that paints
+on a canvas too, but at the layers' native size and only once per appearance.
+The canvas lessons from the old code are kept here because they are general.
 
 ### Buffer size vs display size
 

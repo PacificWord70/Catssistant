@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAppSelector } from '@/store/hooks'
 import { selectCatsLoaded, selectIsFirstVisitExample } from '@/store/selectors'
-import { treeCatPath } from '@/lib/catPicture'
+import CatPortrait from '@/components/CatPortrait'
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -21,11 +21,16 @@ export default function OnboardingPage() {
 
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      {/* One of Heidi's tree cats rather than the system emoji, so the first
-          thing a new owner sees is a drawing they will meet again on the home
-          page. Mochi is the one a cat nothing describes falls back to. */}
+      {/* One of Heidi's drawn cats rather than the system emoji, so the first
+          thing a new owner sees is the kind of portrait their own cat will get
+          until it has a photo: a cream, solid, middling-energy adult, which is
+          what a cat nothing describes looks like. */}
       <div className="mb-6 select-none" aria-hidden="true">
-        <img src={treeCatPath('mochi')} alt="" width={140} height={140} className="w-[140px] h-[140px] object-contain" />
+        <CatPortrait
+          cat={{ name: '', breed: [], color: 'Cream', pattern: 'Solid', energyLevel: 'Medium' }}
+          size={140}
+          decorative
+        />
       </div>
       <h1 className="font-display text-4xl text-brand-brown mb-3">Welcome to Catssistant!</h1>
       <p className="text-brand-brown/60 mb-12 max-w-md text-lg leading-relaxed">

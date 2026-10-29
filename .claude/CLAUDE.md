@@ -160,7 +160,7 @@ Tapestry.
 - Commented render conditions for component variants: `// Removable chip — form use`, `// Inline text — profile page`, `// Pill — card use`
 - JSDoc `/** */` blocks are used widely — 30 of 65 source files carry them.
   They explain *why*, not what: why reducers must not touch storage in
-  `store/catsSlice.ts`, why the stand-in picture in `lib/catPicture.ts` is a
+  `store/catsSlice.ts`, why the portrait colours in `lib/portrait.ts` are a
   stand-in by colour and not a likeness. Match that habit; do not add comments
   that restate the code.
 
