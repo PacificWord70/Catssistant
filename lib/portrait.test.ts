@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   COAT_TONES,
-  EAR_PINK,
   PARTS,
   POSE_BY_ENERGY,
   POSES,
@@ -81,11 +80,9 @@ describe('poseFor', () => {
 })
 
 describe('portraitColours', () => {
-  it('a solid cat is the base tone all over, with pink ears', () => {
+  it('a solid cat is the base tone all over, ears included', () => {
     const c = portraitColours('Gray', 'Solid')
-    for (const part of PARTS) {
-      expect(c[part]).toBe(part === 'earInner' ? EAR_PINK : COAT_TONES.Gray.base)
-    }
+    for (const part of PARTS) expect(c[part]).toBe(COAT_TONES.Gray.base)
   })
 
   it('a tabby has pale underparts and dark tips', () => {
@@ -151,7 +148,7 @@ describe('portraitColours', () => {
       for (const pattern of PATTERNS) {
         const c = portraitColours(color, pattern)
         for (const part of PARTS) expect(c[part]).toMatch(/^#[0-9a-f]{6}$/)
-        expect(c.earInner).toBe(EAR_PINK)
+        expect(c.earInner).toBe(c.earTipLeft)
       }
     }
   })

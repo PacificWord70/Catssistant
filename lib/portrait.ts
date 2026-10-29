@@ -98,9 +98,6 @@ export const COAT_TONES: Record<CoatColor, CoatTones> = {
   Lilac: tones('#c4b2c8'),
 }
 
-/** The inside of the ears, the same on every cat: a touch of life. */
-export const EAR_PINK = '#f2a7a7'
-
 /** The white of a tuxedo front and a calico ground. Matches White's base. */
 const WHITE = COAT_TONES.White.base
 
@@ -204,7 +201,9 @@ export function portraitColours(color: CoatColor, pattern: CoatPattern): Record<
     default:
       colours = all(tones.base)
   }
-  colours.earInner = EAR_PINK
+  // The ear insides take whatever the ear tips got: the inner line marks the
+  // ear's shape, not a different colour. Heidi tried pink and didn't want it.
+  colours.earInner = colours.earTipLeft
   return colours
 }
 

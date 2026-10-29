@@ -277,7 +277,7 @@ each part — Solid is base all over with no inner lines; Tabby pales the
 bib/belly/paws and darkens the tips; Tuxedo whites the front; Colorpoint is
 the light tone with the shade on ears, legs, paws and tail tip; Calico and
 Tortoiseshell patch in fixed orange (and black) regardless of coat colour.
-Ear insides are always `EAR_PINK`. Unknown colour → Cream, unknown pattern →
+Ear insides match the ear tips — no pink. Unknown colour → Cream, unknown pattern →
 Solid. It is a stand-in by colour, not a likeness.
 
 The layers live in `public/images/portraits/{pose}-{outline,inner,regions}.png`:
