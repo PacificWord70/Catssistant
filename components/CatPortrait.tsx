@@ -39,6 +39,9 @@ interface Props {
  */
 
 const LAYER_DIR = '/images/portraits/'
+/* Bumped whenever the layer files are regenerated. The file names never
+   change, so without this a browser keeps serving the old lines from cache. */
+const LAYER_VERSION = 3
 
 interface PoseLayers {
   width: number
@@ -66,9 +69,9 @@ function loadLayers(pose: Pose): Promise<PoseLayers> {
   if (!pending) {
     pending = (async () => {
       const [regionsImg, inner, outline] = await Promise.all([
-        loadImage(`${LAYER_DIR}${pose}-regions.png`),
-        loadImage(`${LAYER_DIR}${pose}-inner.png`),
-        loadImage(`${LAYER_DIR}${pose}-outline.png`),
+        loadImage(`${LAYER_DIR}${pose}-regions.png?v=${LAYER_VERSION}`),
+        loadImage(`${LAYER_DIR}${pose}-inner.png?v=${LAYER_VERSION}`),
+        loadImage(`${LAYER_DIR}${pose}-outline.png?v=${LAYER_VERSION}`),
       ])
       const { naturalWidth: width, naturalHeight: height } = regionsImg
       const canvas = document.createElement('canvas')
@@ -199,8 +202,10 @@ export default function CatPortrait({ cat, size, decorative = false, className =
           height={size}
           decoding="async"
           // object-contain, never cover: the whole layer fits the square so no
-          // pose loses an ear or a tail tip to the frame.
-          className="w-full h-full object-contain p-[8%]"
+          // pose loses an ear or a tail tip to the frame. A kitten sits in the
+          // bottom of a wider margin, so beside an adult's card she is small —
+          // the size difference says "kitten" before the age does.
+          className={`w-full h-full object-contain ${plan.pose === 'kitten' ? 'p-[18%] object-bottom' : 'p-[8%]'}`}
         />
       )}
       {ready && state.failed && (
