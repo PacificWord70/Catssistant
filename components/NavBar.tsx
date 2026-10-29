@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import { useRef, useState, useEffect } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import CatssistantLogo from '@/components/CatssistantLogo'
-import TintedLogo, { useTintedLogo } from '@/components/TintedLogo'
 
 /* Breeds and Guides are deliberately absent: they are reference material rather
    than places you work, so they hang off Resources instead of adding two more
@@ -101,7 +100,6 @@ export default function NavBar() {
   const [hoveredHref, setHoveredHref] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
   const reduceMotion = useReducedMotion()
-  const logo = useTintedLogo()
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -154,22 +152,16 @@ export default function NavBar() {
           scrolled ? 'h-14' : 'h-16'
         }`}
       >
-        {/* The logo's own colours — orange lines, brown wordmark — have
-            nothing to push against on the orange bar, so it is shown in a
-            single cream made from her file at runtime (see TintedLogo). Only
-            if that cannot be made does the original go back on a pale chip,
-            which is the one way the untouched colours get an edge here. */}
+        {/* Heidi's logo as she drew it — orange lines, brown wordmark — on a
+            plain white chip. Its colours have nothing to push against on the
+            orange bar, and recolouring it was tried and rejected: the chip
+            gives it a ground and leaves every line of the file alone. */}
         <Link
           href="/"
           aria-label="Catssistant home"
-          className={`hover:opacity-90 transition-opacity flex items-center ${
-            logo.status === 'failed' ? 'rounded-2xl bg-[#FEEBD6] px-3 py-1.5' : 'py-1.5'
-          }`}
+          className="hover:opacity-90 transition-opacity flex items-center rounded-xl bg-white px-3 py-1.5"
         >
-          <TintedLogo
-            height={logoHeight}
-            fallback={<CatssistantLogo horizontal height={logoHeight} />}
-          />
+          <CatssistantLogo horizontal height={logoHeight} />
         </Link>
         <div className="flex items-center gap-1">
           {/* Hidden on narrow screens. The full row — logo, four links, Add Cat
