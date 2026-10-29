@@ -41,7 +41,7 @@ interface Props {
 const LAYER_DIR = '/images/portraits/'
 /* Bumped whenever the layer files are regenerated. The file names never
    change, so without this a browser keeps serving the old lines from cache. */
-const LAYER_VERSION = 3
+const LAYER_VERSION = 4
 
 interface PoseLayers {
   width: number
@@ -130,14 +130,58 @@ async function paint(plan: PortraitPlan): Promise<string> {
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('No 2d context')
   ctx.putImageData(fill, 0, 0)
-  // Her lines go on whole, on top, at full alpha: never masked, clipped,
-  // thinned or recoloured by region. The fill only ever sits underneath.
-  if (plan.showInner) ctx.drawImage(layers.inner, 0, 0)
-  ctx.drawImage(layers.outline, 0, 0)
+  // Her lines go on whole, on top, at full alpha: never masked, clipped or
+  // thinned. The one thing that changes is their single colour — black on a
+  // dark coat, cocoa otherwise — applied to the whole layer at once.
+  if (plan.showInner) ctx.drawImage(tintLines(layers.inner, plan.line), 0, 0)
+  ctx.drawImage(tintLines(layers.outline, plan.line), 0, 0)
 
-  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
+  // Trim the transparent margin so the drawing's own edges are the image's
+  // edges. The cards sit every cat on the same floor, which only works if the
+  // feet are at the bottom of the picture and not above a margin that differs
+  // from pose to pose.
+  const trimmed = trimToContent(canvas)
+
+  const blob = await new Promise<Blob | null>(resolve => trimmed.toBlob(resolve, 'image/png'))
   if (!blob) throw new Error('Could not export portrait')
   return URL.createObjectURL(blob)
+}
+
+/** The line layer in one flat colour, its alpha untouched. */
+function tintLines(layer: HTMLImageElement, colour: string): HTMLCanvasElement {
+  const c = document.createElement('canvas')
+  c.width = layer.naturalWidth
+  c.height = layer.naturalHeight
+  const ctx = c.getContext('2d')
+  if (!ctx) return c
+  ctx.drawImage(layer, 0, 0)
+  ctx.globalCompositeOperation = 'source-in'
+  ctx.fillStyle = colour
+  ctx.fillRect(0, 0, c.width, c.height)
+  return c
+}
+
+/** A copy cropped to the painted pixels, with a small even margin. */
+function trimToContent(canvas: HTMLCanvasElement): HTMLCanvasElement {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return canvas
+  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  let x0 = canvas.width, y0 = canvas.height, x1 = -1, y1 = -1
+  for (let y = 0; y < canvas.height; y++)
+    for (let x = 0; x < canvas.width; x++) {
+      if (data[(y * canvas.width + x) * 4 + 3] === 0) continue
+      if (x < x0) x0 = x
+      if (x > x1) x1 = x
+      if (y < y0) y0 = y
+      if (y > y1) y1 = y
+    }
+  if (x1 < 0) return canvas
+  const m = 2
+  const out = document.createElement('canvas')
+  out.width = x1 - x0 + 1 + m * 2
+  out.height = y1 - y0 + 1 + m * 2
+  out.getContext('2d')?.drawImage(canvas, x0 - m, y0 - m, out.width, out.height, 0, 0, out.width, out.height)
+  return out
 }
 
 /**
@@ -205,7 +249,13 @@ export default function CatPortrait({ cat, size, decorative = false, className =
           // pose loses an ear or a tail tip to the frame. A kitten sits in the
           // bottom of a wider margin, so beside an adult's card she is small —
           // the size difference says "kitten" before the age does.
-          className={`w-full h-full object-contain ${plan.pose === 'kitten' ? 'p-[18%] object-bottom' : 'p-[8%]'}`}
+          // Every cat stands on the same floor — the bottom edge of the
+          // padded box — rather than floating at the centre of its frame.
+          // A kitten gets a taller top margin, so she is smaller on that
+          // same floor; the size difference says "kitten" before the age does.
+          className={`w-full h-full object-contain object-bottom ${
+            plan.pose === 'kitten' ? 'px-[20%] pt-[36%] pb-[9%]' : 'px-[8%] pt-[8%] pb-[9%]'
+          }`}
         />
       )}
       {ready && state.failed && (

@@ -128,6 +128,27 @@ export interface PortraitPlan {
    */
   showInner: boolean
   colours: Record<Part, string>
+  /**
+   * The colour her lines are drawn in. Cocoa, like the home tree, unless the
+   * coat is darker than cocoa — a black cat with a lighter outline looks as
+   * if its edges were worn off — in which case the lines go black too.
+   */
+  line: string
+}
+
+export const LINE_COCOA = '#4a3527'
+export const LINE_BLACK = '#0f0d0c'
+
+/** Perceived lightness 0..255 of a hex colour. */
+function lightness(hex: string): number {
+  const n = parseInt(hex.slice(1), 16)
+  return 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)
+}
+
+/** Lines darker than the coat, always: cocoa, or black on a dark coat. */
+export function lineColourFor(colours: Record<Part, string>): string {
+  const darkest = Math.min(...PARTS.map(p => lightness(colours[p])))
+  return darkest < lightness(LINE_COCOA) + 12 ? LINE_BLACK : LINE_COCOA
 }
 
 /**
@@ -213,10 +234,12 @@ export function portraitPlan(
 ): PortraitPlan {
   const color = effectiveColor(cat) ?? DEFAULT_COLOR
   const pattern = effectivePattern(cat) ?? DEFAULT_PATTERN
+  const colours = portraitColours(color, pattern)
   return {
     pose: poseFor(cat),
     showInner: pattern !== 'Solid',
-    colours: portraitColours(color, pattern),
+    colours,
+    line: lineColourFor(colours),
   }
 }
 
@@ -226,5 +249,5 @@ export function portraitPlan(
  * painter, so this is exact rather than a heuristic.
  */
 export function portraitKey(plan: PortraitPlan): string {
-  return `${plan.pose}|${plan.showInner ? 'lines' : 'clean'}|${PARTS.map(p => plan.colours[p]).join(',')}`
+  return `${plan.pose}|${plan.showInner ? 'lines' : 'clean'}|${plan.line}|${PARTS.map(p => plan.colours[p]).join(',')}`
 }

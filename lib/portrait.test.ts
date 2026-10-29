@@ -212,3 +212,20 @@ describe('portrait regions', () => {
     }
   })
 })
+
+describe('lineColourFor', () => {
+  it('draws black lines on a dark coat and cocoa lines on a light one', async () => {
+    const { lineColourFor, LINE_BLACK, LINE_COCOA } = await import('@/lib/portrait')
+    expect(lineColourFor(portraitColours('Black', 'Solid'))).toBe(LINE_BLACK)
+    expect(lineColourFor(portraitColours('Chocolate', 'Solid'))).toBe(LINE_BLACK)
+    expect(lineColourFor(portraitColours('Orange', 'Solid'))).toBe(LINE_COCOA)
+    expect(lineColourFor(portraitColours('White', 'Solid'))).toBe(LINE_COCOA)
+    // A tuxedo is black with white parts: the lines follow the darkest part.
+    expect(lineColourFor(portraitColours('Black', 'Tuxedo'))).toBe(LINE_BLACK)
+  })
+
+  it('is part of the appearance key, so two line colours never share a render', () => {
+    const black = portraitPlan({ color: 'Black', pattern: 'Solid', breed: [] })
+    expect(portraitKey(black)).toContain(black.line)
+  })
+})
