@@ -103,6 +103,10 @@ describe('portraitColours', () => {
     expect(c.bib).toBe(COAT_TONES.White.base)
     expect(c.belly).toBe(COAT_TONES.White.base)
     expect(c.paw).toBe(COAT_TONES.White.base)
+    expect(c.earInner).toBe(COAT_TONES.White.base)
+    expect(c.earTipLeft).toBe(COAT_TONES.White.base)
+    expect(c.earTipRight).toBe(COAT_TONES.White.base)
+    expect(c.tailTip).toBe(COAT_TONES.White.base)
   })
 
   it('a colorpoint is pale with the shade on its extremities', () => {

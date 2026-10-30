@@ -87,7 +87,9 @@ function tones(base: string): CoatTones {
  * amount so every colour's markings sit at the same contrast.
  */
 export const COAT_TONES: Record<CoatColor, CoatTones> = {
-  Black: tones('#1f1b19'),
+  // Softened off true black: pure black flattened to a silhouette on the
+  // cards and hid the inner lines. Still darker than cocoa, so lines go black.
+  Black: tones('#3a3330'),
   White: tones('#ffffff'),
   Gray: tones('#9a9a9a'),
   Orange: tones('#f28c28'),
@@ -187,7 +189,15 @@ export function portraitColours(color: CoatColor, pattern: CoatPattern): Record<
       }
       break
     case 'Tuxedo':
-      colours = { ...all(tones.base), bib: WHITE, belly: WHITE, paw: WHITE }
+      colours = {
+        ...all(tones.base),
+        bib: WHITE,
+        belly: WHITE,
+        paw: WHITE,
+        tailTip: WHITE,
+        earTipLeft: WHITE,
+        earTipRight: WHITE,
+      }
       break
     case 'Colorpoint':
       colours = {
