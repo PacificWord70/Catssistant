@@ -17,6 +17,12 @@ export interface FeedingAmount {
   catId: string
   amount: number
   unit: FeedingUnit
+  /**
+   * The catalog product being served, when the owner picked one. The amount
+   * is stored exactly as written; the product's label facts are what let a
+   * chart turn "half a can" into grams or calories.
+   */
+  productId?: string
 }
 
 export interface ScheduleEvent {

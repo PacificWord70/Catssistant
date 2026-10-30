@@ -2,6 +2,7 @@
 
 import { useId, useState, FormEvent } from 'react'
 import { Cat } from '@/types/cat'
+import { CatalogProduct } from '@/types/item'
 import { ScheduleEvent, ScheduleCategory, Recurrence, MedicationStatus, MedicationDuration, CareRoutineType, LitterType, PlayActivityType, PerCatValue, FeedingAmount, FeedingUnit } from '@/types/scheduleEvent'
 import { SCHEDULE_CATEGORIES, MEDICATION_STATUSES, MEDICATION_DURATIONS, CARE_ROUTINE_TYPES, LITTER_TYPES, PLAY_ACTIVITY_TYPES, FEEDING_UNITS, DURATION_OPTIONS_MINUTES } from '@/lib/scheduleAttributes'
 import { toDateKey, formatDurationLabel, formatDateLabel } from '@/lib/scheduleUtils'
@@ -18,6 +19,8 @@ const RECURRENCES: { value: Recurrence; label: string }[] = [
 
 interface Props {
   cats: Cat[]
+  /** The catalog, so a feeding can name the product being served. */
+  products?: CatalogProduct[]
   existing?: ScheduleEvent
   defaultDate?: string
   /** Category a new event starts on. Ignored when editing an existing one. */
@@ -153,7 +156,7 @@ function DurationSection({
   )
 }
 
-export default function ScheduleEventForm({ cats, existing, defaultDate, defaultCategory, defaultCatIds, onSave, onCancel, onDelete }: Props) {
+export default function ScheduleEventForm({ cats, products = [], existing, defaultDate, defaultCategory, defaultCatIds, onSave, onCancel, onDelete }: Props) {
   const [catIds, setCatIds] = useState<string[]>(
     existing?.catIds ?? defaultCatIds ?? (cats.length === 1 ? [cats[0].id] : []),
   )
@@ -179,6 +182,19 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, default
   const [foodBrand, setFoodBrand] = useState(existing?.foodBrand ?? '')
   const [foodName, setFoodName] = useState(existing?.foodName ?? '')
   const [feedingAmounts, setFeedingAmounts] = useState<FeedingAmount[]>(existing?.feedingAmounts ?? [])
+  /* One product for the meal. Each serving carries it, since a cat could in
+     principle be on a different food, but the form keeps to the common case. */
+  const [productId, setProductId] = useState(existing?.feedingAmounts?.find(f => f.productId)?.productId ?? '')
+  const foodProducts = products.filter(p => p.category === 'Food')
+  function chooseProduct(id: string) {
+    setProductId(id)
+    const p = foodProducts.find(x => x.id === id)
+    // The schedule shows brand and name as text, so they follow the product.
+    if (p) {
+      setFoodBrand(p.brand ?? '')
+      setFoodName(p.name)
+    }
+  }
 
   const [groomingTools, setGroomingTools] = useState<PerCatValue[]>(existing?.groomingTools ?? [])
 
@@ -199,7 +215,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, default
 
   // Every field in one string, so "has anything changed?" is one comparison.
   // The first render's copy is the baseline; useState keeps only that one.
-  const snapshot = JSON.stringify([catIds, category, title, date, times, durationMinutes, recurrence, recurrenceEndDate, notes, medicationStatus, medicationDuration, routineType, routineBrand, routineItemName, litterType, routineOther, foodBrand, foodName, feedingAmounts, groomingTools, playActivityType, playDetail, vetName, vetPhone, vetAddress, estimatedCost])
+  const snapshot = JSON.stringify([catIds, category, title, date, times, durationMinutes, recurrence, recurrenceEndDate, notes, medicationStatus, medicationDuration, routineType, routineBrand, routineItemName, litterType, routineOther, foodBrand, foodName, feedingAmounts, productId, groomingTools, playActivityType, playDetail, vetName, vetPhone, vetAddress, estimatedCost])
   const [initialSnapshot] = useState(snapshot)
   const dirty = snapshot !== initialSnapshot
 
@@ -209,6 +225,7 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, default
     heading: `${uid}-heading`,
     cats: `${uid}-cats`,
     category: `${uid}-category`,
+    foodProduct: `${uid}-food-product`,
     foodBrand: `${uid}-food-brand`,
     foodName: `${uid}-food-name`,
     amounts: `${uid}-amounts`,
@@ -375,7 +392,12 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, default
 
         foodBrand: category === 'Feeding' ? foodBrand.trim() || undefined : undefined,
         foodName: category === 'Feeding' ? foodName.trim() || undefined : undefined,
-        feedingAmounts: category === 'Feeding' ? feedingAmounts.filter(a => catIds.includes(a.catId) && a.amount > 0) : undefined,
+        feedingAmounts:
+          category === 'Feeding'
+            ? feedingAmounts
+                .filter(a => catIds.includes(a.catId) && a.amount > 0)
+                .map(a => ({ ...a, productId: productId || undefined }))
+            : undefined,
 
         groomingTools: category === 'Grooming' ? groomingTools.filter(g => catIds.includes(g.catId)) : undefined,
 
@@ -483,6 +505,25 @@ export default function ScheduleEventForm({ cats, existing, defaultDate, default
           {/* ── Feeding ───────────────────────────────────────── */}
           {category === 'Feeding' && (
             <>
+              {/* The product is what lets Health chart this meal in grams and
+                  calories from its label; the brand and name below are the
+                  words the schedule shows, and follow the product when one is
+                  picked. Without any food products yet, the text fields stand
+                  alone and the meal is still saved exactly as written. */}
+              {foodProducts.length > 0 && (
+                <div>
+                  <label htmlFor={ids.foodProduct} className={labelClass}>Product</label>
+                  <select id={ids.foodProduct} value={productId} onChange={e => chooseProduct(e.target.value)} className={inputClass}>
+                    <option value="">Not in My Items</option>
+                    {foodProducts.map(p => (
+                      <option key={p.id} value={p.id}>{p.brand ? `${p.name} — ${p.brand}` : p.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-brand-brown/55 mt-1 px-1">
+                    Picking the product lets Health chart this meal in grams and calories from its label.
+                  </p>
+                </div>
+              )}
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label htmlFor={ids.foodBrand} className={labelClass}>Food brand</label>

@@ -7,6 +7,7 @@ import { persistScheduleEvent, removeScheduleEvent } from '@/store/scheduleSlice
 import { persistHealthRecord } from '@/store/healthSlice'
 import {
   selectAllCats,
+  selectCatalog,
   selectCatsLoaded,
   selectScheduleEvents,
   selectScheduleLoaded,
@@ -96,6 +97,7 @@ function SchedulePageContent() {
   const dispatch = useAppDispatch()
   const cats = useAppSelector(selectAllCats)
   const events = useAppSelector(selectScheduleEvents)
+  const catalog = useAppSelector(selectCatalog)
   const catsLoaded = useAppSelector(selectCatsLoaded)
   const scheduleLoaded = useAppSelector(selectScheduleLoaded)
   const loaded = catsLoaded && scheduleLoaded
@@ -338,6 +340,7 @@ function SchedulePageContent() {
       {editingEvent && (
         <ScheduleEventForm
           cats={cats}
+          products={catalog}
           existing={editingEvent === 'new' ? undefined : editingEvent}
           defaultDate={selectedDate}
           onSave={handleSave}
