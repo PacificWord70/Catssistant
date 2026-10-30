@@ -175,58 +175,40 @@ export function portraitColours(color: CoatColor, pattern: CoatPattern): Record<
   const orange = COAT_TONES.Orange.base
   const black = COAT_TONES.Black.base
 
+  /* One layout for every two-tone coat, as Heidi asked: the second colour
+     goes on the ears, bib, belly (the high-energy pose has one), paws and tail
+     tip, and the base colour everywhere else. Only the two colours differ. */
+  const twoTone = (base: string, accent: string): Record<Part, string> => ({
+    ...all(base),
+    earTipLeft: accent,
+    earTipRight: accent,
+    earInner: accent,
+    bib: accent,
+    belly: accent,
+    paw: accent,
+    tailTip: accent,
+  })
+
   let colours: Record<Part, string>
   switch (pattern) {
     case 'Tabby':
-      colours = {
-        ...all(tones.base),
-        bib: tones.light,
-        belly: tones.light,
-        paw: tones.light,
-        tailTip: tones.shade,
-        earTipLeft: tones.shade,
-        earTipRight: tones.shade,
-      }
+      colours = twoTone(tones.base, tones.light)
       break
     case 'Tuxedo':
-      colours = {
-        ...all(tones.base),
-        bib: WHITE,
-        belly: WHITE,
-        paw: WHITE,
-        tailTip: WHITE,
-        earTipLeft: WHITE,
-        earTipRight: WHITE,
-      }
+      colours = twoTone(tones.base, WHITE)
       break
     case 'Colorpoint':
-      colours = {
-        ...all(tones.light),
-        earTipLeft: tones.shade,
-        earTipRight: tones.shade,
-        tailTip: tones.shade,
-        paw: tones.shade,
-        leg: tones.shade,
-      }
+      // The inverse of the layout: a pale body with the dark colour on the
+      // extremities, which is what makes a points cat a points cat.
+      colours = { ...twoTone(tones.light, tones.shade), bib: tones.light, belly: tones.light, leg: tones.shade }
       break
     case 'Calico':
-      colours = {
-        ...all(WHITE),
-        earTipLeft: orange,
-        haunch: orange,
-        tailTip: orange,
-        earTipRight: black,
-        tail: black,
-      }
+      // White with orange in the two-tone places, and black on the tail and
+      // one haunch so all three colours show.
+      colours = { ...twoTone(WHITE, orange), tail: black, haunch: black }
       break
     case 'Tortoiseshell':
-      colours = {
-        ...all(tones.base),
-        earTipLeft: orange,
-        tailTip: orange,
-        belly: orange,
-        haunch: orange,
-      }
+      colours = twoTone(tones.base, orange)
       break
     case 'Solid':
     default:

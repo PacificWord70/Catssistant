@@ -91,9 +91,9 @@ describe('portraitColours', () => {
     expect(c.bib).toBe(COAT_TONES.Orange.light)
     expect(c.belly).toBe(COAT_TONES.Orange.light)
     expect(c.paw).toBe(COAT_TONES.Orange.light)
-    expect(c.tailTip).toBe(COAT_TONES.Orange.shade)
-    expect(c.earTipLeft).toBe(COAT_TONES.Orange.shade)
-    expect(c.earTipRight).toBe(COAT_TONES.Orange.shade)
+    expect(c.tailTip).toBe(COAT_TONES.Orange.light)
+    expect(c.earTipLeft).toBe(COAT_TONES.Orange.light)
+    expect(c.earTipRight).toBe(COAT_TONES.Orange.light)
   })
 
   it('a tuxedo has a white front over the coat colour', () => {
@@ -128,11 +128,11 @@ describe('portraitColours', () => {
   it('a calico is white, orange and black whatever the coat colour', () => {
     const c = portraitColours('Gray', 'Calico')
     expect(c.body).toBe(COAT_TONES.White.base)
-    expect(c.bib).toBe(COAT_TONES.White.base)
+    expect(c.bib).toBe(COAT_TONES.Orange.base)
     expect(c.earTipLeft).toBe(COAT_TONES.Orange.base)
-    expect(c.haunch).toBe(COAT_TONES.Orange.base)
+    expect(c.earTipRight).toBe(COAT_TONES.Orange.base)
     expect(c.tailTip).toBe(COAT_TONES.Orange.base)
-    expect(c.earTipRight).toBe(COAT_TONES.Black.base)
+    expect(c.haunch).toBe(COAT_TONES.Black.base)
     expect(c.tail).toBe(COAT_TONES.Black.base)
     expect(Object.values(c)).not.toContain(COAT_TONES.Gray.base)
   })
@@ -143,8 +143,8 @@ describe('portraitColours', () => {
     expect(c.earTipLeft).toBe(COAT_TONES.Orange.base)
     expect(c.tailTip).toBe(COAT_TONES.Orange.base)
     expect(c.belly).toBe(COAT_TONES.Orange.base)
-    expect(c.haunch).toBe(COAT_TONES.Orange.base)
-    expect(c.earTipRight).toBe(COAT_TONES.Black.base)
+    expect(c.paw).toBe(COAT_TONES.Orange.base)
+    expect(c.earTipRight).toBe(COAT_TONES.Orange.base)
   })
 
   it('every colour and pattern gives every part a hex colour and pink ears', () => {

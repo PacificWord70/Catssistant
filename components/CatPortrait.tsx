@@ -41,7 +41,7 @@ interface Props {
 const LAYER_DIR = '/images/portraits/'
 /* Bumped whenever the layer files are regenerated. The file names never
    change, so without this a browser keeps serving the old lines from cache. */
-const LAYER_VERSION = 4
+const LAYER_VERSION = 7
 
 interface PoseLayers {
   width: number
@@ -118,10 +118,9 @@ async function paint(plan: PortraitPlan): Promise<string> {
     out[i] = r
     out[i + 1] = g
     out[i + 2] = b
-    // The map's edge pixels are partly transparent where the regions meet the
-    // line; keeping that alpha lets the outline's own anti-aliasing finish the
-    // edge instead of a hard colour step showing through beside it.
-    out[i + 3] = alpha
+    // Solid, always. The lines are hard-edged and sit on top, so any softness
+    // here would only let the page show through as a pale rim beside them.
+    out[i + 3] = 255
   }
 
   const canvas = document.createElement('canvas')
