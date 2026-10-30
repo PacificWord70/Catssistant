@@ -2,7 +2,7 @@
 
 import { useId, useState, FormEvent } from 'react'
 import { Cat } from '@/types/cat'
-import { CatalogProduct, HouseholdItem, ProductCategory, ItemStatus } from '@/types/item'
+import { CaloriePer, CatalogProduct, FoodFacts, FoodForm, HouseholdItem, ProductCategory, ItemStatus } from '@/types/item'
 import { PRODUCT_CATEGORIES } from '@/lib/itemAttributes'
 import { DELETE_FALLBACK_MESSAGE, errorMessage } from '@/lib/formErrors'
 import Dialog, { ConfirmRequest } from '@/components/Dialog'
@@ -32,6 +32,14 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
   const [brand, setBrand] = useState(existingProduct?.brand ?? '')
   const [category, setCategory] = useState<ProductCategory>(existingProduct?.category ?? 'Food')
   const [subCategory, setSubCategory] = useState(existingProduct?.subCategory ?? '')
+  /* Label facts, kept as text while typing so a half-typed number is not
+     coerced; they are parsed once on save. Empty means "not on the label". */
+  const facts = existingProduct?.food
+  const [foodForm, setFoodForm] = useState<FoodForm | ''>(facts?.form ?? '')
+  const [gramsPerCan, setGramsPerCan] = useState(facts?.gramsPerCan?.toString() ?? '')
+  const [gramsPerCup, setGramsPerCup] = useState(facts?.gramsPerCup?.toString() ?? '')
+  const [kcalAmount, setKcalAmount] = useState(facts?.kcal?.amount.toString() ?? '')
+  const [kcalPer, setKcalPer] = useState<CaloriePer>(facts?.kcal?.per ?? 'kg')
 
   const [status, setStatus] = useState<ItemStatus>(existing?.status ?? 'current')
   const [dateStarted, setDateStarted] = useState(existing?.dateStarted ?? '')
@@ -45,7 +53,7 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
 
   // Every field in one string, so "has anything changed?" is one comparison.
   // The first render's copy is the baseline; useState keeps only that one.
-  const snapshot = JSON.stringify([productMode, selectedProductId, name, brand, category, subCategory, status, dateStarted, dateEnded, catIds, notes])
+  const snapshot = JSON.stringify([productMode, selectedProductId, name, brand, category, subCategory, foodForm, gramsPerCan, gramsPerCup, kcalAmount, kcalPer, status, dateStarted, dateEnded, catIds, notes])
   const [initialSnapshot] = useState(snapshot)
   const dirty = snapshot !== initialSnapshot
 
@@ -58,6 +66,11 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
     brand: `${uid}-brand`,
     category: `${uid}-category`,
     subCategory: `${uid}-sub-category`,
+    foodForm: `${uid}-food-form`,
+    gramsPerCan: `${uid}-grams-per-can`,
+    gramsPerCup: `${uid}-grams-per-cup`,
+    kcal: `${uid}-kcal`,
+    kcalPer: `${uid}-kcal-per`,
     status: `${uid}-status`,
     dateStarted: `${uid}-date-started`,
     dateEnded: `${uid}-date-ended`,
@@ -94,11 +107,27 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
       document.getElementById(ids.name)?.focus()
       return
     }
+    /** A typed number, or undefined for blank or nonsense; never zero by accident. */
+    const num = (text: string) => {
+      const n = parseFloat(text)
+      return Number.isFinite(n) && n > 0 ? n : undefined
+    }
+    const food: FoodFacts | undefined =
+      category === 'Food'
+        ? {
+            form: foodForm || undefined,
+            gramsPerCan: num(gramsPerCan),
+            gramsPerCup: num(gramsPerCup),
+            kcal: num(kcalAmount) !== undefined ? { amount: num(kcalAmount)!, per: kcalPer } : undefined,
+          }
+        : undefined
+    const hasFacts = !!food && Object.values(food).some(v => v !== undefined)
     const productFields = {
       name: name.trim(),
       brand: brand.trim() || undefined,
       category,
       subCategory: subCategory.trim() || undefined,
+      food: hasFacts ? food : undefined,
     }
 
     if (existing) {
@@ -110,7 +139,8 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
         (productFields.name !== existingProduct.name ||
           productFields.brand !== (existingProduct.brand || undefined) ||
           productFields.category !== existingProduct.category ||
-          productFields.subCategory !== (existingProduct.subCategory || undefined))
+          productFields.subCategory !== (existingProduct.subCategory || undefined) ||
+          JSON.stringify(productFields.food ?? null) !== JSON.stringify(existingProduct.food ?? null))
       ) {
         product = { ...existingProduct, ...productFields }
       }
@@ -119,7 +149,10 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
       // something the owner can get wrong.
       productId = selectedProductId || products[0].id
     } else {
-      product = { id: crypto.randomUUID(), ...productFields, createdAt: new Date().toISOString() }
+      /* An owner's own product. It works in their app at once, and stays
+         unverified until it has been checked before it can join the shared
+         catalog — nothing acts on that flag yet. */
+      product = { id: crypto.randomUUID(), ...productFields, source: 'owner', review: 'unverified', createdAt: new Date().toISOString() }
       productId = product.id
     }
 
@@ -213,6 +246,47 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
           className={inputClass}
         />
       </div>
+      {/* Read off the label. Every one is optional: a meal plan saves without
+          them, and Health converts what the facts allow and names the cats it
+          cannot chart. Numbers stay text until save so typing is never fought. */}
+      {category === 'Food' && (
+        <fieldset className="rounded-2xl border border-brand-tan/40 p-4 space-y-3">
+          <legend className="px-1 text-sm font-medium text-brand-charcoal">From the label (optional)</legend>
+          <p className="text-xs text-brand-brown/55 -mt-1">
+            These let Health chart this food in grams and calories, whether a meal is written in cans, cups, grams or ounces.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label htmlFor={ids.foodForm} className={labelClass}>Form</label>
+              <select id={ids.foodForm} value={foodForm} onChange={e => setFoodForm(e.target.value as FoodForm | '')} className={inputClass}>
+                <option value="">Not sure</option>
+                <option value="wet">Wet</option>
+                <option value="dry">Dry</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor={ids.gramsPerCan} className={labelClass}>Net weight per can (g)</label>
+              <input id={ids.gramsPerCan} type="number" min="1" step="1" inputMode="decimal" placeholder="e.g. 156" value={gramsPerCan} onChange={e => setGramsPerCan(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label htmlFor={ids.gramsPerCup} className={labelClass}>Grams per cup</label>
+              <input id={ids.gramsPerCup} type="number" min="1" step="1" inputMode="decimal" placeholder="e.g. 110" value={gramsPerCup} onChange={e => setGramsPerCup(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label htmlFor={ids.kcal} className={labelClass}>Calories</label>
+              <div className="flex gap-2">
+                <input id={ids.kcal} type="number" min="1" step="1" inputMode="decimal" placeholder="e.g. 3700" value={kcalAmount} onChange={e => setKcalAmount(e.target.value)} className={`${inputClass} min-w-0 flex-1`} />
+                <select aria-label="Calories per" id={ids.kcalPer} value={kcalPer} onChange={e => setKcalPer(e.target.value as CaloriePer)} className="px-2 py-2.5 rounded-2xl border border-brand-tan/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/40 bg-white text-sm">
+                  <option value="kg">per kg</option>
+                  <option value="100g">per 100 g</option>
+                  <option value="can">per can</option>
+                  <option value="cup">per cup</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      )}
     </>
   )
 
