@@ -71,6 +71,19 @@ describe('buildExampleHousehold', () => {
     for (const i of house.items) for (const id of i.catIds) expect(catIds.has(id)).toBe(true)
   })
 
+  it('points every serving at a food product with the label facts to chart it', () => {
+    const products = new Map(house.products.map(p => [p.id, p]))
+    const servings = house.events.flatMap(e => e.feedingAmounts ?? [])
+    expect(servings.length).toBeGreaterThan(0)
+    for (const f of servings) {
+      const product = products.get(f.productId ?? '')
+      expect(product, `serving of ${f.amount} ${f.unit}`).toBeDefined()
+      expect(product!.food?.kcal).toBeDefined()
+      if (f.unit === 'can') expect(product!.food?.gramsPerCan).toBeGreaterThan(0)
+      if (f.unit === 'cup') expect(product!.food?.gramsPerCup).toBeGreaterThan(0)
+    }
+  })
+
   it('points every item at a product in the catalogue', () => {
     const productIds = new Set(house.products.map(p => p.id))
     for (const item of house.items) expect(productIds.has(item.productId)).toBe(true)

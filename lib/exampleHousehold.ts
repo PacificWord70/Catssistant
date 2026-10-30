@@ -1086,6 +1086,8 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
     ]),
   ]
 
+  /* The example's products stand in for the shared catalog, so their label
+     facts are marked as coming from it and already checked. */
   const product = (
     name: string,
     over: Omit<CatalogProduct, 'id' | 'name' | 'createdAt'>,
@@ -1093,6 +1095,8 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
     id: id(`product-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`),
     name,
     createdAt: made(-HISTORY),
+    source: 'catalog',
+    review: 'verified',
     ...over,
   })
 
@@ -1101,41 +1105,49 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       brand: 'Hearth & Paw',
       category: 'Food',
       subCategory: 'Wet Food',
+      food: { form: 'wet', gramsPerCan: 156, kcal: { amount: 185, per: 'can' } },
     }),
     dry: product('Indoor adult dry', {
       brand: 'Hearth & Paw',
       category: 'Food',
       subCategory: 'Dry Food',
+      food: { form: 'dry', gramsPerCup: 110, kcal: { amount: 3700, per: 'kg' } },
     }),
     senior: product('Senior chicken pâté', {
       brand: 'Hearth & Paw',
       category: 'Food',
       subCategory: 'Wet Food',
+      food: { form: 'wet', gramsPerCan: 156, kcal: { amount: 165, per: 'can' } },
     }),
     weightControl: product('Weight control dry', {
       brand: 'Hearth & Paw',
       category: 'Food',
       subCategory: 'Dry Food',
+      food: { form: 'dry', gramsPerCup: 105, kcal: { amount: 3300, per: 'kg' } },
     }),
     urinaryWet: product('Urinary care chicken stew', {
       brand: 'Northpaw Veterinary',
       category: 'Food',
       subCategory: 'Wet Food',
+      food: { form: 'wet', gramsPerCan: 156, kcal: { amount: 170, per: 'can' } },
     }),
     urinaryDry: product('Urinary care dry', {
       brand: 'Northpaw Veterinary',
       category: 'Food',
       subCategory: 'Dry Food',
+      food: { form: 'dry', gramsPerCup: 115, kcal: { amount: 3600, per: 'kg' } },
     }),
     kitten: product('Kitten formula', {
       brand: 'Hearth & Paw',
       category: 'Food',
       subCategory: 'Dry Food',
+      food: { form: 'dry', gramsPerCup: 100, kcal: { amount: 4200, per: 'kg' } },
     }),
     salmon: product('Salmon kibble', {
       brand: 'Ocean Bowl',
       category: 'Food',
       subCategory: 'Dry Food',
+      food: { form: 'dry', gramsPerCup: 110, kcal: { amount: 3900, per: 'kg' } },
     }),
     litter: product('Unscented clumping litter', { brand: 'Clean Paws', category: 'Litter' }),
     methimazole: product('Methimazole 2.5 mg', { category: 'Medication', subCategory: 'Tablet' }),
@@ -1151,6 +1163,16 @@ export function buildExampleHousehold(today: string): ExampleHousehold {
       category: 'Other',
       subCategory: 'Treats',
     }),
+  }
+
+  /* Every meal names its food, so each serving is pointed at that product;
+     that link is what lets the food charts put half a can and a quarter cup
+     on one axis. Done here because the products are declared after the meals. */
+  for (const e of events) {
+    if (!e.feedingAmounts) continue
+    const productId = Object.values(products).find(p => p.name === e.foodName)?.id
+    if (!productId) throw new Error(`Example meal "${e.title}" names a food that is not a product: ${e.foodName}`)
+    e.feedingAmounts = e.feedingAmounts.map(f => ({ ...f, productId }))
   }
 
   const item = (
