@@ -22,8 +22,8 @@ import {
   selectScheduleEvents,
   selectScheduleLoaded,
 } from '@/store/selectors'
-import { CHART_RANGES, ChartRange, catHealthSummary, chartRangeStart } from '@/lib/healthAnalysis'
-import { MARKER_KINDS, MarkerKind, chartMarkers } from '@/lib/chartMarkers'
+import { CHART_RANGES, ChartRange, NamedSeries, catHealthSummary, chartRangeStart } from '@/lib/healthAnalysis'
+import { ChartMarker, MARKER_KINDS, MarkerKind, chartMarkers } from '@/lib/chartMarkers'
 import SegmentedControl from '@/components/SegmentedControl'
 import { buildMetrics, metricsWithData } from '@/lib/healthMetrics'
 import { catLifeStage, catWeightLbs } from '@/lib/utils'
@@ -113,16 +113,82 @@ export default function HealthPage() {
   const rangeFrom = chartRangeStart(today, range)
   const domain = rangeFrom ? { from: rangeFrom, to: today } : undefined
 
-  const metricChoice = pickedMetrics ?? new Set(['weight'])
+  /* Every metric with data is charted until the owner chooses otherwise. The
+     page is the overview of a cat's care, and a reader should not have to know
+     the food chart exists to find it. Derived rather than written into state,
+     so it follows the data arriving, and the first click builds on what is
+     already shown. */
+  const metricChoice = pickedMetrics ?? new Set(available.map(m => m.id))
   const shownMetrics = available.filter(m => metricChoice.has(m.id))
   const isKitten = (id: string) => catLifeStage(selectedCats.find(c => c.id === id)?.birthday) === 'Kitten'
-  // Weight splits into adults and kittens when both are selected; every other
-  // metric is one card.
-  const chartCount = shownMetrics.reduce((n, m) => {
-    if (m.id !== 'weight') return n + 1
-    const kittens = selectedCats.filter(c => isKitten(c.id)).length
-    return n + (kittens > 0 && kittens < selectedCats.length ? 2 : 1)
-  }, 0)
+
+  /* One entry per chart card, in display order: adult weight, kitten weight,
+     then the scheduled metrics. Worked out ahead of the markup so the grid can
+     pin the two weight charts to its left column and know how many cards it
+     is laying out before it does. */
+  const chartCards: {
+    key: string
+    title: string
+    unit: string
+    note?: string
+    series: NamedSeries[]
+    domain?: { from: string; to: string }
+    markers?: ChartMarker[]
+    selectable: boolean
+    inRange: boolean
+    place?: string
+  }[] = shownMetrics.flatMap(m => {
+    const metricSeries: NamedSeries[] = selectedCats.map(c => ({ id: c.id, label: c.name, points: m.seriesFor(c.id) }))
+    /* Kittens get their own weight chart. A 2 lb kitten and a 13 lb adult
+       on one scale flatten every adult's change into a line, and a kitten's
+       climb is a different story anyway — growth, not a trend to watch. The
+       chart only appears when a selected cat is under a year old. */
+    const groups =
+      m.id === 'weight'
+        ? [
+            { key: 'adults', title: m.label, series: metricSeries.filter(x => !isKitten(x.id)) },
+            { key: 'kittens', title: `${m.label}: Kittens`, series: metricSeries.filter(x => isKitten(x.id)) },
+          ].filter(g => g.series.length > 0)
+        : [{ key: 'all', title: m.label, series: metricSeries }]
+    const split = groups.length > 1
+    /* A kitten's whole life is shorter than a year, so a year-wide axis
+       squeezes all of it against the right edge. Its chart starts at the
+       first weigh-in instead, unless the range itself starts later. */
+    const kittenDomain = (series: NamedSeries[]) => {
+      const first = series.flatMap(x => x.points.map(p => p.date)).sort()[0]
+      return domain && first && first < domain.from ? domain : undefined
+    }
+    const markersFor = (series: NamedSeries[], span: typeof domain) => {
+      if (markerKinds.size === 0) return []
+      const from = span?.from ?? series.flatMap(x => x.points.map(p => p.date)).sort()[0]
+      if (!from) return []
+      return chartMarkers(events, catNameMap, series.map(x => x.id), from, today).filter(mk => markerKinds.has(mk.kind))
+    }
+    return groups.map(group => {
+      const span = group.key === 'kittens' ? kittenDomain(group.series) : domain
+      return {
+        key: `${m.id}-${group.key}`,
+        title: split ? group.title : m.label,
+        unit: m.unit,
+        note:
+          split && group.key === 'kittens'
+            ? "Cats under a year old, on their own chart so their growth doesn't flatten everyone else's line."
+            : m.note,
+        series: group.series,
+        domain: span,
+        /* Only weight points map to a stored record. Scheduled metrics are
+           aggregated per day with synthetic ids, so making them clickable
+           would open an editor for a record that is not there. */
+        selectable: m.id === 'weight',
+        markers: m.id === 'weight' ? markersFor(group.series, span) : undefined,
+        inRange: group.series.some(x => x.points.some(p => !span || (p.date >= span.from && p.date <= span.to))),
+        /* The weight pair lives in the left column, kitten under adult, so the
+           growth chart always reads as a footnote to the household's weight;
+           everything else fills in beside them, dense, so no slot goes empty. */
+        place: group.key === 'adults' ? 'xl:col-start-1 xl:row-start-1' : group.key === 'kittens' ? 'xl:col-start-1 xl:row-start-2' : undefined,
+      }
+    })
+  })
 
   function toggleMetric(id: string) {
     const next = new Set(metricChoice)
@@ -376,80 +442,42 @@ export default function HealthPage() {
 
       {/* A chart per metric. They cannot share a Y axis — pounds, minutes and
           cups on one scale would be meaningless — so each gets its own card,
-          sharing only the cat colours. On a wide screen the cards sit two
-          across, so no single chart runs the width of a monitor; a lone chart
-          is held to a readable width instead of stretching to fill the row. */}
-      <div className={chartCount > 1 ? 'grid gap-6 xl:grid-cols-2 mb-6' : 'max-w-3xl mb-6'}>
-      {shownMetrics.map(m => {
-        const metricSeries = selectedCats.map(c => ({ id: c.id, label: c.name, points: m.seriesFor(c.id) }))
-        /* Kittens get their own weight chart. A 2 lb kitten and a 13 lb adult
-           on one scale flatten every adult's change into a line, and a kitten's
-           climb is a different story anyway — growth, not a trend to watch. The
-           chart only appears when a selected cat is under a year old. */
-        const groups =
-          m.id === 'weight'
-            ? [
-                { key: 'adults', title: undefined as string | undefined, series: metricSeries.filter(x => !isKitten(x.id)) },
-                { key: 'kittens', title: 'Kittens', series: metricSeries.filter(x => isKitten(x.id)) },
-              ].filter(g => g.series.length > 0)
-            : [{ key: 'all', title: undefined as string | undefined, series: metricSeries }]
-        const split = groups.length > 1
-        const colorFor = (id: string) => lineColor(selectedCats.findIndex(c => c.id === id))
-        /* A kitten's whole life is shorter than a year, so a year-wide axis
-           squeezes all of it against the right edge. Its chart starts at the
-           first weigh-in instead, unless the range itself starts later. */
-        const kittenDomain = (series: typeof metricSeries) => {
-          const first = series.flatMap(x => x.points.map(p => p.date)).sort()[0]
-          return domain && first && first < domain.from ? domain : undefined
-        }
-        const markersFor = (series: typeof metricSeries, span: typeof domain) => {
-          if (markerKinds.size === 0) return []
-          const from = span?.from ?? series.flatMap(x => x.points.map(p => p.date)).sort()[0]
-          if (!from) return []
-          return chartMarkers(events, catNameMap, series.map(x => x.id), from, today).filter(mk => markerKinds.has(mk.kind))
-        }
-        const inRange = (series: typeof metricSeries) =>
-          series.some(x => x.points.some(p => !domain || (p.date >= domain.from && p.date <= domain.to)))
-
-        return groups.map(group => (
-          <Reveal key={`${m.id}-${group.key}`}>
-            <div className={CARD}>
-              <h2 className="font-display text-xl text-brand-brown">
-                {split && group.title ? `${m.label}: ${group.title}` : m.label}{' '}
-                <span className="text-base text-brand-brown/50">({m.unit})</span>
-              </h2>
-              {split && group.key === 'kittens' ? (
-                <p className="text-sm text-brand-brown/55 mb-4">
-                  Cats under a year old, on their own chart so their growth doesn&apos;t flatten everyone else&apos;s line.
-                </p>
-              ) : m.note ? (
-                <p className="text-sm text-brand-brown/55 mb-4">{m.note}</p>
-              ) : (
-                <div className="mb-4" />
-              )}
-              {inRange(group.series) ? (
-                <MetricChart
-                  series={group.series}
-                  unit={m.unit}
-                  /* Only weight points map to a stored record. Scheduled metrics
-                     are aggregated per day with synthetic ids, so making them
-                     clickable would open an editor for a record that is not
-                     there. */
-                  onSelect={m.id === 'weight' ? setEditingId : undefined}
-                  domain={group.key === 'kittens' ? kittenDomain(group.series) : domain}
-                  colorFor={colorFor}
-                  markers={m.id === 'weight' ? markersFor(group.series, group.key === 'kittens' ? kittenDomain(group.series) : domain) : undefined}
-                />
-              ) : (
-                <p className="text-center text-brand-brown/60 py-8">
-                  {range === 'all' ? 'Nothing recorded for the selected cats.' : 'Nothing recorded in this time range.'}
-                </p>
-              )}
-            </div>
-          </Reveal>
-        ))
-      })}
-      </div>
+          sharing only the cat colours. From the xl breakpoint the cards sit two
+          across and every row stretches to one height, so no chart runs the
+          width of a monitor and neighbours line up. A lone chart is held to a
+          readable width instead of spanning the row. */}
+      {chartCards.length > 0 && (
+        <div className={chartCards.length > 1 ? 'grid gap-6 xl:grid-cols-2 grid-flow-dense mb-6' : 'max-w-3xl mb-6'}>
+          {chartCards.map(card => (
+            <Reveal key={card.key} className={card.place}>
+              <div className={`${CARD} h-full`}>
+                {/* Title and note share one minimum height, so the charts in a
+                    row start on the same line whether or not there is a note. */}
+                <div className="min-h-[4.25rem] mb-2">
+                  <h2 className="font-display text-xl text-brand-brown">
+                    {card.title} <span className="text-base text-brand-brown/50">({card.unit})</span>
+                  </h2>
+                  {card.note && <p className="text-sm text-brand-brown/55">{card.note}</p>}
+                </div>
+                {card.inRange ? (
+                  <MetricChart
+                    series={card.series}
+                    unit={card.unit}
+                    onSelect={card.selectable ? setEditingId : undefined}
+                    domain={card.domain}
+                    colorFor={(id: string) => lineColor(selectedCats.findIndex(c => c.id === id))}
+                    markers={card.markers}
+                  />
+                ) : (
+                  <p className="text-center text-brand-brown/60 py-8">
+                    {range === 'all' ? 'Nothing recorded for the selected cats.' : 'Nothing recorded in this time range.'}
+                  </p>
+                )}
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      )}
 
       {/* Weight drops out of `available` when none of the selected cats have a
           reading, so this is the prompt to start it. It has to work for a whole
