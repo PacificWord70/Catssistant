@@ -1,8 +1,10 @@
 import { Cat } from '@/types/cat'
 import { HealthRecord } from '@/types/healthRecord'
+import { CatalogProduct } from '@/types/item'
 import { ScheduleCategory, ScheduleEvent } from '@/types/scheduleEvent'
 import { SeriesPoint, weightSeries } from '@/lib/healthAnalysis'
 import { expandEvents } from '@/lib/scheduleUtils'
+import { FOOD_CHART_UNITS, FoodChartUnit, convertServing } from '@/lib/foodConversion'
 
 /**
  * What the health page is able to chart, derived from what the app actually
@@ -38,14 +40,27 @@ export interface MetricDef {
    * nothing behind it can offer to go and add some instead of being a dead end.
    */
   sourceCategory?: ScheduleCategory
+  /**
+   * Charted until the owner says otherwise. Food comes in three units and
+   * only one of them needs to be up by default; the rest are a toggle away.
+   */
+  defaultOn?: boolean
   /** Points for one cat, oldest first. */
   seriesFor(catId: string): SeriesPoint[]
+  /**
+   * Why this cat is left off the chart, when some of its data could not be
+   * put in the chart's unit — a cat fed by the can on the cups chart, or on a
+   * product with no label facts. Undefined when everything charted.
+   */
+  omittedReason?(catId: string): string | undefined
 }
 
 export interface MetricContext {
   cats: Cat[]
   records: HealthRecord[]
   events: ScheduleEvent[]
+  /** The catalog, for the label facts that turn a serving into grams or calories. */
+  products?: CatalogProduct[]
   /** Window to expand recurring events across. */
   from: Date
   to: Date
@@ -67,14 +82,16 @@ function perDay(entries: { date: string; value: number }[], idPrefix: string): S
  * empty — an axis with nothing on it invites the reader to conclude the value
  * was zero, when really it was never recorded.
  *
- * Food is emitted as one metric *per unit*. Cups and grams cannot be added
- * together, and picking one to convert into would need food densities the app
- * does not have.
+ * Food is emitted in three units — grams, cups and calories a day — and every
+ * cat is converted into each from the serving as written, using the product's
+ * label facts (see lib/foodConversion). A cat whose servings cannot be put in
+ * a unit honestly is left off that chart and named, rather than guessed at.
  */
 export function buildMetrics(ctx: MetricContext): MetricDef[] {
   const { records, events, from, to } = ctx
   const agenda = expandEvents(events, from, to)
   const metrics: MetricDef[] = []
+  const productById = new Map((ctx.products ?? []).map(p => [p.id, p]))
 
   metrics.push({
     id: 'weight',
@@ -106,15 +123,12 @@ export function buildMetrics(ctx: MetricContext): MetricDef[] {
     seriesFor: playFor,
   })
 
-  const foodUnits = new Set(
-    agenda
-      .filter(a => a.event.category === 'Feeding')
-      .flatMap(a => (a.event.feedingAmounts ?? []).map(f => f.unit)),
-  )
+  const feedings = agenda.filter(a => a.event.category === 'Feeding')
   /* With nothing fed yet there is no unit to name, but the metric still has to
      appear so the owner can see that food is something the app charts. It shows
-     empty and disabled until a feeding event gives it a real unit. */
-  if (foodUnits.size === 0) {
+     empty and disabled until a feeding event gives it something to convert. */
+  const anythingFed = feedings.some(a => (a.event.feedingAmounts ?? []).length > 0)
+  if (!anythingFed) {
     metrics.push({
       id: 'food',
       label: 'Food',
@@ -125,25 +139,42 @@ export function buildMetrics(ctx: MetricContext): MetricDef[] {
       seriesFor: () => [],
     })
   }
-  for (const unit of foodUnits) {
+  /** Every serving for a cat, converted to the unit, or the first reason one could not be. */
+  const servings = (catId: string, unit: FoodChartUnit) => {
+    const points: { date: string; value: number }[] = []
+    let reason: string | undefined
+    for (const a of feedings) {
+      for (const f of a.event.feedingAmounts ?? []) {
+        if (f.catId !== catId) continue
+        const converted = convertServing(f.amount, f.unit, f.productId ? productById.get(f.productId) : undefined, unit)
+        if (converted.ok) points.push({ date: a.date, value: converted.value * Math.max(1, a.event.times.length) })
+        else reason ??= converted.reason
+      }
+    }
+    return { points, reason }
+  }
+  for (const { unit, label } of anythingFed ? FOOD_CHART_UNITS : []) {
     metrics.push({
       id: `food-${unit}`,
       label: 'Food',
-      unit: `${unit}/day`,
+      unit: label,
       kind: 'planned',
-      note: 'How much is meant to be served. Nothing records how much was eaten.',
+      note:
+        unit === 'kcal'
+          ? 'Calories meant to be served, from each product\u2019s label. Nothing records how much was eaten.'
+          : 'How much is meant to be served, converted from each meal as written. Nothing records how much was eaten.',
       sourceCategory: 'Feeding',
-      seriesFor: catId =>
-        perDay(
-          agenda
-            .filter(a => a.event.category === 'Feeding')
-            .flatMap(a =>
-              (a.event.feedingAmounts ?? [])
-                .filter(f => f.catId === catId && f.unit === unit)
-                .map(f => ({ date: a.date, value: f.amount * Math.max(1, a.event.times.length) })),
-            ),
-          `food-${unit}-${catId}`,
-        ),
+      // Grams is the one unit every serving can reach with a label, so it is
+      // the chart that is up by default; cups and calories are a toggle away.
+      defaultOn: unit === 'g',
+      /* A cat with any serving the unit cannot honestly reach is left off the
+         chart entirely, not charted on the servings that happened to convert:
+         half a diet is a wrong total, not a partial one. */
+      seriesFor: catId => {
+        const { points, reason } = servings(catId, unit)
+        return reason ? [] : perDay(points, `food-${unit}-${catId}`)
+      },
+      omittedReason: catId => servings(catId, unit).reason,
     })
   }
 

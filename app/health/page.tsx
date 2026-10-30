@@ -19,6 +19,7 @@ import {
   selectCatsLoaded,
   selectHealthLoaded,
   selectHealthRecords,
+  selectCatalog,
   selectScheduleEvents,
   selectScheduleLoaded,
 } from '@/store/selectors'
@@ -40,6 +41,7 @@ export default function HealthPage() {
   const dispatch = useAppDispatch()
   const cats = useAppSelector(selectCatsByNewest)
   const events = useAppSelector(selectScheduleEvents)
+  const catalog = useAppSelector(selectCatalog)
   const allRecords = useAppSelector(selectHealthRecords)
   /* Every slice the page reads, not just cats: records arriving a beat after
      the cats would flash "No weight readings yet" over a cat that has plenty. */
@@ -86,8 +88,8 @@ export default function HealthPage() {
     to.setMonth(to.getMonth() + 1)
     const from = new Date()
     from.setFullYear(from.getFullYear() - 2)
-    return buildMetrics({ cats, records: allRecords, events, from, to })
-  }, [cats, allRecords, events])
+    return buildMetrics({ cats, records: allRecords, events, products: catalog, from, to })
+  }, [cats, allRecords, events, catalog])
 
   const selectedCatIds = useMemo(() => selectedCats.map(c => c.id), [selectedCats])
   const available = useMemo(() => metricsWithData(metrics, selectedCatIds), [metrics, selectedCatIds])
@@ -113,12 +115,13 @@ export default function HealthPage() {
   const rangeFrom = chartRangeStart(today, range)
   const domain = rangeFrom ? { from: rangeFrom, to: today } : undefined
 
-  /* Every metric with data is charted until the owner chooses otherwise. The
-     page is the overview of a cat's care, and a reader should not have to know
-     the food chart exists to find it. Derived rather than written into state,
-     so it follows the data arriving, and the first click builds on what is
-     already shown. */
-  const metricChoice = pickedMetrics ?? new Set(available.map(m => m.id))
+  /* Every metric with data is charted until the owner chooses otherwise,
+     except the ones a metric marks as a toggle away (food in its second and
+     third units). The page is the overview of a cat's care, and a reader
+     should not have to know the food chart exists to find it. Derived rather
+     than written into state, so it follows the data arriving, and the first
+     click builds on what is already shown. */
+  const metricChoice = pickedMetrics ?? new Set(available.filter(m => m.defaultOn !== false).map(m => m.id))
   const shownMetrics = available.filter(m => metricChoice.has(m.id))
   const isKitten = (id: string) => catLifeStage(selectedCats.find(c => c.id === id)?.birthday) === 'Kitten'
 
@@ -137,6 +140,8 @@ export default function HealthPage() {
     selectable: boolean
     inRange: boolean
     place?: string
+    /** Cats left off this chart, and why, in the owner's terms. */
+    omitted: { name: string; reason: string }[]
   }[] = shownMetrics.flatMap(m => {
     const metricSeries: NamedSeries[] = selectedCats.map(c => ({ id: c.id, label: c.name, points: m.seriesFor(c.id) }))
     /* Kittens get their own weight chart. A 2 lb kitten and a 13 lb adult
@@ -182,6 +187,10 @@ export default function HealthPage() {
         selectable: m.id === 'weight',
         markers: m.id === 'weight' ? markersFor(group.series, span) : undefined,
         inRange: group.series.some(x => x.points.some(p => !span || (p.date >= span.from && p.date <= span.to))),
+        omitted: selectedCats.flatMap(c => {
+          const reason = m.omittedReason?.(c.id)
+          return reason ? [{ name: c.name, reason }] : []
+        }),
         /* The weight pair lives in the left column, kitten under adult, so the
            growth chart always reads as a footnote to the household's weight;
            everything else fills in beside them, dense, so no slot goes empty. */
@@ -473,6 +482,20 @@ export default function HealthPage() {
                     {range === 'all' ? 'Nothing recorded for the selected cats.' : 'Nothing recorded in this time range.'}
                   </p>
                 )}
+                {/* A cat the chart could not convert is named rather than
+                    quietly missing, with the reason in the owner's terms, so
+                    the fix — pick a product, fill in its label — is plain. */}
+                {card.omitted.length > 0 && (
+                  <p className="text-xs text-brand-brown/55 mt-3">
+                    <span className="font-medium text-brand-brown/70">Not on this chart:</span>{' '}
+                    {card.omitted.map((o, i) => (
+                      <span key={o.name}>
+                        {i > 0 && '; '}
+                        {o.name} <span className="text-brand-brown/45">({o.reason})</span>
+                      </span>
+                    ))}
+                  </p>
+                )}
               </div>
             </Reveal>
           ))}
@@ -559,6 +582,7 @@ export default function HealthPage() {
       {addingCategory && (
         <ScheduleEventForm
           cats={cats}
+          products={catalog}
           defaultCategory={addingCategory}
           defaultDate={todayKey()}
           /* Starts against whichever cats are on the chart, since that is who

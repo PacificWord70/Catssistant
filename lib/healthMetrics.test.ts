@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Cat } from '@/types/cat'
 import { HealthRecord } from '@/types/healthRecord'
 import { ScheduleEvent } from '@/types/scheduleEvent'
+import { CatalogProduct } from '@/types/item'
 import { buildMetrics, metricsWithData } from '@/lib/healthMetrics'
 
 const FROM = new Date(2026, 5, 1) // 1 June 2026
@@ -22,8 +23,13 @@ function event(over: Partial<ScheduleEvent>): ScheduleEvent {
 }
 
 const cats = [{ id: 'c1', name: 'One' } as Cat, { id: 'c2', name: 'Two' } as Cat]
+const products: CatalogProduct[] = [
+  { id: 'dry', name: 'Kibble', category: 'Food', createdAt: 'x', food: { gramsPerCup: 120, kcal: { amount: 4000, per: 'kg' } } },
+  { id: 'wet', name: 'Pâté', category: 'Food', createdAt: 'x', food: { gramsPerCan: 156, kcal: { amount: 180, per: 'can' } } },
+  { id: 'bare', name: 'Mystery', category: 'Food', createdAt: 'x' },
+]
 const build = (events: ScheduleEvent[], records: HealthRecord[] = []) =>
-  buildMetrics({ cats, records, events, from: FROM, to: TO })
+  buildMetrics({ cats, records, events, products, from: FROM, to: TO })
 const metric = (events: ScheduleEvent[], id: string, records: HealthRecord[] = []) =>
   build(events, records).find(m => m.id === id)!
 
@@ -83,27 +89,58 @@ describe('play metric', () => {
 })
 
 describe('food metric', () => {
-  const feeding = (unit: 'cup' | 'g', amount: number, catId = 'c1') =>
+  const feeding = (unit: 'cup' | 'g' | 'can' | 'oz', amount: number, productId?: string, catId = 'c1') =>
     event({
-      id: `f-${unit}-${catId}`,
+      id: `f-${unit}-${productId}-${catId}`,
       category: 'Feeding',
       catIds: [catId],
       times: ['08:00', '18:00'],
-      feedingAmounts: [{ catId, amount, unit }],
+      feedingAmounts: [{ catId, amount, unit, productId }],
     })
 
   it('multiplies the per-serving amount by the servings that day', () => {
-    const m = metric([feeding('cup', 0.5)], 'food-cup')
+    const m = metric([feeding('cup', 0.5, 'dry')], 'food-cup')
     expect(m.seriesFor('c1')[0].value).toBeCloseTo(1)
   })
 
-  it('keeps units apart instead of adding cups to grams', () => {
-    const metrics = build([feeding('cup', 0.5), feeding('g', 60)])
-    const ids = metrics.map(m => m.id)
-    expect(ids).toContain('food-cup')
-    expect(ids).toContain('food-g')
-    expect(metrics.find(m => m.id === 'food-cup')!.seriesFor('c1')[0].value).toBeCloseTo(1)
-    expect(metrics.find(m => m.id === 'food-g')!.seriesFor('c1')[0].value).toBeCloseTo(120)
+  it('offers grams, cups and calories, with grams up by default', () => {
+    const metrics = build([feeding('cup', 0.5, 'dry')])
+    const food = metrics.filter(m => m.id.startsWith('food-'))
+    expect(food.map(m => m.id)).toEqual(['food-g', 'food-cup', 'food-kcal'])
+    expect(food.map(m => m.defaultOn)).toEqual([true, false, false])
+  })
+
+  it('converts every cat into each unit from the serving as written', () => {
+    const metrics = build([feeding('cup', 0.5, 'dry'), feeding('can', 0.5, 'wet', 'c2')])
+    const g = metrics.find(m => m.id === 'food-g')!
+    expect(g.seriesFor('c1')[0].value).toBeCloseTo(120) // 2 × 0.5 cup × 120 g
+    expect(g.seriesFor('c2')[0].value).toBeCloseTo(156) // 2 × 0.5 can × 156 g
+    const kcal = metrics.find(m => m.id === 'food-kcal')!
+    expect(kcal.seriesFor('c1')[0].value).toBeCloseTo(480)
+    expect(kcal.seriesFor('c2')[0].value).toBeCloseTo(180)
+  })
+
+  it('adds a cup of dry and a can of wet into one grams figure', () => {
+    const m = metric([feeding('cup', 0.25, 'dry'), feeding('can', 0.5, 'wet')], 'food-g')
+    expect(m.seriesFor('c1')[0].value).toBeCloseTo(2 * 0.25 * 120 + 2 * 0.5 * 156)
+  })
+
+  it('leaves a can-fed cat off the cups chart and says why', () => {
+    const m = metric([feeding('can', 0.5, 'wet')], 'food-cup')
+    expect(m.seriesFor('c1')).toEqual([])
+    expect(m.omittedReason!('c1')).toMatch(/can/)
+  })
+
+  it('leaves a cat off entirely when any serving cannot convert, rather than charting half its diet', () => {
+    const m = metric([feeding('g', 60, 'dry'), feeding('can', 0.5, 'bare')], 'food-g')
+    expect(m.seriesFor('c1')).toEqual([])
+    expect(m.omittedReason!('c1')).toMatch(/Mystery/)
+  })
+
+  it('reports nothing omitted for a cat that charted', () => {
+    const m = metric([feeding('oz', 3, undefined)], 'food-g')
+    expect(m.seriesFor('c1')[0].value).toBeCloseTo(2 * 3 * 28.3495)
+    expect(m.omittedReason!('c1')).toBeUndefined()
   })
 
   it('only counts the portion belonging to the cat asked about', () => {
@@ -112,8 +149,8 @@ describe('food metric', () => {
       catIds: ['c1', 'c2'],
       times: ['08:00'],
       feedingAmounts: [
-        { catId: 'c1', amount: 0.5, unit: 'cup' },
-        { catId: 'c2', amount: 1.25, unit: 'cup' },
+        { catId: 'c1', amount: 0.5, unit: 'cup', productId: 'dry' },
+        { catId: 'c2', amount: 1.25, unit: 'cup', productId: 'dry' },
       ],
     })
     const m = metric([shared], 'food-cup')
@@ -121,8 +158,9 @@ describe('food metric', () => {
     expect(m.seriesFor('c2')[0].value).toBeCloseTo(1.25)
   })
 
-  it('offers no food metric at all when nothing is fed', () => {
-    expect(build([]).some(m => m.id.startsWith('food-'))).toBe(false)
+  it('offers an empty placeholder food metric when nothing is fed', () => {
+    const food = build([]).filter(m => m.id.startsWith('food'))
+    expect(food.map(m => m.id)).toEqual(['food'])
   })
 })
 
