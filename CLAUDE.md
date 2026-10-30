@@ -182,6 +182,8 @@ Catssistant/
 │   ├── backup.ts               # Backup build/validate/merge (schema version 1)
 │   ├── dateKeys.ts             # Local YYYY-MM-DD keys — never toISOString
 │   ├── health*.ts              # Health metrics, analysis, validation
+│   ├── foodConversion.ts       # Servings as written → grams / cups / kcal via label facts
+│   ├── foodFacts.ts            # Normalise label facts at every entry point; migrateProduct
 │   ├── photo.ts                # Photo type check + downscale/re-encode
 │   ├── safeUrl.ts              # safeImageSrc, telHref — guards for stored URLs
 │   ├── catTreeArt.ts           # Pixel work on the cat tree drawing
@@ -221,6 +223,12 @@ Catssistant/
   records may lack it; compare with `updatedAt ?? createdAt`. Backup merges
   depend on this, so never bypass the save functions
 - New collections must be added to `lib/backup.ts`, or backups silently drop them
+- A feeding is stored exactly as the owner wrote it (cans, cups, g, oz, tbsp)
+  and points at a product. Conversion to grams, cups or calories happens only
+  at chart time from the product's label facts (`lib/foodConversion.ts`), and
+  never guesses: a serving that cannot be converted leaves the cat off that
+  chart, named. A can never becomes cups. Label facts pass through
+  `normaliseFoodFacts` wherever they enter (form, read, import)
 
 ---
 

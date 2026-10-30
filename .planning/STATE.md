@@ -16,16 +16,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-04)
 
 **Core value:** Reliable daily care tracking plus a trustworthy central record for each cat
-**Current focus:** Example household for first-time visitors (next), then accounts
+**Current focus:** Accounts and a backend (vendor undecided), and the shared product catalog the food charts now depend on
 
 ## Current Position
 
 Phase: 2 of 2 — both phases of this milestone delivered
 Plan: n/a (delivered through quick tasks)
 Status: Milestone complete; next work is unplanned
-Last activity: 2026-10-27 — List view on Schedule (Phase 1) and back up &
-restore (Phase 2), plus CI, updatedAt on every record, per-cat Health cards,
-delete-cat, My Cats search, editable product names and a Safari focus fix
+Last activity: 2026-10-30 — Food charts in grams, cups and calories from
+label facts on products, Health chart sizing and layout, drawn portraits
+tuned (line weight, black coat tone)
 
 Progress: [██████████] 100%
 
@@ -70,6 +70,29 @@ Next up, agreed with Heidi 2026-10-27:
   the page and can switch it to a preview of the example household, which
   the sticky banner ends.
 - **Declined for now:** a UI to restore the automatic backups of unreadable data.
+
+- **Drawn portraits: done 2026-10-28, tuned 2026-10-30.** Every cat without a
+  photo gets a portrait painted from the pose and coat layers in
+  `public/images/portraits/` (see CLAUDE.md). Line weight and the black coat
+  tone were adjusted by eye on 2026-10-30; the stretch-up pose is still spare.
+- **Health charts: 2026-10-30.** Charts draw at one unit per pixel with a
+  capped height, sit two across from the xl breakpoint with the weight pair in
+  the left column, and every metric with data is on by default.
+- **Food charts from label facts: 2026-10-30.** Food is charted in grams
+  (default), cups and calories a day. A meal is stored exactly as written
+  (cans, cups, g, oz, tbsp) and points at a catalog product; the product's
+  label facts (net weight per can, grams per cup, calories and their basis)
+  do the conversion at chart time (`lib/foodConversion.ts`). A cat with any
+  serving that cannot be converted is left off that chart and named under
+  it. A can never converts to cups. Facts are normalised at every entry
+  point (`lib/foodFacts.ts`). The example household carries dummy facts;
+  the real source is the shared product catalog, which does not exist yet.
+  Products record `source` and `review` for when owner-added entries need
+  checking before joining it — nothing acts on those flags yet.
+- **Open for later:** a Calories chart is in but the kcal basis has no
+  per-cat daily target (deliberately — no health prescriptions); an owner
+  product that cannot convert shows only as "not on this chart", with no
+  link straight to the product to fill in its label.
 
 - **Old avatar system removed 2026-10-28.** The canvas cat-head avatars,
   `lib/avatar/` and `public/art-assets/` are gone; a cat without a photo now
