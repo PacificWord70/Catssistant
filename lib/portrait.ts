@@ -87,9 +87,11 @@ function tones(base: string): CoatTones {
  * amount so every colour's markings sit at the same contrast.
  */
 export const COAT_TONES: Record<CoatColor, CoatTones> = {
-  // Softened off true black: pure black flattened to a silhouette on the
-  // cards and hid the inner lines. Still darker than cocoa, so lines go black.
-  Black: tones('#3a3330'),
+  // A soft charcoal rather than true black: pure black flattened to a
+  // silhouette on the cards and hid the inner lines, and #3a3330 still did.
+  // Kept darker than cocoa (lightness 67 against the 70 cut-off in
+  // lineColourFor) so the lines still go black and stay visible on it.
+  Black: tones('#474140'),
   White: tones('#ffffff'),
   Gray: tones('#9a9a9a'),
   Orange: tones('#f28c28'),
