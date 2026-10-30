@@ -1,12 +1,14 @@
 import { CatalogProduct, HouseholdItem } from '@/types/item'
 import { readList, readListForWrite, stamped, upsertById, writeList } from '@/lib/storageSafety'
+import { migrateProduct } from '@/lib/foodFacts'
 
 /** Exported for the whole-app read and write in lib/storage.ts that backups use. */
 export const CATALOG_KEY = 'catssistant_catalog_products'
 export const ITEMS_KEY = 'catssistant_household_items'
 
+/** Label facts are cleaned on read (see migrateProduct); the stored shape is left as it is. */
 export function getCatalogProducts(): CatalogProduct[] {
-  return readList<CatalogProduct>(CATALOG_KEY)
+  return readList<CatalogProduct>(CATALOG_KEY).map(migrateProduct)
 }
 
 export function getCatalogProductById(id: string): CatalogProduct | undefined {

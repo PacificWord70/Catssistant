@@ -158,3 +158,12 @@ describe('household items', () => {
     expect(() => saveHouseholdItem(item())).toThrow(StorageWriteError)
   })
 })
+
+describe('label facts on read', () => {
+  it('cleans stored facts without rewriting storage', () => {
+    const stored = [{ id: 'p1', name: 'Kibble', category: 'Food', createdAt: 'x', food: { gramsPerCup: -110, kcal: { amount: 3700, per: 'kg' } } }]
+    localStorage.setItem(CATALOG_KEY, JSON.stringify(stored))
+    expect(getCatalogProducts()[0].food).toEqual({ kcal: { amount: 3700, per: 'kg' } })
+    expect(JSON.parse(localStorage.getItem(CATALOG_KEY)!)[0].food.gramsPerCup).toBe(-110)
+  })
+})

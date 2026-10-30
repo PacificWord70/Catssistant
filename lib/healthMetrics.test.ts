@@ -137,6 +137,20 @@ describe('food metric', () => {
     expect(m.omittedReason!('c1')).toMatch(/Mystery/)
   })
 
+  it('skips a serving whose amount is not a positive number instead of charting NaN', () => {
+    const broken = event({
+      category: 'Feeding',
+      times: ['08:00'],
+      feedingAmounts: [
+        { catId: 'c1', amount: Number.NaN, unit: 'g', productId: 'dry' },
+        { catId: 'c1', amount: 50, unit: 'g', productId: 'dry' },
+      ],
+    })
+    const m = metric([broken], 'food-g')
+    expect(m.seriesFor('c1').map(p => p.value)).toEqual([50])
+    expect(m.omittedReason!('c1')).toBeUndefined()
+  })
+
   it('reports nothing omitted for a cat that charted', () => {
     const m = metric([feeding('oz', 3, undefined)], 'food-g')
     expect(m.seriesFor('c1')[0].value).toBeCloseTo(2 * 3 * 28.3495)

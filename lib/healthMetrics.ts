@@ -146,6 +146,9 @@ export function buildMetrics(ctx: MetricContext): MetricDef[] {
     for (const a of feedings) {
       for (const f of a.event.feedingAmounts ?? []) {
         if (f.catId !== catId) continue
+        // An amount that is not a positive number is a damaged record, not a
+        // serving of nothing; it is skipped rather than charted as NaN.
+        if (!Number.isFinite(f.amount) || f.amount <= 0) continue
         const converted = convertServing(f.amount, f.unit, f.productId ? productById.get(f.productId) : undefined, unit)
         if (converted.ok) points.push({ date: a.date, value: converted.value * Math.max(1, a.event.times.length) })
         else reason ??= converted.reason

@@ -531,3 +531,17 @@ describe('export then import through storage', () => {
     expect(localStorage.getItem('catssistant_cats')).toBe(before)
   })
 })
+
+describe('label facts on import', () => {
+  it('cleans a product\u2019s label facts rather than refusing the file or trusting them', () => {
+    const dirty = { ...product(), food: { gramsPerCan: 0, gramsPerCup: '110', kcal: { amount: 180, per: 'can' } } }
+    const parsed = parseBackup(fileFor({ ...empty(), catalogProducts: [dirty as unknown as CatalogProduct] }))
+    expect(parsed.catalogProducts[0].food).toEqual({ kcal: { amount: 180, per: 'can' } })
+  })
+
+  it('drops the facts entirely when none survive', () => {
+    const dirty = { ...product(), food: 'about a cup' }
+    const parsed = parseBackup(fileFor({ ...empty(), catalogProducts: [dirty as unknown as CatalogProduct] }))
+    expect('food' in parsed.catalogProducts[0]).toBe(false)
+  })
+})

@@ -4,6 +4,7 @@ import { ScheduleEvent } from '@/types/scheduleEvent'
 import { CatalogProduct, HouseholdItem } from '@/types/item'
 import { HEALTH_KEY } from '@/lib/healthStorage'
 import { CATALOG_KEY, ITEMS_KEY } from '@/lib/itemStorage'
+import { migrateProduct } from '@/lib/foodFacts'
 import {
   readList,
   readListForWrite,
@@ -169,7 +170,7 @@ export function readAllCollections(): StoredCollections {
     cats: readListForWrite<Cat>(STORAGE_KEY).map(migrateCat),
     scheduleEvents: readListForWrite<ScheduleEvent>(SCHEDULE_KEY),
     healthRecords: readListForWrite<HealthRecord>(HEALTH_KEY),
-    catalogProducts: readListForWrite<CatalogProduct>(CATALOG_KEY),
+    catalogProducts: readListForWrite<CatalogProduct>(CATALOG_KEY).map(migrateProduct),
     householdItems: readListForWrite<HouseholdItem>(ITEMS_KEY),
   }
 }

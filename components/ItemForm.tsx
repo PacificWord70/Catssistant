@@ -2,7 +2,8 @@
 
 import { useId, useState, FormEvent } from 'react'
 import { Cat } from '@/types/cat'
-import { CaloriePer, CatalogProduct, FoodFacts, FoodForm, HouseholdItem, ProductCategory, ItemStatus } from '@/types/item'
+import { CaloriePer, CatalogProduct, FoodForm, HouseholdItem, ProductCategory, ItemStatus } from '@/types/item'
+import { foodFactsFromInput } from '@/lib/foodFacts'
 import { PRODUCT_CATEGORIES } from '@/lib/itemAttributes'
 import { DELETE_FALLBACK_MESSAGE, errorMessage } from '@/lib/formErrors'
 import Dialog, { ConfirmRequest } from '@/components/Dialog'
@@ -107,27 +108,13 @@ export default function ItemForm({ cats, products, existing, onSave, onCancel, o
       document.getElementById(ids.name)?.focus()
       return
     }
-    /** A typed number, or undefined for blank or nonsense; never zero by accident. */
-    const num = (text: string) => {
-      const n = parseFloat(text)
-      return Number.isFinite(n) && n > 0 ? n : undefined
-    }
-    const food: FoodFacts | undefined =
-      category === 'Food'
-        ? {
-            form: foodForm || undefined,
-            gramsPerCan: num(gramsPerCan),
-            gramsPerCup: num(gramsPerCup),
-            kcal: num(kcalAmount) !== undefined ? { amount: num(kcalAmount)!, per: kcalPer } : undefined,
-          }
-        : undefined
-    const hasFacts = !!food && Object.values(food).some(v => v !== undefined)
     const productFields = {
       name: name.trim(),
       brand: brand.trim() || undefined,
       category,
       subCategory: subCategory.trim() || undefined,
-      food: hasFacts ? food : undefined,
+      // Parsed once here; blank or nonsense is "not on the label", never zero.
+      food: category === 'Food' ? foodFactsFromInput({ form: foodForm, gramsPerCan, gramsPerCup, kcalAmount, kcalPer }) : undefined,
     }
 
     if (existing) {

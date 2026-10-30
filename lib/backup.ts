@@ -24,6 +24,7 @@
 import { Cat } from '@/types/cat'
 import { HealthRecord } from '@/types/healthRecord'
 import { CatalogProduct, HouseholdItem } from '@/types/item'
+import { migrateProduct } from '@/lib/foodFacts'
 import { ScheduleEvent } from '@/types/scheduleEvent'
 import { todayKey } from '@/lib/dateKeys'
 import { safeImageSrc } from '@/lib/safeUrl'
@@ -147,6 +148,9 @@ const RECORD_CHECKS: Record<CollectionName, (r: Fields) => boolean> = {
  */
 function cleanRecord(name: CollectionName, record: Fields): Fields {
   const copy = { ...record }
+  // Label facts feed arithmetic, so a hand-edited or damaged file must not be
+  // able to smuggle in a zero can weight or a string of calories.
+  if (name === 'catalogProducts') return migrateProduct(copy as unknown as CatalogProduct) as unknown as Fields
   if (name !== 'cats') return copy
   const photo = safeImageSrc(copy.photoUrl)
   if (photo === undefined) delete copy.photoUrl
