@@ -115,6 +115,14 @@ export default function HealthPage() {
 
   const metricChoice = pickedMetrics ?? new Set(['weight'])
   const shownMetrics = available.filter(m => metricChoice.has(m.id))
+  const isKitten = (id: string) => catLifeStage(selectedCats.find(c => c.id === id)?.birthday) === 'Kitten'
+  // Weight splits into adults and kittens when both are selected; every other
+  // metric is one card.
+  const chartCount = shownMetrics.reduce((n, m) => {
+    if (m.id !== 'weight') return n + 1
+    const kittens = selectedCats.filter(c => isKitten(c.id)).length
+    return n + (kittens > 0 && kittens < selectedCats.length ? 2 : 1)
+  }, 0)
 
   function toggleMetric(id: string) {
     const next = new Set(metricChoice)
@@ -367,15 +375,17 @@ export default function HealthPage() {
       )}
 
       {/* A chart per metric. They cannot share a Y axis — pounds, minutes and
-          cups on one scale would be meaningless — so they stack, sharing only
-          the cat colours. */}
+          cups on one scale would be meaningless — so each gets its own card,
+          sharing only the cat colours. On a wide screen the cards sit two
+          across, so no single chart runs the width of a monitor; a lone chart
+          is held to a readable width instead of stretching to fill the row. */}
+      <div className={chartCount > 1 ? 'grid gap-6 xl:grid-cols-2 mb-6' : 'max-w-3xl mb-6'}>
       {shownMetrics.map(m => {
         const metricSeries = selectedCats.map(c => ({ id: c.id, label: c.name, points: m.seriesFor(c.id) }))
         /* Kittens get their own weight chart. A 2 lb kitten and a 13 lb adult
            on one scale flatten every adult's change into a line, and a kitten's
            climb is a different story anyway — growth, not a trend to watch. The
            chart only appears when a selected cat is under a year old. */
-        const isKitten = (id: string) => catLifeStage(selectedCats.find(c => c.id === id)?.birthday) === 'Kitten'
         const groups =
           m.id === 'weight'
             ? [
@@ -403,7 +413,7 @@ export default function HealthPage() {
 
         return groups.map(group => (
           <Reveal key={`${m.id}-${group.key}`}>
-            <div className={`${CARD} mb-6`}>
+            <div className={CARD}>
               <h2 className="font-display text-xl text-brand-brown">
                 {split && group.title ? `${m.label}: ${group.title}` : m.label}{' '}
                 <span className="text-base text-brand-brown/50">({m.unit})</span>
@@ -439,6 +449,7 @@ export default function HealthPage() {
           </Reveal>
         ))
       })}
+      </div>
 
       {/* Weight drops out of `available` when none of the selected cats have a
           reading, so this is the prompt to start it. It has to work for a whole

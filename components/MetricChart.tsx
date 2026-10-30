@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { multiSeriesGeometry, NamedSeries } from '@/lib/healthAnalysis'
 import { formatDateKey, parseDateKey } from '@/lib/dateKeys'
 import { ChartMarker, MARKER_KINDS } from '@/lib/chartMarkers'
@@ -32,7 +32,17 @@ interface Props {
 }
 
 
-const VIEW = { width: 640, height: 280 }
+/**
+ * The chart is drawn at one viewBox unit per CSS pixel, so its width follows
+ * the card it sits in and its height is chosen for that width. A fixed
+ * viewBox scaled with the page: on a wide monitor one chart filled the screen
+ * and its labels grew with it. Height is capped so a wide chart stays a band
+ * and floored so a phone-width one keeps room for its ticks.
+ */
+const DEFAULT_WIDTH = 640
+function viewFor(width: number): { width: number; height: number } {
+  return { width, height: Math.round(Math.min(300, Math.max(200, width * 0.42))) }
+}
 const PADDING = { top: 16, right: 16, bottom: 34, left: 46 }
 
 /**
@@ -82,7 +92,22 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
   const [highlighted, setHighlighted] = useState<string | null>(null)
   const [hoveredDate, setHoveredDate] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const geo = multiSeriesGeometry(series, VIEW.width, VIEW.height, PADDING, 4, domain)
+  const frameRef = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(DEFAULT_WIDTH)
+  useEffect(() => {
+    const frame = frameRef.current
+    if (!frame) return
+    const measure = () => {
+      const w = Math.round(frame.getBoundingClientRect().width)
+      if (w > 0) setWidth(w)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(frame)
+    return () => observer.disconnect()
+  }, [])
+  const view = viewFor(width)
+  const geo = multiSeriesGeometry(series, view.width, view.height, PADDING, 4, domain)
   const crossesYear = !!geo && geo.from.slice(0, 4) !== geo.to.slice(0, 4)
 
   /**
@@ -115,7 +140,7 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
     const start = parseDateKey(geo.from)?.getTime()
     const end = parseDateKey(geo.to)?.getTime()
     if (start === undefined || end === undefined || end <= start) return undefined
-    const plotW = VIEW.width - PADDING.left - PADDING.right
+    const plotW = view.width - PADDING.left - PADDING.right
     return (date: string) => {
       const t = parseDateKey(date)?.getTime()
       if (t === undefined || t < start || t > end) return undefined
@@ -134,9 +159,9 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
     const svg = svgRef.current
     if (!svg) return
     const box = svg.getBoundingClientRect()
-    // The SVG scales to its container, so pointer pixels have to be mapped back
-    // into viewBox units before they mean anything against the geometry.
-    const x = ((clientX - box.left) / box.width) * VIEW.width
+    // Drawn at one unit per pixel, but mapped through the rendered width
+    // anyway so a stale measurement cannot put the guide on the wrong date.
+    const x = ((clientX - box.left) / box.width) * view.width
     let best: string | null = null
     let bestDistance = Infinity
     for (const [date, points] of byDate) {
@@ -150,13 +175,13 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={frameRef}>
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
+        viewBox={`0 0 ${view.width} ${view.height}`}
         role="img"
         aria-label={`${geo.lines.length} ${geo.lines.length === 1 ? 'cat' : 'cats'}, ${unit}, ${formatDateKey(geo.from, { dateStyle: 'medium' })} to ${formatDateKey(geo.to, { dateStyle: 'medium' })}`}
-        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+        style={{ width: '100%', height: view.height, display: 'block', overflow: 'visible' }}
         onMouseMove={e => trackPointer(e.clientX)}
         onMouseLeave={() => setHoveredDate(null)}
       >
@@ -165,7 +190,7 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
             <line
               x1={PADDING.left}
               y1={t.y}
-              x2={VIEW.width - PADDING.right}
+              x2={view.width - PADDING.right}
               y2={t.y}
               stroke="#E7C9A9"
               strokeWidth={1}
@@ -184,7 +209,7 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
             x1={hovered[0].x}
             y1={PADDING.top}
             x2={hovered[0].x}
-            y2={VIEW.height - PADDING.bottom}
+            y2={view.height - PADDING.bottom}
             stroke="#6B4A34"
             strokeWidth={1}
             strokeDasharray="2 3"
@@ -291,13 +316,13 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
           </>
         )}
 
-        <text x={PADDING.left} y={VIEW.height - 12} textAnchor="start" fontSize={11} fill="#6B4A34" opacity={0.65}>
+        <text x={PADDING.left} y={view.height - 12} textAnchor="start" fontSize={11} fill="#6B4A34" opacity={0.65}>
           {shortDate(geo.from, crossesYear)}
         </text>
         {geo.from !== geo.to && (
           <text
-            x={VIEW.width - PADDING.right}
-            y={VIEW.height - 12}
+            x={view.width - PADDING.right}
+            y={view.height - 12}
             textAnchor="end"
             fontSize={11}
             fill="#6B4A34"
@@ -314,7 +339,7 @@ export default function MetricChart({ series, unit, onSelect, domain, colorFor, 
         <div
           className="absolute -translate-x-1/2 pointer-events-none z-10 bg-white rounded-2xl shadow-card border border-brand-tan/40 px-3 py-2 min-w-[9rem]"
           style={{
-            left: `${Math.min(Math.max((hovered[0].x / VIEW.width) * 100, 14), 86)}%`,
+            left: `${Math.min(Math.max((hovered[0].x / view.width) * 100, 14), 86)}%`,
             top: '100%',
             marginTop: -8,
           }}
