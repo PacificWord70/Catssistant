@@ -41,7 +41,7 @@ interface Props {
 const LAYER_DIR = '/images/portraits/'
 /* Bumped whenever the layer files are regenerated. The file names never
    change, so without this a browser keeps serving the old lines from cache. */
-const LAYER_VERSION = 14
+const LAYER_VERSION = 15
 
 interface PoseLayers {
   width: number
